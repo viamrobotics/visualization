@@ -5,7 +5,7 @@
 
 	import { Canvas } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
-	import { provideToast, ToastContainer, ToastVariant } from '@viamrobotics/prime-core'
+	import { provideToast, Toast } from '@viamrobotics/prime-ui'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
 	import { NeutralToneMapping } from 'three'
@@ -121,7 +121,7 @@
 	providePartConfig(
 		() => partID,
 		() => localConfigProps,
-		(message) => toast({ message, variant: ToastVariant.Danger })
+		(message) => toast.danger(message)
 	)
 
 	$effect(() => {
@@ -180,5 +180,5 @@
 		</SceneProviders>
 	</Canvas>
 
-	<ToastContainer />
+	<Toast />
 </div>

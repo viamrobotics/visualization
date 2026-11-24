@@ -1,7 +1,6 @@
 <script lang="ts">
+	import { Tooltip } from '@viamrobotics/prime-ui'
 	import { Maximize2, Minimize2 } from 'lucide-svelte'
-
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		fullscreen: boolean
@@ -27,13 +26,12 @@
 	})
 </script>
 
-<Tooltip placement="left">
-	{#snippet children(tooltipID)}
+<Tooltip>
+	<Tooltip.Trigger>
 		<button
 			class="border-gray-5 text-gray-8 hover:bg-light active:bg-medium block rounded-md border bg-white p-1.5"
 			aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
 			aria-pressed={fullscreen}
-			aria-describedby={tooltipID}
 			onclick={() => (fullscreen = !fullscreen)}
 		>
 			{#if fullscreen}
@@ -48,9 +46,8 @@
 				/>
 			{/if}
 		</button>
-	{/snippet}
-
-	{#snippet content()}
+	</Tooltip.Trigger>
+	<Tooltip.Content placement="left">
 		{fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

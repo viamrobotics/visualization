@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlert, mdiAlertCircle } from '@mdi/js'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { type LogStatus, type LogTarget, useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	interface Props {
@@ -24,31 +24,29 @@
 	Interactive so a long message can be reached and copied.
 -->
 <Tooltip
-	placement="right-start"
 	interactive
 	openDelay={150}
 >
-	{#snippet children(tooltipID)}
+	<Tooltip.Trigger class="inline-flex items-center">
 		<span
 			class={[
 				'flex size-4 shrink-0 items-center justify-center rounded-sm text-white',
 				status === 'error' ? 'bg-danger-bright' : 'bg-warning-bright',
 			]}
-			aria-describedby={tooltipID}
 			role="img"
 			aria-label="{label} is reporting {status === 'error' ? 'errors' : 'warnings'}"
 		>
 			<Icon
-				name={status === 'error' ? 'alert-circle' : 'alert'}
+				icon={status === 'error' ? mdiAlertCircle : mdiAlert}
 				size="xs"
 			/>
 		</span>
-	{/snippet}
+	</Tooltip.Trigger>
 
-	{#snippet content()}
+	<Tooltip.Content placement="right">
 		<!--
-			Read here rather than in a component-level `$derived`: the snippet body only
-			runs while the tooltip is open, so a row costs nothing until it is hovered.
+			Read here rather than in a component-level `$derived`: the content only
+			renders while the tooltip is open, so a row costs nothing until it is hovered.
 			Info lines are dropped, since the tooltip exists to explain the alert and the
 			per-tick "Fetching..." lines would bury what raised it.
 		-->
@@ -78,5 +76,5 @@
 				{/each}
 			</ul>
 		</div>
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlertCircleOutline, mdiChevronLeft } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import IKCandidateList from './IKCandidateList.svelte'
 	import { useIKInspection } from './useIKInspection.svelte'
@@ -14,9 +15,8 @@
 		onclick={() => ctx.exit()}
 	>
 		<Icon
-			name="chevron-left"
+			icon={mdiChevronLeft}
 			size="sm"
-			aria-hidden="true"
 		/>
 		Back to plans
 	</button>
@@ -36,9 +36,8 @@
 	{:else if ctx.status === 'error'}
 		<div class="flex grow flex-col items-center justify-center gap-2 p-4 text-center">
 			<Icon
-				name="alert-circle-outline"
+				icon={mdiAlertCircleOutline}
 				size="lg"
-				aria-hidden="true"
 			/>
 			<p class="text-danger-dark break-words">{ctx.error}</p>
 		</div>

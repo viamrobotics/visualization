@@ -1,9 +1,8 @@
 <script lang="ts">
 	import type { ClassValue } from 'svelte/elements'
 
+	import { Tooltip } from '@viamrobotics/prime-ui'
 	import { useResizeObserver } from 'runed'
-
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		text: string
@@ -30,19 +29,18 @@
 
 <div class={['min-w-0', containerClass]}>
 	<Tooltip
-		placement="top-start"
 		openDelay={250}
 		disabled={!showTooltip}
-		triggerClass="w-full min-w-0"
 	>
-		<span
-			bind:this={element}
-			class={['block w-full truncate', textClass]}
-			aria-label={tooltipText ?? text}
-		>
-			{text}
-		</span>
-
-		{#snippet content()}{tooltipText ?? text}{/snippet}
+		<Tooltip.Trigger class="flex w-full min-w-0">
+			<span
+				bind:this={element}
+				class={['block w-full truncate', textClass]}
+				aria-label={tooltipText ?? text}
+			>
+				{text}
+			</span>
+		</Tooltip.Trigger>
+		<Tooltip.Content placement="top">{tooltipText ?? text}</Tooltip.Content>
 	</Tooltip>
 </div>

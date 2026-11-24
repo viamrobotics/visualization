@@ -21,8 +21,6 @@
 </script>
 
 <script lang="ts">
-	import { Button } from '@viamrobotics/prime-core'
-
 	import { type AppearanceEdit, foldAppearanceEdits } from '#lib/appearanceEdits.js'
 	import AppearanceFields from '#lib/components/overlay/details/AppearanceFields.svelte'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
@@ -135,22 +133,22 @@
 	/>
 
 	{#if savedTargets.length > 0}
-		<Button
-			variant="ghost-outline"
-			class="w-full"
+		<button
+			type="button"
+			class="button button-compact w-full"
 			onclick={handleReset}
 		>
 			{only?.frameId !== undefined && only ? `Reset to ${only.component.name}` : 'Reset appearance'}
-		</Button>
+		</button>
 	{/if}
 
 	{#if targetsWithSavedChildren.length > 0}
-		<Button
-			variant="ghost-outline"
-			class="w-full"
+		<button
+			type="button"
+			class="button button-compact w-full"
 			onclick={handleResetChildren}
 		>
 			Reset children
-		</Button>
+		</button>
 	{/if}
 </div>

@@ -2,9 +2,10 @@
 	import type { Snippet } from 'svelte'
 	import type { ClassValue } from 'svelte/elements'
 
+	import { mdiClose } from '@mdi/js'
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { Portal } from '@threlte/extras/webgpu'
-	import { Icon } from '@viamrobotics/prime-core'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import * as floatingPanel from '@zag-js/floating-panel'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import { untrack } from 'svelte'
@@ -155,7 +156,7 @@
 									aria-label="Close panel"
 									onclick={() => (isOpen = false)}
 								>
-									<Icon name="close" />
+									<Icon icon={mdiClose} />
 								</button>
 							</div>
 						{/if}

@@ -28,9 +28,9 @@ vi.mock('#lib', async () => {
 })
 
 // useToast requires a `provideToast` ancestor; nothing here checks toast content.
-vi.mock('@viamrobotics/prime-core', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@viamrobotics/prime-core')>()),
-	useToast: () => vi.fn(),
+vi.mock('@viamrobotics/prime-ui', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@viamrobotics/prime-ui')>()),
+	useToast: () => ({ info: vi.fn(), success: vi.fn(), warning: vi.fn(), danger: vi.fn() }),
 }))
 
 const planSnapshot = new Snapshot({

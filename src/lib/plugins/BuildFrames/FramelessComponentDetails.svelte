@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements'
 
-	import { Button } from '@viamrobotics/prime-core'
+	import { mdiPlus } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import { type Entity } from 'koota'
 
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
@@ -32,9 +33,9 @@
 				: "These components have no frame, so they aren't in the scene."}
 		</p>
 
-		<Button
-			icon="plus"
-			class="w-full"
+		<button
+			type="button"
+			class="button button-compact w-full"
 			onclick={() => {
 				for (const entity of entities) {
 					const name = entity.get(traits.Name)
@@ -42,7 +43,8 @@
 				}
 			}}
 		>
+			<Icon icon={mdiPlus} />
 			{isSingle ? 'Add frame' : `Add ${entities.length} frames`}
-		</Button>
+		</button>
 	</div>
 </DetailsPanel>

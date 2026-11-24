@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { Button } from '@viamrobotics/prime-core'
 	import { ElementRect } from 'runed'
 
 	import { FloatingPanel } from '#lib'
@@ -40,17 +39,19 @@
 >
 	<div class="flex items-center gap-4 p-4 text-xs">
 		Shift + click and drag to make a lasso selection.
-		<Button
-			variant="success"
+		<button
+			type="button"
+			class="button button-compact button-success"
 			onclick={() => console.log(selectionCtx.current)}
 		>
 			Commit selection
-		</Button>
-		<Button
-			variant="danger"
+		</button>
+		<button
+			type="button"
+			class="button button-compact button-danger"
 			onclick={() => selectionCtx.clearSelections()}
 		>
 			Clear selection
-		</Button>
+		</button>
 	</div>
 </FloatingPanel>

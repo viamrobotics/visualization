@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiTrashCanOutline } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import { type Entity } from 'koota'
 
 	import { relations, traits } from '#lib/ecs/index.js'
@@ -31,7 +32,7 @@
 			<div class="flex items-center gap-1">
 				<span class="text-primary">{linkedEntityName} ({linkType})</span>
 				<Icon
-					name="trash-can-outline"
+					icon={mdiTrashCanOutline}
 					class="h-6 cursor-pointer px-2 py-1 text-xs text-red-500"
 					onclick={() => owner?.remove(relations.SubEntityLink(linkedEntity))}
 				/>

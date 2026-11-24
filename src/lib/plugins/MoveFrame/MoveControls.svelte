@@ -3,7 +3,7 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 	import type { Matrix4 } from 'three'
 
-	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { useToast } from '@viamrobotics/prime-ui'
 	import { MotionClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { PersistedState } from 'runed'
@@ -227,6 +227,12 @@
 		],
 	})
 
+	const moveDisabled = $derived(!staged || executing || otherPanelMoving || !canCommand)
+	const executePlanDisabled = $derived(
+		preview.status !== 'ready' || executing || otherPanelMoving || !canCommand
+	)
+	const resetDisabled = $derived(!staged || executing)
+
 	/**
 	 * Two ways to the same staged target, one action each: `Move` plans and runs server-side, and
 	 * Preview draws a trajectory before running exactly that.
@@ -264,17 +270,12 @@
 		try {
 			// `execute` answers `{execute: true}` or errors; there is no partial-success reply to read.
 			await client.doCommand(executeCommand(preview.trajectory))
-			toast({
-				message: `Moved "${frameName}" along the previewed plan.`,
-				variant: ToastVariant.Success,
-			})
+			toast.success(`Moved "${frameName}" along the previewed plan.`)
 			resetTarget()
 		} catch (error) {
-			toast({
-				message:
-					error instanceof Error ? error.message : `Failed to execute the plan for "${frameName}".`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(
+				error instanceof Error ? error.message : `Failed to execute the plan for "${frameName}".`
+			)
 			// A failed `execute` is not a move that never happened: RDK batches the waypoints to the
 			// component, which can stop anywhere along them, so the plan no longer starts where the
 			// machine is.
@@ -303,18 +304,14 @@
 				worldState,
 				constraints
 			)
-			toast({
-				message: success
-					? `Moved "${frameName}" to the target.`
-					: `Move for "${frameName}" did not complete.`,
-				variant: success ? ToastVariant.Success : ToastVariant.Warning,
-			})
-			if (success) resetTarget()
+			if (success) {
+				toast.success(`Moved "${frameName}" to the target.`)
+				resetTarget()
+			} else {
+				toast.warning(`Move for "${frameName}" did not complete.`)
+			}
 		} catch (error) {
-			toast({
-				message: error instanceof Error ? error.message : `Failed to move "${frameName}".`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(error instanceof Error ? error.message : `Failed to move "${frameName}".`)
 		} finally {
 			moveExecutionOwner.release(frameName)
 		}
@@ -338,12 +335,13 @@
 	{#if preempted}
 		<div class="border-light flex items-center justify-between gap-2 border px-2 py-1.5">
 			<p class="text-subtle-1">Another move panel has the gizmo.</p>
-			<Button
-				variant="ghost"
+			<button
+				type="button"
+				class="button button-compact button-ghost"
 				onclick={() => moveGizmoOwner.arm(frameName)}
 			>
 				Use it here
-			</Button>
+			</button>
 		</div>
 	{/if}
 
@@ -358,14 +356,17 @@
 			>
 				Target
 			</h4>
-			<Button
-				variant="ghost"
-				disabled={!staged || executing}
+			<button
+				type="button"
+				class="button button-compact button-ghost"
+				aria-disabled={resetDisabled || undefined}
 				title="Put the target back where the frame is"
-				onclick={resetTarget}
+				onclick={() => {
+					if (!resetDisabled) resetTarget()
+				}}
 			>
 				Reset
-			</Button>
+			</button>
 		</div>
 
 		{#if targetPose}
@@ -429,15 +430,24 @@
 			`Move` rather than a label naming a plan: this calls the motion service's `Move`, which plans
 			server-side and never sees a plan on screen.
 		-->
-		<Button
-			variant="success"
-			disabled={!staged || executing || otherPanelMoving || !canCommand}
-			progress={executing ? 'indeterminate' : undefined}
+		<button
+			type="button"
+			class="button button-compact button-success"
+			aria-disabled={moveDisabled || undefined}
+			aria-busy={executing || undefined}
 			title="Ask the motion service to plan and move"
-			onclick={executeMove}
+			onclick={() => {
+				if (!moveDisabled) void executeMove()
+			}}
 		>
+			{#if executing}
+				<span
+					class="progress-dots"
+					aria-hidden="true"
+				></span>
+			{/if}
 			Move
-		</Button>
+		</button>
 		<StopMoveButton
 			arm={frameName}
 			isMoving={executing}
@@ -458,21 +468,30 @@
 		<MovePreview
 			{preview}
 			{frameName}
-			disabled={!staged || executing || otherPanelMoving || !canCommand}
+			disabled={moveDisabled}
 		/>
 
 		<Collisions />
 
 		<div class="border-light flex items-center gap-2 border-t pt-3">
-			<Button
-				variant="success"
-				disabled={preview.status !== 'ready' || executing || otherPanelMoving || !canCommand}
-				progress={executing ? 'indeterminate' : undefined}
+			<button
+				type="button"
+				class="button button-compact button-success"
+				aria-disabled={executePlanDisabled || undefined}
+				aria-busy={executing || undefined}
 				title="Run the trajectory shown above, without planning again"
-				onclick={executePreviewedMove}
+				onclick={() => {
+					if (!executePlanDisabled) void executePreviewedMove()
+				}}
 			>
+				{#if executing}
+					<span
+						class="progress-dots"
+						aria-hidden="true"
+					></span>
+				{/if}
 				Execute plan
-			</Button>
+			</button>
 			<StopMoveButton
 				arm={frameName}
 				isMoving={executing}

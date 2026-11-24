@@ -25,9 +25,9 @@ import { createWeblabs, WEBLABS_CONTEXT_KEY } from '#lib/hooks/useWeblabs.svelte
 
 import MonitorDetails from '../MonitorDetails.svelte'
 
-vi.mock('@viamrobotics/prime-core', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@viamrobotics/prime-core')>()),
-	useToast: () => vi.fn(),
+vi.mock('@viamrobotics/prime-ui', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@viamrobotics/prime-ui')>()),
+	useToast: () => ({ info: vi.fn(), success: vi.fn(), warning: vi.fn(), danger: vi.fn() }),
 }))
 
 describe('MonitorDetails', () => {

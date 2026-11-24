@@ -4,7 +4,7 @@
 Appends a copy of each selected Complex obstacle shape to its obstacle, by button or by Shift+D, then moves the selection to the copies once their frames reach the scene.
 -->
 <script lang="ts">
-	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { useToast } from '@viamrobotics/prime-ui'
 
 	import Kbd from '#lib/components/overlay/Kbd.svelte'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
@@ -60,13 +60,11 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 
 		const [only] = shapes
 		const sourceEntry = only ? obstacleGeometriesOf(only.component)[only.index] : undefined
-		toast({
-			message:
-				shapes.length === 1 && only && sourceEntry
-					? `Duplicated ${obstacleGeometryLabel(sourceEntry, only.index)} as ${copies[0]?.labels[0]}.`
-					: `Duplicated ${shapes.length} shapes.`,
-			variant: ToastVariant.Success,
-		})
+		toast.success(
+			shapes.length === 1 && only && sourceEntry
+				? `Duplicated ${obstacleGeometryLabel(sourceEntry, only.index)} as ${copies[0]?.labels[0]}.`
+				: `Duplicated ${shapes.length} shapes.`
+		)
 	}
 
 	const duplicateKeybinding = useHotkey({
@@ -80,8 +78,9 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 </script>
 
 <div class="flex min-w-0 flex-1 flex-col">
-	<Button
-		class="w-full"
+	<button
+		type="button"
+		class="button button-compact w-full"
 		aria-label={label}
 		onclick={handleDuplicate}
 	>
@@ -89,7 +88,7 @@ Appends a copy of each selected Complex obstacle shape to its obstacle, by butto
 			Duplicate
 			<Kbd binding={duplicateKeybinding} />
 		</div>
-	</Button>
+	</button>
 
 	{#if error}
 		<p

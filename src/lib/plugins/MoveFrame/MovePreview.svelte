@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Banner, BannerVariant, Button, Icon, ToggleButtons } from '@viamrobotics/prime-core'
+	import { mdiInformationOutline } from '@mdi/js'
+	import { ToggleButtons } from '@viamrobotics/prime-controls'
+	import { Banner, Icon, Tooltip } from '@viamrobotics/prime-ui'
 
 	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	import type { PreviewDetail, PreviewMove } from './usePreviewMove.svelte'
 
@@ -18,27 +19,34 @@
 
 	const planning = $derived(preview.status === 'planning')
 	const ready = $derived(preview.status === 'ready')
+	const previewDisabled = $derived(disabled || planning)
 
-	const detailLabels: Record<PreviewDetail, string> = {
-		waypoints: 'Waypoints',
-		interpolated: 'Interpolated',
-	}
-	const detailByLabel = new Map<string, PreviewDetail>(
-		Object.entries(detailLabels).map(([value, label]) => [label, value as PreviewDetail])
-	)
+	const detailItems: { value: PreviewDetail; label: string }[] = [
+		{ value: 'waypoints', label: 'Waypoints' },
+		{ value: 'interpolated', label: 'Interpolated' },
+	]
 
 	const frameCount = $derived(preview.player.totalSteps)
 </script>
 
 <div class="flex flex-col gap-2">
-	<Button
-		variant="outline-success"
-		disabled={disabled || planning}
-		progress={planning ? 'indeterminate' : undefined}
-		onclick={() => preview.requestPreview()}
+	<button
+		type="button"
+		class="button button-compact button-success button-outline"
+		aria-disabled={previewDisabled || undefined}
+		aria-busy={planning || undefined}
+		onclick={() => {
+			if (!previewDisabled) preview.requestPreview()
+		}}
 	>
+		{#if planning}
+			<span
+				class="progress-dots"
+				aria-hidden="true"
+			></span>
+		{/if}
 		{ready ? 'Re-plan preview' : 'Preview move'}
-	</Button>
+	</button>
 
 	{#if preview.status === 'error' && preview.message}
 		<p
@@ -62,50 +70,45 @@
 	{/if}
 
 	{#if ready}
+		<!-- A standing caveat, not an update, so it must not announce as a live `status` region. -->
 		<Banner
-			variant={BannerVariant.Info}
-			size="sm"
+			variant="info"
+			role="note"
 		>
-			{#snippet titleContent()}
-				<span class="inline-flex items-center gap-1 font-normal">
+			<Banner.Description>
+				<span class="inline-flex items-center gap-1">
 					This preview is an approximation
-					<Tooltip placement="top">
-						{#snippet children(tooltipID)}
+					<Tooltip>
+						<Tooltip.Trigger>
 							<button
+								type="button"
 								class="flex opacity-70 hover:opacity-100"
 								aria-label="About this approximation"
-								aria-describedby={tooltipID}
 							>
-								<Icon
-									name="information-outline"
-									aria-hidden="true"
-								/>
+								<Icon icon={mdiInformationOutline} />
 							</button>
-						{/snippet}
-
-						{#snippet content()}
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="top">
 							Plans carry no timing, so this plays at a fixed rate. The arm may also deviate from
 							the planned waypoints: how it moves between them is the component's decision, not the
 							planner's.
-						{/snippet}
+						</Tooltip.Content>
 					</Tooltip>
 				</span>
-			{/snippet}
+			</Banner.Description>
 		</Banner>
 
 		<div class="flex flex-col gap-1">
 			<ToggleButtons
-				options={Object.values(detailLabels)}
-				selected={detailLabels[preview.detail]}
-				on:input={(event) => {
-					const next = detailByLabel.get(event.detail)
-					if (next) preview.detail = next
-				}}
-			>
-				{#snippet legend()}
-					Each frame is
-				{/snippet}
-			</ToggleButtons>
+				label="Each frame is"
+				items={detailItems}
+				bind:value={
+					() => preview.detail,
+					(next) => {
+						if (next === 'waypoints' || next === 'interpolated') preview.detail = next
+					}
+				}
+			/>
 
 			<p
 				class="text-subtle-2"

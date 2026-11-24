@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Input } from '@viamrobotics/prime-core'
+	import { TextField } from '@viamrobotics/prime-controls'
 	import { Matrix4 } from 'three'
 
 	import type { Frame } from '#lib/frame.js'
@@ -126,6 +126,7 @@
 
 	const fieldId = $props.id()
 	const labelFieldId = `${fieldId}-shape-label`
+	const labelId = `${fieldId}-shape-label-name`
 	const labelErrorId = `${fieldId}-label-error`
 </script>
 
@@ -144,18 +145,20 @@
 
 <div class="flex flex-col gap-0.5">
 	<label
+		id={labelId}
 		for={labelFieldId}
 		class="font-semibold"
 	>
 		label
 	</label>
-	<Input
+	<TextField
 		id={labelFieldId}
+		aria-labelledby={labelId}
 		bind:value={labelDraft}
-		state={error?.scope === 'label' ? 'error' : 'none'}
+		state={error?.scope === 'label' ? 'error' : undefined}
 		aria-describedby={error?.scope === 'label' ? labelErrorId : undefined}
-		on:keydown={handleLabelKeydown}
-		on:blur={handleRelabel}
+		onkeydown={handleLabelKeydown}
+		onblur={handleRelabel}
 	/>
 	{#if error?.scope === 'label'}
 		<p

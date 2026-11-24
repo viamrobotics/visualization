@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { ResourceName } from '@viamrobotics/sdk'
 
-	import { Icon, Switch } from '@viamrobotics/prime-core'
+	import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js'
+	import { Icon, Switch } from '@viamrobotics/prime-ui'
 	import { PersistedState } from 'runed'
 
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
@@ -40,9 +41,9 @@
 		onclick={() => (expanded.current = !expanded.current)}
 	>
 		<Icon
-			name={expanded.current ? 'unfold-more-horizontal' : 'unfold-less-horizontal'}
-			cx="text-subtle-1 size-5 shrink-0"
-			aria-hidden="true"
+			icon={expanded.current ? mdiUnfoldMoreHorizontal : mdiUnfoldLessHorizontal}
+			size="lg"
+			class="text-subtle-1 shrink-0"
 		/>
 		<span class="min-w-0 flex-1 truncate">{resource.name}</span>
 		<span class="text-subtle-2 shrink-0 tabular-nums">{enabledCount}/{toggles.length}</span>
@@ -54,8 +55,11 @@
 				<div class="flex items-center justify-between gap-2 py-0.5">
 					<span class="min-w-0 truncate">{toggle.label}</span>
 					<Switch
-						on={store.isOpen(partID.current, resource.name, toggle.id)}
-						on:change={(event) => setWidget(toggle.id, event.detail)}
+						aria-label={toggle.label}
+						bind:checked={
+							() => store.isOpen(partID.current, resource.name, toggle.id),
+							(next) => setWidget(toggle.id, next)
+						}
 					/>
 				</div>
 			{/each}

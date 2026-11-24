@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Button, Input, InputStates } from '@viamrobotics/prime-core'
+	import { TextField } from '@viamrobotics/prime-controls'
+	import { Dialog } from '@viamrobotics/prime-ui'
 	import { untrack } from 'svelte'
 
-	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
@@ -64,56 +64,54 @@
 
 	const id = $props.id()
 	const nameId = `${id}-name`
+	const nameLabelId = `${id}-name-label`
 	const errorId = `${id}-error`
 </script>
 
-<Dialog
-	bind:open
-	role="dialog"
-	title={`New ${option.label.toLowerCase()} obstacle`}
->
-	<div>
-		<label
-			for={nameId}
-			class="text-subtle-2 mb-1 block text-xs"
-		>
-			Name
-		</label>
-		<Input
-			id={nameId}
-			aria-describedby={error === undefined ? undefined : errorId}
-			bind:value={name}
-			onkeydown={(event: KeyboardEvent) => {
-				if (event.key !== 'Enter') return
-				event.preventDefault()
-				create()
-			}}
-			state={error === undefined ? InputStates.NONE : InputStates.ERROR}
-		/>
-		{#if error !== undefined}
-			<p
-				id={errorId}
-				class="text-danger-dark mt-1 text-xs"
-			>
-				{error}
-			</p>
-		{/if}
-	</div>
+<Dialog bind:open>
+	<Dialog.Content class="w-full max-w-sm gap-3">
+		<Dialog.Title>{`New ${option.label.toLowerCase()} obstacle`}</Dialog.Title>
 
-	{#snippet actions({ close })}
-		<Button
-			variant="ghost"
-			onclick={close}
-		>
-			Cancel
-		</Button>
-		<Button
-			variant="primary"
-			aria-disabled={error !== undefined}
-			class={error === undefined ? undefined : 'cursor-not-allowed opacity-50'}
-			onclick={create}
-		>
-			Create
-		</Button>
-	{/snippet}
+		<div>
+			<label
+				id={nameLabelId}
+				for={nameId}
+				class="text-subtle-2 mb-1 block text-xs"
+			>
+				Name
+			</label>
+			<TextField
+				id={nameId}
+				aria-labelledby={nameLabelId}
+				aria-describedby={error === undefined ? undefined : errorId}
+				bind:value={name}
+				onkeydown={(event) => {
+					if (event.key !== 'Enter') return
+					event.preventDefault()
+					create()
+				}}
+				state={error === undefined ? undefined : 'error'}
+			/>
+			{#if error !== undefined}
+				<p
+					id={errorId}
+					class="text-danger-dark mt-1 text-xs"
+				>
+					{error}
+				</p>
+			{/if}
+		</div>
+
+		<div class="mt-1 flex justify-end gap-2">
+			<Dialog.Close class="button button-compact button-ghost">Cancel</Dialog.Close>
+			<button
+				type="button"
+				class="button button-compact"
+				aria-disabled={error !== undefined}
+				onclick={create}
+			>
+				Create
+			</button>
+		</div>
+	</Dialog.Content>
 </Dialog>

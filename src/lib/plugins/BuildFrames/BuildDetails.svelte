@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements'
 
-	import { Button } from '@viamrobotics/prime-core'
 	import { type Entity } from 'koota'
 
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
@@ -289,13 +288,13 @@
 		<div class="mt-2 flex items-start gap-2">
 			{#if canDuplicate}
 				<DuplicateObstaclesButton {entities} />
-				<Button
-					variant="danger"
-					class="flex-1"
+				<button
+					type="button"
+					class="button button-compact button-danger flex-1"
 					onclick={() => partConfig.deleteComponents(selectedNames)}
 				>
 					{isSingle ? 'Delete obstacle' : `Delete ${entities.length} obstacles`}
-				</Button>
+				</button>
 			{/if}
 
 			{#if isAllShapes}
@@ -304,13 +303,13 @@
 			{/if}
 
 			{#if canDeleteEvery}
-				<Button
-					variant="danger"
-					class="flex-1"
+				<button
+					type="button"
+					class="button button-compact button-danger flex-1"
 					onclick={() => partConfig.deleteFrames(selectedNames)}
 				>
 					{isSingle ? 'Delete frame' : `Delete ${entities.length} frames`}
-				</Button>
+				</button>
 			{/if}
 		</div>
 	{/if}

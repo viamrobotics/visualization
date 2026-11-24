@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Struct } from '@viamrobotics/sdk'
 
-	import { provideToast } from '@viamrobotics/prime-core'
+	import { provideToast } from '@viamrobotics/prime-ui'
 	import { untrack } from 'svelte'
 
 	import { provideWorld } from '#lib/ecs/index.js'

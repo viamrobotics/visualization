@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlert } from '@mdi/js'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 
 	import type { UnhealthyResource } from '#lib/hooks/resources/unhealthyResources.js'
-
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 
 	interface Props {
 		/** The machine's report for this row's resource. */
@@ -14,25 +13,23 @@
 </script>
 
 <Tooltip
-	placement="right-start"
 	interactive
 	openDelay={150}
 >
-	{#snippet children(tooltipID)}
+	<Tooltip.Trigger class="inline-flex items-center">
 		<span
 			class="bg-warning-bright flex size-4 shrink-0 items-center justify-center rounded-sm text-white"
-			aria-describedby={tooltipID}
 			role="img"
 			aria-label="{resource.name} is unhealthy"
 		>
 			<Icon
-				name="alert"
+				icon={mdiAlert}
 				size="xs"
 			/>
 		</span>
-	{/snippet}
+	</Tooltip.Trigger>
 
-	{#snippet content()}
+	<Tooltip.Content placement="right">
 		<div class="font-public-sans flex flex-col gap-1.5">
 			<p class="font-roboto-mono text-gray-4">{resource.name}</p>
 
@@ -42,5 +39,5 @@
 				<p class="text-gray-4">{resource.error}</p>
 			{/if}
 		</div>
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

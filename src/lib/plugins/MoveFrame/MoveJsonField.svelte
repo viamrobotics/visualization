@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Expandable, Icon } from '@viamrobotics/prime-core'
-	import { CodeEditor } from '@viamrobotics/prime-core/code-editor'
+	import { CodeEditor } from '@viamrobotics/prime-editor'
+	import { Collapsible } from '@viamrobotics/prime-ui'
 
 	interface Props {
 		label: string
@@ -13,33 +13,20 @@
 	let open = $state(false)
 </script>
 
-{#snippet trigger({ isOpen }: { isOpen: boolean })}
-	<span class="flex w-full items-center gap-1">
-		<Icon
-			name={isOpen ? 'chevron-down' : 'chevron-right'}
-			aria-hidden="true"
-		/>
-		<strong class="font-semibold">{label}</strong>
-		<span class="text-subtle-2">(optional JSON)</span>
-	</span>
-{/snippet}
-
-{#snippet content()}
-	<!-- CodeMirror measures itself on mount, so keep it out of the collapsed panel. -->
-	{#if open}
+<Collapsible bind:open>
+	<Collapsible.Trigger>
+		<span class="flex items-center gap-1">
+			<strong class="font-semibold">{label}</strong>
+			<span class="text-subtle-2">(optional JSON)</span>
+		</span>
+	</Collapsible.Trigger>
+	<!-- CodeMirror measures itself on mount, and Collapsible.Content only mounts while open. -->
+	<Collapsible.Content>
 		<CodeEditor
-			{label}
-			{value}
-			{onChange}
+			aria-label={label}
+			bind:value={() => value, (next) => onChange(next)}
 			language="json"
 			class="mt-1 h-32 overflow-y-auto"
 		/>
-	{/if}
-{/snippet}
-
-<Expandable
-	bind:open
-	{trigger}
-	{content}
-	triggerClass="w-full text-left"
-/>
+	</Collapsible.Content>
+</Collapsible>

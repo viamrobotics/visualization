@@ -38,11 +38,11 @@
 <script lang="ts">
 	import type { ClassValue } from 'svelte/elements'
 
-	import { Icon, Button as PrimeButton } from '@viamrobotics/prime-core'
+	import { mdiEyeOutline, mdiPlayCircleOutline } from '@mdi/js'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 	import { Hammer, Move3d } from 'lucide-svelte'
 
 	import Dialog from '#lib/components/overlay/Dialog.svelte'
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { useWorld } from '#lib/ecs/index.js'
 	import { resetStagedEdits } from '#lib/editing/resetStagedEdits.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
@@ -85,15 +85,14 @@
 	}
 </script>
 
-<Tooltip placement="bottom">
-	{#snippet children(tooltipID)}
+<Tooltip>
+	<Tooltip.Trigger>
 		<label
 			class={[
 				className,
 				'relative block rounded-md border bg-white',
 				isSelected ? ['z-4', style.border] : 'border-gray-5 hover:bg-light active:bg-medium',
 			]}
-			aria-describedby={tooltipID}
 		>
 			<button
 				class={['flex items-center rounded-[inherit] p-1.5', isSelected ? style.fill : style.idle]}
@@ -103,11 +102,11 @@
 				onclick={request}
 			>
 				{#if mode === 'monitor'}
-					<Icon name="eye-outline" />
+					<Icon icon={mdiEyeOutline} />
 				{:else if mode === 'build'}
 					<Hammer size="16" />
 				{:else if mode === 'replay'}
-					<Icon name="play-circle-outline" />
+					<Icon icon={mdiPlayCircleOutline} />
 				{:else if mode === 'move'}
 					<Move3d size="16" />
 				{/if}
@@ -123,9 +122,8 @@
 				</span>
 			</button>
 		</label>
-	{/snippet}
-
-	{#snippet content()}{description}{/snippet}
+	</Tooltip.Trigger>
+	<Tooltip.Content placement="bottom">{description}</Tooltip.Content>
 </Tooltip>
 
 <Dialog
@@ -134,12 +132,17 @@
 	description={`Switching to ${mode} mode will discard your unsaved frame edits.`}
 >
 	{#snippet actions({ close })}
-		<PrimeButton onclick={close}>Cancel</PrimeButton>
-		<PrimeButton
-			variant="dark"
+		<button
+			type="button"
+			class="button button-compact"
+			onclick={close}>Cancel</button
+		>
+		<button
+			type="button"
+			class="button button-compact button-dark"
 			onclick={discardAndSwitch}
 		>
 			Discard
-		</PrimeButton>
+		</button>
 	{/snippet}
 </Dialog>

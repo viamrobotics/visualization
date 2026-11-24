@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Select, Switch } from '@viamrobotics/prime-core'
+	import { Select } from '@viamrobotics/prime-controls'
+	import { type SelectOption, Switch } from '@viamrobotics/prime-ui'
 	import { useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
@@ -7,6 +8,7 @@
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
+	const uid = $props.id()
 	const armClient = useArmClient()
 	const partID = usePartID()
 	const resources = useResourceStatuses(() => partID.current, 'gripper')
@@ -58,6 +60,10 @@
 		}
 	}
 
+	function toSelectItems(names: string[]): SelectOption[] {
+		return [{ value: '', label: 'None' }, ...names.map((name) => ({ value: name, label: name }))]
+	}
+
 	function toggleCamera(name: string, on: boolean) {
 		const next = new Set(settings.current.xrCameras)
 		if (on) {
@@ -72,7 +78,7 @@
 <div class="flex flex-col gap-2.5 text-xs">
 	<div class="flex flex-col gap-2.5">
 		<label class="flex items-center justify-between gap-2">
-			Enable VR / AR mode <Switch bind:on={settings.current.enableXR} />
+			Enable VR / AR mode <Switch bind:checked={settings.current.enableXR} />
 		</label>
 
 		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Cameras</strong></h3>
@@ -84,10 +90,9 @@
 				<label class="flex items-center justify-between gap-2">
 					{name}
 					<Switch
-						on={settings.current.xrCameras.includes(name)}
-						on:change={(event) => {
-							toggleCamera(name, event.detail)
-						}}
+						bind:checked={
+							() => settings.current.xrCameras.includes(name), (isOn) => toggleCamera(name, isOn)
+						}
 					/>
 				</label>
 			{/each}
@@ -95,39 +100,31 @@
 
 		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Left Controller</strong></h3>
 
-		<label class="flex items-center justify-between gap-2">
-			Arm
+		<div class="flex items-center justify-between gap-2">
+			<span id="{uid}-left-arm">Arm</span>
 			<Select
-				value={config.left.armName || ''}
-				onchange={(event: Event) => {
-					if (event.target instanceof HTMLSelectElement) {
-						updateConfig('left', 'armName', event.target.value || undefined)
-					}
-				}}
-			>
-				<option value="">None</option>
-				{#each leftAvailableArms as armName (armName)}
-					<option value={armName}>{armName}</option>
-				{/each}
-			</Select>
-		</label>
+				aria-labelledby="{uid}-left-arm"
+				placeholder="None"
+				items={toSelectItems(leftAvailableArms)}
+				bind:value={
+					() => config.left.armName || '',
+					(armName) => updateConfig('left', 'armName', armName || undefined)
+				}
+			/>
+		</div>
 
-		<label class="flex items-center justify-between gap-2">
-			Gripper
+		<div class="flex items-center justify-between gap-2">
+			<span id="{uid}-left-gripper">Gripper</span>
 			<Select
-				value={config.left.gripperName || ''}
-				onchange={(event: Event) => {
-					if (event.target instanceof HTMLSelectElement) {
-						updateConfig('left', 'gripperName', event.target.value || undefined)
-					}
-				}}
-			>
-				<option value="">None</option>
-				{#each leftAvailableGrippers as gripperName (gripperName)}
-					<option value={gripperName}>{gripperName}</option>
-				{/each}
-			</Select>
-		</label>
+				aria-labelledby="{uid}-left-gripper"
+				placeholder="None"
+				items={toSelectItems(leftAvailableGrippers)}
+				bind:value={
+					() => config.left.gripperName || '',
+					(gripperName) => updateConfig('left', 'gripperName', gripperName || undefined)
+				}
+			/>
+		</div>
 
 		<label class="flex items-center justify-between gap-2">
 			Scale: {config.left.scaleFactor.toFixed(1)}
@@ -147,48 +144,40 @@
 		<label class="flex items-center justify-between gap-2">
 			Rotation
 			<Switch
-				on={config.left.rotationEnabled}
-				on:change={(event) => {
-					updateConfig('left', 'rotationEnabled', event.detail)
-				}}
+				bind:checked={
+					() => config.left.rotationEnabled,
+					(isEnabled) => updateConfig('left', 'rotationEnabled', isEnabled)
+				}
 			/>
 		</label>
 
 		<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Right Controller</strong></h3>
 
-		<label class="flex items-center justify-between gap-2">
-			Arm
+		<div class="flex items-center justify-between gap-2">
+			<span id="{uid}-right-arm">Arm</span>
 			<Select
-				value={config.right.armName || ''}
-				onchange={(event: Event) => {
-					if (event.target instanceof HTMLSelectElement) {
-						updateConfig('right', 'armName', event.target.value || undefined)
-					}
-				}}
-			>
-				<option value="">None</option>
-				{#each rightAvailableArms as armName (armName)}
-					<option value={armName}>{armName}</option>
-				{/each}
-			</Select>
-		</label>
+				aria-labelledby="{uid}-right-arm"
+				placeholder="None"
+				items={toSelectItems(rightAvailableArms)}
+				bind:value={
+					() => config.right.armName || '',
+					(armName) => updateConfig('right', 'armName', armName || undefined)
+				}
+			/>
+		</div>
 
-		<label class="flex items-center justify-between gap-2">
-			Gripper
+		<div class="flex items-center justify-between gap-2">
+			<span id="{uid}-right-gripper">Gripper</span>
 			<Select
-				value={config.right.gripperName || ''}
-				onchange={(event: Event) => {
-					if (event.target instanceof HTMLSelectElement) {
-						updateConfig('right', 'gripperName', event.target.value || undefined)
-					}
-				}}
-			>
-				<option value="">None</option>
-				{#each rightAvailableGrippers as gripperName (gripperName)}
-					<option value={gripperName}>{gripperName}</option>
-				{/each}
-			</Select>
-		</label>
+				aria-labelledby="{uid}-right-gripper"
+				placeholder="None"
+				items={toSelectItems(rightAvailableGrippers)}
+				bind:value={
+					() => config.right.gripperName || '',
+					(gripperName) => updateConfig('right', 'gripperName', gripperName || undefined)
+				}
+			/>
+		</div>
 
 		<label class="flex items-center justify-between gap-2">
 			Scale: {config.right.scaleFactor.toFixed(1)}
@@ -208,10 +197,10 @@
 		<label class="flex items-center justify-between gap-2">
 			Rotation
 			<Switch
-				on={config.right.rotationEnabled}
-				on:change={(event) => {
-					updateConfig('right', 'rotationEnabled', event.detail)
-				}}
+				bind:checked={
+					() => config.right.rotationEnabled,
+					(isEnabled) => updateConfig('right', 'rotationEnabled', isEnabled)
+				}
 			/>
 		</label>
 	</div>

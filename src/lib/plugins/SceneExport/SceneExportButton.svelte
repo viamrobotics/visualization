@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { Tooltip } from '@viamrobotics/prime-ui'
 	import { Download, LoaderCircle } from 'lucide-svelte'
 
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { useWorld } from '#lib/ecs/index.js'
 	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
@@ -62,12 +62,11 @@
 	}
 </script>
 
-<Tooltip placement="left">
-	{#snippet children(tooltipID)}
+<Tooltip>
+	<Tooltip.Trigger>
 		<button
 			class="border-gray-5 text-gray-8 hover:bg-light active:bg-medium block rounded-md border bg-white p-1.5 disabled:opacity-50"
 			aria-label={LABEL}
-			aria-describedby={tooltipID}
 			aria-busy={isExporting}
 			disabled={isExporting}
 			onclick={exportScene}
@@ -85,9 +84,6 @@
 				/>
 			{/if}
 		</button>
-	{/snippet}
-
-	{#snippet content()}
-		{LABEL}
-	{/snippet}
+	</Tooltip.Trigger>
+	<Tooltip.Content placement="bottom">{LABEL}</Tooltip.Content>
 </Tooltip>

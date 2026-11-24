@@ -1,13 +1,14 @@
 <script lang="ts">
 	import {
-		Banner,
-		BannerVariant,
-		Button,
-		Icon,
-		type IconName,
-		Input,
-		Progress,
-	} from '@viamrobotics/prime-core'
+		mdiBroadcast,
+		mdiBroadcastOff,
+		mdiChevronDown,
+		mdiMagnify,
+		mdiMultiplicationBox,
+		mdiSelectionEllipse,
+	} from '@mdi/js'
+	import { TextField } from '@viamrobotics/prime-controls'
+	import { Banner, Icon } from '@viamrobotics/prime-ui'
 	import { appApi } from '@viamrobotics/sdk'
 	import { PersistedState } from 'runed'
 	import { type Snippet, untrack } from 'svelte'
@@ -127,27 +128,28 @@
 {#snippet partStatus(part: appApi.PartSummary)}
 	<span class="flex shrink-0 items-center gap-1 text-xs">
 		{#if pickingPartId === part.partId}
-			<Progress
-				variant="dots"
-				size="small"
-			/>
+			<span
+				class="progress-dots"
+				role="status"
+				aria-label="Connecting"
+			></span>
 		{/if}
 		{#if part.onlineState === appApi.OnlineState.ONLINE}
 			<Icon
-				name="broadcast"
-				cx="text-success-dark"
+				icon={mdiBroadcast}
+				class="text-success-dark"
 			/>
 			<span class="text-success-dark">Online</span>
 		{:else if part.onlineState === appApi.OnlineState.AWAITING_SETUP}
 			<Icon
-				name="selection-ellipse"
-				cx="text-info-dark"
+				icon={mdiSelectionEllipse}
+				class="text-info-dark"
 			/>
 			<span class="text-info-dark">Awaiting setup</span>
 		{:else}
 			<Icon
-				name="broadcast-off"
-				cx="text-gray-6"
+				icon={mdiBroadcastOff}
+				class="text-gray-6"
 			/>
 			<span class="text-subtle-2">Offline · {formatLastOnline(part.secondsSinceOnline)}</span>
 		{/if}
@@ -239,7 +241,7 @@
 {/snippet}
 
 <!-- Clicking a header sorts by it and clicking again flips direction, as on app.viam.com. -->
-{#snippet sortHeader(property: MachineSortProperty, label: string, icon: IconName)}
+{#snippet sortHeader(property: MachineSortProperty, label: string, icon: string)}
 	{@const isActive = sort.current.property === property}
 	{@const isDescending = isActive && sort.current.direction === 'descending'}
 	<button
@@ -251,13 +253,13 @@
 		}}
 	>
 		<Icon
-			name={icon}
-			cx="text-gray-6 shrink-0"
+			{icon}
+			class="text-gray-6 shrink-0"
 		/>
 		{label}
 		<Icon
-			name="chevron-down"
-			cx={[
+			icon={mdiChevronDown}
+			class={[
 				'text-gray-6 transition-transform',
 				!isActive && 'invisible group-hover:visible',
 				isDescending && 'rotate-180',
@@ -275,23 +277,18 @@
 >
 	{#if error}
 		<div role="alert">
-			<Banner
-				variant={BannerVariant.Danger}
-				size="sm"
-			>
-				{#snippet titleContent()}
-					{error}
-				{/snippet}
+			<Banner variant="danger">
+				<Banner.Description>{error}</Banner.Description>
 			</Banner>
 		</div>
 	{/if}
 
 	{#if session.state.status === 'restoring'}
 		<div class="text-subtle-1 flex items-center gap-2 p-2 text-xs">
-			<Progress
-				variant="dots"
-				size="small"
-			/>
+			<span
+				class="progress-dots"
+				aria-hidden="true"
+			></span>
 			Restoring your Viam session
 		</div>
 	{:else if session.state.status === 'logged-out'}
@@ -300,12 +297,13 @@
 				<span class="text-heading font-medium">Connect with your Viam account</span>
 				<span class="text-subtle-1">Pick any machine in your organizations.</span>
 			</div>
-			<Button
-				variant="dark"
+			<button
+				type="button"
+				class="button button-compact button-dark"
 				onclick={() => void session.login()}
 			>
 				Log in with Viam
-			</Button>
+			</button>
 		</div>
 	{:else if session.state.status === 'awaiting-approval'}
 		{@const { pending } = session.state}
@@ -317,32 +315,45 @@
 				>
 			</div>
 			<div class="text-subtle-1 flex items-center gap-2">
-				<Progress
-					variant="dots"
-					size="small"
-				/>
+				<span
+					class="progress-dots"
+					aria-hidden="true"
+				></span>
 				<span>Waiting for approval, expires in {formatCountdown(pending.expiresAt)}</span>
 			</div>
 			<div class="flex justify-between">
-				<Button
-					variant="ghost"
+				<button
+					type="button"
+					class="button button-compact button-ghost"
 					onclick={() => window.open(pending.verificationUri, '_blank', 'noopener')}
 				>
 					Reopen login page
-				</Button>
-				<Button onclick={session.cancelLogin}>Cancel</Button>
+				</button>
+				<button
+					type="button"
+					class="button button-compact"
+					onclick={session.cancelLogin}
+				>
+					Cancel
+				</button>
 			</div>
 		</div>
 	{:else if session.state.status === 'expired'}
 		<div class="border-medium flex items-center justify-between gap-4 rounded border p-3 text-xs">
 			<div class="text-subtle-1 flex items-center gap-2">
-				<Progress
-					variant="dots"
-					size="small"
-				/>
+				<span
+					class="progress-dots"
+					aria-hidden="true"
+				></span>
 				Reconnecting to your Viam account
 			</div>
-			<Button onclick={session.logout}>Sign out</Button>
+			<button
+				type="button"
+				class="button button-compact"
+				onclick={session.logout}
+			>
+				Sign out
+			</button>
 		</div>
 	{:else}
 		{@const { session: activeSession } = session.state}
@@ -362,21 +373,16 @@
 		</div>
 
 		<div class="flex items-center gap-2">
-			<div class="relative grow">
-				<Icon
-					name="magnify"
-					cx="text-gray-6 absolute top-1/2 left-2 z-10 -translate-y-1/2"
-				/>
-				<Input
-					aria-label="Search machines, parts, and locations"
-					placeholder="Start typing to search…"
-					cx="pl-7"
-					value={filter}
-					on:input={(event) => {
-						filter = (event.target as HTMLInputElement).value
-					}}
-				/>
-			</div>
+			<Icon
+				icon={mdiMagnify}
+				class="text-gray-6 shrink-0"
+			/>
+			<TextField
+				aria-label="Search machines, parts, and locations"
+				placeholder="Start typing to search…"
+				class="grow"
+				bind:value={filter}
+			/>
 		</div>
 
 		{#if isLaunched}
@@ -402,17 +408,17 @@
 							<Star isFilled={favorites.isFavoritesFirst} />
 						</button>
 					</span>
-					{@render sortHeader('name', 'Machine', 'multiplication-box')}
+					{@render sortHeader('name', 'Machine', mdiMultiplicationBox)}
 				</span>
-				{@render sortHeader('status', 'Status', 'broadcast')}
+				{@render sortHeader('status', 'Status', mdiBroadcast)}
 			</div>
 
 			{#if machines.isLoading && machines.locations.length === 0}
 				<div class="text-subtle-1 flex items-center gap-2 px-4 py-3 text-xs">
-					<Progress
-						variant="dots"
-						size="small"
-					/>
+					<span
+						class="progress-dots"
+						aria-hidden="true"
+					></span>
 					Loading machines
 				</div>
 			{:else if items.length === 0}

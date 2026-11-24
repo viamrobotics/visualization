@@ -3,13 +3,13 @@
 	import type { Snippet } from 'svelte'
 
 	import { useThrelte } from '@threlte/core/webgpu'
+	import { ToggleButtons } from '@viamrobotics/prime-controls'
 	import { ElementRect } from 'runed'
 	import { untrack } from 'svelte'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
 	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
-	import ToggleGroup from '#lib/components/overlay/ToggleGroup.svelte'
 	import { traits, useWorld } from '#lib/ecs/index.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
@@ -112,18 +112,19 @@
 				{/snippet}
 
 				<div class="font-public-sans text-default p-2 text-xs">
-					<div class="flex items-center gap-2">
-						Selection type
-						<ToggleGroup
-							options={[
-								{ label: 'Lasso', selected: selectionType === 'lasso' },
-								{ label: 'Ellipse', selected: selectionType === 'ellipse' },
-							]}
-							onSelect={(details) => {
-								selectionType = details.includes('Lasso') ? 'lasso' : 'ellipse'
-							}}
-						/>
-					</div>
+					<ToggleButtons
+						label="Selection type"
+						items={[
+							{ label: 'Lasso', value: 'lasso' },
+							{ label: 'Ellipse', value: 'ellipse' },
+						]}
+						bind:value={
+							() => selectionType,
+							(next) => {
+								if (next === 'lasso' || next === 'ellipse') selectionType = next
+							}
+						}
+					/>
 				</div>
 			</Popover>
 		</div>
