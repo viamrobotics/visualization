@@ -40,7 +40,7 @@
 									<Icon icon={mdiInformationOutline} />
 								</button>
 							</Tooltip.Trigger>
-							<Tooltip.Content placement="top">
+							<Tooltip.Content side="top">
 								While on, the running machine plans around your unsaved edits to this obstacle,
 								before you save. Your saved config is not changed. Turning this off, or leaving
 								Build mode, switches the machine back to the last saved shape.

@@ -1,7 +1,8 @@
 <!--
 @component
 
-A row of number fields for values shared across a selection, laid out like prime-controls `Point`.
+A row of number fields for values shared across a selection. Unlike prime-controls `Point`, the
+row never stacks its axes, so it fits the narrow details panel on one line.
 A mixed field stays empty with a dash placeholder until typed into, and an edit reports only the
 field it changed, so every selected entity keeps its own value for the others.
 -->
@@ -9,7 +10,8 @@ field it changed, so every selected entity keeps its own value for the others.
 	lang="ts"
 	generics="TKey extends string"
 >
-	import HeldNumberField from '../HeldNumberField.svelte'
+	import { NumberField } from '@viamrobotics/prime-controls'
+
 	import { MIXED, MIXED_TEXT, type Shared } from './sharedValue'
 
 	interface Field {
@@ -50,7 +52,7 @@ field it changed, so every selected entity keeps its own value for the others.
 >
 	{#each fields as field (field.key)}
 		{@const value = valueOf(field.key)}
-		<HeldNumberField
+		<NumberField
 			label={field.label}
 			labelPlacement="inset"
 			{min}

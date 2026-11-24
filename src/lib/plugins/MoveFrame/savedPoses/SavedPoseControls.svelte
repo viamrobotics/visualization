@@ -185,24 +185,12 @@ drives its arm there through the saver's "go to" switch position.
 					class="font-semibold">motion service</strong
 				>
 				<Select
+					aria-labelledby={motionLabelId}
 					items={motionItems}
+					placeholder={motionServices.length === 0 ? DIRECT_MOVE_LABEL : CHOOSE_SERVICE_LABEL}
 					disabled={!canEditConfig || isMoving}
 					bind:value={() => (motion === '' ? undefined : motion), setMotionService}
-				>
-					<Select.Trigger
-						aria-labelledby={motionLabelId}
-						class="w-full"
-					>
-						<Select.Value
-							placeholder={motionServices.length === 0 ? DIRECT_MOVE_LABEL : CHOOSE_SERVICE_LABEL}
-						/>
-					</Select.Trigger>
-					<Select.Content>
-						<Select.Viewport>
-							<Select.Items />
-						</Select.Viewport>
-					</Select.Content>
-				</Select>
+				/>
 			</div>
 
 			<div>

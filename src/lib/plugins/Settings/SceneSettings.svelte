@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { ToggleButtons } from '@viamrobotics/prime-controls'
+	import { NumberField, ToggleButtons } from '@viamrobotics/prime-controls'
 	import { Switch } from '@viamrobotics/prime-ui'
 
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { RENDER_MODES, type RenderMode } from '#lib/three/surfaceShading.js'
 
@@ -106,7 +105,7 @@
 			</label>
 
 			<div class="w-20">
-				<HeldNumberField
+				<NumberField
 					id="{uid}-{key}"
 					aria-labelledby="{uid}-{key}-label"
 					min={GRID_SIZE_STEP}

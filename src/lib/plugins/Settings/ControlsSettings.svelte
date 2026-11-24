@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { NumberField } from '@viamrobotics/prime-controls'
 	import { Switch } from '@viamrobotics/prime-ui'
 
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
@@ -33,7 +33,7 @@
 		</label>
 
 		<div class="w-20">
-			<HeldNumberField
+			<NumberField
 				id="{uid}-smooth"
 				aria-labelledby="{uid}-smooth-label"
 				min={MIN_SMOOTH_TIME}
@@ -53,7 +53,7 @@
 		</label>
 
 		<div class="w-20">
-			<HeldNumberField
+			<NumberField
 				id="{uid}-dragging-smooth"
 				aria-labelledby="{uid}-dragging-smooth-label"
 				min={MIN_SMOOTH_TIME}

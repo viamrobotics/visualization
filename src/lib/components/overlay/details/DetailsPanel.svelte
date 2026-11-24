@@ -121,7 +121,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								{/if}
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">Copy details to clipboard</Tooltip.Content>
+						<Tooltip.Content side="bottom">Copy details to clipboard</Tooltip.Content>
 					</Tooltip>
 				{/if}
 
@@ -140,7 +140,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								<Icon icon={mdiTrashCanOutline} />
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">Remove from scene</Tooltip.Content>
+						<Tooltip.Content side="bottom">Remove from scene</Tooltip.Content>
 					</Tooltip>
 				{/if}
 			</div>

@@ -41,6 +41,6 @@
 				{text}
 			</span>
 		</Tooltip.Trigger>
-		<Tooltip.Content placement="top">{tooltipText ?? text}</Tooltip.Content>
+		<Tooltip.Content side="top">{tooltipText ?? text}</Tooltip.Content>
 	</Tooltip>
 </div>

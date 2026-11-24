@@ -521,21 +521,10 @@
 				<div>
 					<strong class="font-semibold">motion service</strong>
 					<Select
+						aria-label="motion service"
 						items={motionServices.map((name) => ({ value: name, label: name }))}
 						bind:value={() => service, (next) => (selectedService = next)}
-					>
-						<Select.Trigger
-							aria-label="motion service"
-							class="w-full"
-						>
-							<Select.Value />
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Viewport>
-								<Select.Items />
-							</Select.Viewport>
-						</Select.Content>
-					</Select>
+					/>
 				</div>
 			{:else}
 				<p class="text-subtle-2">No motion service available.</p>

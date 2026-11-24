@@ -122,7 +122,7 @@
 			</button>
 		</label>
 	</Tooltip.Trigger>
-	<Tooltip.Content placement="bottom">{description}</Tooltip.Content>
+	<Tooltip.Content side="bottom">{description}</Tooltip.Content>
 </Tooltip>
 
 <Dialog bind:open={confirmOpen}>

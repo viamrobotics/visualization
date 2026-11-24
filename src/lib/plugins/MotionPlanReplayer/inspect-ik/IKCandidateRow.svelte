@@ -47,7 +47,7 @@
 			{/if}
 		</button>
 	</Tooltip.Trigger>
-	<Tooltip.Content placement="right">
+	<Tooltip.Content side="right">
 		{candidate.seed} · #{candidate.indexInSeed + 1}{isScored(cost) ? '' : ' · unscored'}
 	</Tooltip.Content>
 </Tooltip>

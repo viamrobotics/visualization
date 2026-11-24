@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { NumberField } from '@viamrobotics/prime-controls'
+
 	import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
 	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 
 	import type { IKCandidate } from './ik-candidates'
 	import type { PoseKind, PoseSet } from './pose-sets'
@@ -120,7 +121,7 @@
 					class="text-subtle-1"
 					for={stepsInputID}>Interpolate</label
 				>
-				<HeldNumberField
+				<NumberField
 					id={stepsInputID}
 					aria-labelledby={stepsLabelID}
 					min={MIN_PATH_STEPS}

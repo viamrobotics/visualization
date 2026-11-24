@@ -2,7 +2,7 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { Point, type PointValue, Slider } from '@viamrobotics/prime-controls'
+	import { Slider } from '@viamrobotics/prime-controls'
 	import { MathUtils } from 'three'
 
 	import { rgbToHex } from '#lib/color.js'
@@ -10,6 +10,7 @@
 
 	import { colorChannelsToHex, hexToColorChannels } from '../colorChannelsHex'
 	import SharedColor from '../SharedColor.svelte'
+	import SharedNumberFields from '../SharedNumberFields.svelte'
 	import {
 		appendLinePosition as appendLinePositionPure,
 		removeLinePosition as removeLinePositionPure,
@@ -29,10 +30,22 @@
 	const dotSize = useTrait(() => entity, traits.DotSize)
 	const dotColors = useTrait(() => entity, traits.DotColors)
 
-	const linePositionList = $derived.by<Required<Omit<PointValue, 'w'>>[]>(() => {
+	interface LinePosition {
+		x: number
+		y: number
+		z: number
+	}
+
+	const POSITION_FIELDS = [
+		{ key: 'x', label: 'X' },
+		{ key: 'y', label: 'Y' },
+		{ key: 'z', label: 'Z' },
+	] as const
+
+	const linePositionList = $derived.by<LinePosition[]>(() => {
 		const positions = linePositions.current
 		if (!positions) return []
-		const out: Required<Omit<PointValue, 'w'>>[] = []
+		const out: LinePosition[] = []
 		for (let i = 0; i + 2 < positions.length; i += 3) {
 			out.push({ x: positions[i]!, y: positions[i + 1]!, z: positions[i + 2]! })
 		}
@@ -45,13 +58,10 @@
 		return rgbToHex(colors)
 	})
 
-	const writeLinePosition = (index: number, value: PointValue) => {
+	const writeLinePosition = (index: number, value: LinePosition) => {
 		const current = linePositions.current
 		if (!current) return
-		entity.set(
-			traits.LinePositions,
-			writeLinePositionPure(current, index, value.x, value.y, value.z ?? 0)
-		)
+		entity.set(traits.LinePositions, writeLinePositionPure(current, index, value.x, value.y, value.z))
 		invalidate()
 	}
 
@@ -111,12 +121,15 @@
 			<div class="flex max-h-48 flex-col gap-1 overflow-y-auto">
 				{#each linePositionList as position, index (index)}
 					<div class="flex items-end gap-1">
-						<Point
-							aria-label={`position ${index + 1} (m)`}
-							class="flex-1"
-							step={0.01}
-							bind:value={() => position, (next) => writeLinePosition(index, next)}
-						/>
+						<div class="min-w-0 flex-1">
+							<SharedNumberFields
+								aria-label={`position ${index + 1} (m)`}
+								fields={POSITION_FIELDS}
+								values={position}
+								step={0.01}
+								onchange={(patch) => writeLinePosition(index, { ...position, ...patch })}
+							/>
+						</div>
 						<button
 							class="text-subtle-2 px-1 py-0.5 text-[10px] hover:text-red-500"
 							type="button"

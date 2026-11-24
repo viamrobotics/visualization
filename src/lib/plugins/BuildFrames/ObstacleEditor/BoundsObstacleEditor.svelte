@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Point } from '@viamrobotics/prime-controls'
+	import { NumberField } from '@viamrobotics/prime-controls'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
+	import SharedNumberFields from '#lib/components/overlay/details/SharedNumberFields.svelte'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '#lib/obstacleAttributes.js'
 	import { obstacleEditorHint } from '#lib/obstacleEditorType.js'
@@ -20,6 +20,12 @@
 
 	// The steppers stop here. A typed value below it is not positive enough to commit, so it is dropped.
 	const MIN_WALL_THICKNESS_MM = 1
+
+	const INTERIOR_FIELDS = [
+		{ key: 'x_mm', label: 'X' },
+		{ key: 'y_mm', label: 'Y' },
+		{ key: 'z_mm', label: 'Z' },
+	] as const
 
 	const FACE_LABELS: Record<BoundsFace, string> = {
 		x_max: '+X wall',
@@ -68,17 +74,16 @@
 		<div>
 			<strong class="font-semibold">interior</strong>
 			<span class="text-subtle-2">(mm)</span>
-			<Point
+			<SharedNumberFields
 				aria-label="interior size (mm)"
+				fields={INTERIOR_FIELDS}
+				values={current}
 				min={MIN_INTERIOR_MM}
-				bind:value={
-					() => ({ x: current.x_mm, y: current.y_mm, z: current.z_mm }),
-					({ x, y, z }) => commit({ ...current, x_mm: x, y_mm: y, z_mm: z ?? current.z_mm })
-				}
+				onchange={(patch) => commit({ ...current, ...patch })}
 			/>
 		</div>
 
-		<HeldNumberField
+		<NumberField
 			label="wall thickness (mm)"
 			min={MIN_WALL_THICKNESS_MM}
 			bind:value={

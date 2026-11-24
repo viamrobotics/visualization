@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { NumberField } from '@viamrobotics/prime-controls'
 	import { Input, Switch } from '@viamrobotics/prime-ui'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 	import { Color } from 'three'
 
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
@@ -47,7 +47,7 @@
 		</label>
 
 		<div class="w-20">
-			<HeldNumberField
+			<NumberField
 				id="{uid}-point-size"
 				aria-labelledby="{uid}-point-size-label"
 				min={0}
@@ -89,7 +89,7 @@
 		</label>
 
 		<div class="w-20">
-			<HeldNumberField
+			<NumberField
 				id="{uid}-point-budget"
 				aria-labelledby="{uid}-point-budget-label"
 				bind:value={
@@ -114,7 +114,7 @@
 		</label>
 
 		<div class="w-20">
-			<HeldNumberField
+			<NumberField
 				id="{uid}-max-point-size"
 				aria-labelledby="{uid}-max-point-size-label"
 				min={0}

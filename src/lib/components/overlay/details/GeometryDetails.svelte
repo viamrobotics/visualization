@@ -2,10 +2,10 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
+	import { NumberField } from '@viamrobotics/prime-controls'
 
 	import { traits, useTrait } from '#lib/ecs/index.js'
 
-	import HeldNumberField from '../HeldNumberField.svelte'
 	import SharedNumberFields from './SharedNumberFields.svelte'
 
 	interface Props {
@@ -50,7 +50,7 @@
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(sphere) (mm)</span>
-		<HeldNumberField
+		<NumberField
 			label="r"
 			min={0}
 			bind:value={
@@ -68,7 +68,7 @@
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(capsule) (mm)</span>
-		<HeldNumberField
+		<NumberField
 			label="r"
 			min={0}
 			bind:value={
@@ -80,7 +80,7 @@
 				}
 			}
 		/>
-		<HeldNumberField
+		<NumberField
 			label="l"
 			min={0}
 			bind:value={

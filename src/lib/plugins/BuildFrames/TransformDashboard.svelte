@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { NumberField } from '@viamrobotics/prime-controls'
 	import { Switch } from '@viamrobotics/prime-ui'
 
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '#lib/components/overlay/dashboard/DropdownPane.svelte'
-	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
 	import { TRANSFORM_KEYBINDINGS } from '#lib/hooks/transformKeybindings.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
@@ -88,21 +88,21 @@
 				<label class="flex items-center justify-between gap-2">
 					Increment <Switch bind:checked={settings.current.snapIncrement} />
 				</label>
-				<HeldNumberField
+				<NumberField
 					label="Move (m)"
 					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.01}
 					bind:value={settings.current.snapTranslate}
 				/>
-				<HeldNumberField
+				<NumberField
 					label="Rotate (°)"
 					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.5}
 					bind:value={settings.current.snapRotate}
 				/>
-				<HeldNumberField
+				<NumberField
 					label="Scale"
 					disabled={!settings.current.snapIncrement}
 					min={0}

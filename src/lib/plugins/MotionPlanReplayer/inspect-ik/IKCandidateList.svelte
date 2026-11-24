@@ -45,7 +45,7 @@
 							<span class="sr-only">{IK_STATUS_LABEL[status]}</span>
 						</button>
 					</Tooltip.Trigger>
-					<Tooltip.Content placement="bottom">
+					<Tooltip.Content side="bottom">
 						<span class="font-medium">{IK_STATUS_LABEL[status]}</span> — {IK_STATUS_DESCRIPTION[
 							status
 						]}
@@ -71,7 +71,7 @@
 								{label}
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">
+						<Tooltip.Content side="bottom">
 							<span class="font-medium">{label}</span> — {SORT_DESCRIPTION[mode]}
 						</Tooltip.Content>
 					</Tooltip>

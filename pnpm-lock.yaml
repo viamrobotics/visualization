@@ -197,17 +197,17 @@ importers:
         specifier: 8.73.0
         version: 8.73.0(eslint@10.0.2(jiti@2.7.0))(typescript@6.0.3)
       '@viamrobotics/prime-controls':
-        specifier: 0.5.0
-        version: 0.5.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
+        specifier: 0.7.0
+        version: 0.7.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
       '@viamrobotics/prime-core':
         specifier: 0.1.23
         version: 0.1.23(@internationalized/date@3.12.2)(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
       '@viamrobotics/prime-editor':
-        specifier: 0.1.1
-        version: 0.1.1(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
+        specifier: 0.2.0
+        version: 0.2.0(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
       '@viamrobotics/prime-ui':
-        specifier: 0.6.0
-        version: 0.6.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
+        specifier: 0.7.0
+        version: 0.7.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
       '@viamrobotics/sdk':
         specifier: 0.79.0
         version: 0.79.0
@@ -215,8 +215,8 @@ importers:
         specifier: 1.5.3
         version: 1.5.3(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(@viamrobotics/sdk@0.79.0)(svelte@5.58.1(@typescript-eslint/types@8.73.0))(zod@4.4.3)
       '@viamrobotics/tailwind-config':
-        specifier: 1.11.0
-        version: 1.11.0(tailwindcss@4.3.1)
+        specifier: 1.12.0
+        version: 1.12.0(tailwindcss@4.3.1)
       '@viamrobotics/test-widgets':
         specifier: 0.15.0
         version: 0.15.0(3b85bb5c8fb6a57e8bd6432e82c2ecd9)
@@ -522,9 +522,6 @@ packages:
     resolution: {integrity: sha512-tEj8X2No2A1c9NDnZECxiiJ8TP3vmFlN9tLlLeSaMqVW4tUmVG2R4qpv/eP4zymWxnymYLkLcIYVV0VcWj3RCQ==}
     engines: {node: '>= 20.12.0'}
 
-  '@codemirror/autocomplete@6.20.3':
-    resolution: {integrity: sha512-tlosUqb+3BbxCxZdu4tKeRghPFC+QM7q4X5YhKV2eCmPG+1r2F3f4AaSz5sCrFqUtX4Jh20VFTKecl16MgiV9g==}
-
   '@codemirror/autocomplete@6.20.4':
     resolution: {integrity: sha512-yF8RhOf2SXlg00+qtupzLhrglcas61boqaONiNcbPIebHCpJocpqTBA6dyrtUrQO47hqyTdeob/3XnYilT7TaQ==}
 
@@ -560,9 +557,6 @@ packages:
 
   '@codemirror/merge@6.12.3':
     resolution: {integrity: sha512-Wq9wXrp41cW/nIpi1CQPyNwD+36kg8KIX676ym0Hyfn3Dpr+XQHNAIsZYVNlaivuVB4SAASbreG3V0VXinbqZA==}
-
-  '@codemirror/search@6.7.1':
-    resolution: {integrity: sha512-uMe5UO6PamJtSHrXhhHOzSX3ReWtiJrva6GnPMwSOrZtiExb5X5eExhr2OUZQVvdxPsKpY3Ro2mFbQadpPWmHA==}
 
   '@codemirror/search@6.7.2':
     resolution: {integrity: sha512-gUYkYhT2+n/+VGZ+8EzE5WFkYZUZYm1VOKDudIsNqh42uRVQJ0a6Yss9sdKT3MeOYfuL1N6AZA57oza0Oyr0LA==}
@@ -1256,9 +1250,6 @@ packages:
 
   '@lezer/go@1.0.1':
     resolution: {integrity: sha512-xToRsYxwsgJNHTgNdStpcvmbVuKxTapV0dM0wey1geMMRc9aggoVyKgzYp41D2/vVOx+Ii4hmE206kvxIXBVXQ==}
-
-  '@lezer/highlight@1.2.3':
-    resolution: {integrity: sha512-qXdH7UqTvGfdVBINrgKhDsVTJTxactNNxLk7+UMwZhU13lMHaOBlJe9Vqp907ya56Y3+ed2tlqzys7jDkTmW0g==}
 
   '@lezer/highlight@1.2.5':
     resolution: {integrity: sha512-O1GMVKgtf5YspFaRzpmqkVgMtIk2HG9uMAbH6wdAIdNh3TVzCsch/+cRi+6l2//UGDKe6NB9BW3cvuR5ezMQ0w==}
@@ -2131,8 +2122,8 @@ packages:
     resolution: {integrity: sha512-k4lsFVpRZICbltkIEEH4hZRkwXkqDF1GHBpClKQOHQY+RkoZAAuyc1ci3I6p+CB6v3U4jaHIUshc4RzzQXZWLg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@viamrobotics/prime-controls@0.5.0':
-    resolution: {integrity: sha512-LAcAl2onTEL+YZw26X5qjK9OEJO2030Q5fc70zlp20K6m6hIGH/2R+jZWlcRoIeVXyvYZmiz8XgjrbGsTSD4ww==}
+  '@viamrobotics/prime-controls@0.7.0':
+    resolution: {integrity: sha512-IRC3BwUq9q8LKAUnPqEtD3mfQmrQ40HHgAq/PIS4g9zPpzZSkkHmnqON2qEGXbT2D074snZkB8oPf7D7ZNePpA==}
     peerDependencies:
       svelte: ^5.29.0
 
@@ -2141,13 +2132,13 @@ packages:
     peerDependencies:
       svelte: '>=5 <6'
 
-  '@viamrobotics/prime-editor@0.1.1':
-    resolution: {integrity: sha512-qsx9L53Ierp+xpz0FaRTYOzwQU0sqA2yKsEADahiXPR5tmFnW7ZBMkK4pkhoI9P/CoyvefZA3nxag97C55HsZw==}
+  '@viamrobotics/prime-editor@0.2.0':
+    resolution: {integrity: sha512-fDrjAJwX1c1ttJHczIuzlv2qn7Hdr2IrL3UNcuouypWzGvrDe+49Z9whiBCWBXgsxuUetMjxjHpzoovyXJGVhQ==}
     peerDependencies:
       svelte: ^5.29.0
 
-  '@viamrobotics/prime-ui@0.6.0':
-    resolution: {integrity: sha512-8LZBFK8GXvDxYPOqyW6tnkGzfQbuDhW352iE9YBjLUBIyOKNuyxxipWwnkm9R1gO0ACUE0N9MUCtGM4vy1TeRA==}
+  '@viamrobotics/prime-ui@0.7.0':
+    resolution: {integrity: sha512-LgrHlFF12yclcTSq677deSFiV1U2piZTjd8Gpr9nWWCUbP7AVipojvNa4SB3Huo/8w9sksVBHfcKUFsldWpf0w==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -2160,8 +2151,8 @@ packages:
       '@viamrobotics/sdk': '>=0.57'
       svelte: '>=5'
 
-  '@viamrobotics/tailwind-config@1.11.0':
-    resolution: {integrity: sha512-cjWW+Tg2UtqAOZev9QCx5MNFEjjthcz82TpcJuWM73L/LH0fl8beu3jRmq8zcQIxc4gZ4gCpka+qFW2RbwmivA==}
+  '@viamrobotics/tailwind-config@1.12.0':
+    resolution: {integrity: sha512-2zL2qfA698B1KZsxWNDZTVjk3VSH+MQaeHRuJHa0zQNwbi2zMxe4Q4Bj9PT8nRQqZLZdZwhLpP30RyFyw1px0A==}
     peerDependencies:
       tailwindcss: '>=4 <5'
 
@@ -5413,13 +5404,6 @@ snapshots:
       fast-wrap-ansi: 0.2.2
       sisteransi: 2.0.0
 
-  '@codemirror/autocomplete@6.20.3':
-    dependencies:
-      '@codemirror/language': 6.12.3
-      '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
-      '@lezer/common': 1.5.2
-
   '@codemirror/autocomplete@6.20.4':
     dependencies:
       '@codemirror/language': 6.12.3
@@ -5443,7 +5427,7 @@ snapshots:
 
   '@codemirror/lang-go@6.0.1':
     dependencies:
-      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/autocomplete': 6.20.4
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
       '@lezer/common': 1.5.2
@@ -5466,7 +5450,7 @@ snapshots:
 
   '@codemirror/lang-python@6.2.1':
     dependencies:
-      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/autocomplete': 6.20.4
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
       '@lezer/common': 1.5.2
@@ -5474,11 +5458,11 @@ snapshots:
 
   '@codemirror/lang-sql@6.10.0':
     dependencies:
-      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/autocomplete': 6.20.4
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
       '@lezer/common': 1.5.2
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.10
 
   '@codemirror/language@6.12.3':
@@ -5501,7 +5485,7 @@ snapshots:
       '@codemirror/language': 6.12.3
       '@codemirror/state': 6.6.0
       '@codemirror/view': 6.43.1
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       style-mod: 4.1.3
 
   '@codemirror/merge@6.12.3':
@@ -5511,12 +5495,6 @@ snapshots:
       '@codemirror/view': 6.43.1
       '@lezer/highlight': 1.2.5
       style-mod: 4.1.3
-
-  '@codemirror/search@6.7.1':
-    dependencies:
-      '@codemirror/state': 6.6.0
-      '@codemirror/view': 6.43.1
-      crelt: 1.0.7
 
   '@codemirror/search@6.7.2':
     dependencies:
@@ -6075,12 +6053,8 @@ snapshots:
   '@lezer/go@1.0.1':
     dependencies:
       '@lezer/common': 1.5.2
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.10
-
-  '@lezer/highlight@1.2.3':
-    dependencies:
-      '@lezer/common': 1.5.2
 
   '@lezer/highlight@1.2.5':
     dependencies:
@@ -6105,7 +6079,7 @@ snapshots:
   '@lezer/python@1.1.19':
     dependencies:
       '@lezer/common': 1.5.2
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.10
 
   '@loglayer/context-manager@2.0.2':
@@ -6946,11 +6920,11 @@ snapshots:
       '@typescript-eslint/types': 8.73.0
       eslint-visitor-keys: 5.0.1
 
-  '@viamrobotics/prime-controls@0.5.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
+  '@viamrobotics/prime-controls@0.7.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
     dependencies:
       '@mdi/js': 7.4.47
-      '@viamrobotics/prime-ui': 0.6.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
-      '@viamrobotics/tailwind-config': 1.11.0(tailwindcss@4.3.1)
+      '@viamrobotics/prime-ui': 0.7.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)
+      '@viamrobotics/tailwind-config': 1.12.0(tailwindcss@4.3.1)
       svelte: 5.58.1(@typescript-eslint/types@8.73.0)
     transitivePeerDependencies:
       - '@sveltejs/kit'
@@ -6969,7 +6943,7 @@ snapshots:
       '@codemirror/view': 6.43.1
       '@floating-ui/dom': 1.5.3
       '@mdi/js': 7.4.47
-      '@viamrobotics/tailwind-config': 1.11.0(tailwindcss@4.3.1)
+      '@viamrobotics/tailwind-config': 1.12.0(tailwindcss@4.3.1)
       '@zag-js/collapsible': 1.40.0
       '@zag-js/date-picker': 1.40.0(@internationalized/date@3.12.2)
       '@zag-js/svelte': 1.40.0(svelte@5.58.1(@typescript-eslint/types@8.73.0))
@@ -6983,7 +6957,7 @@ snapshots:
       - '@internationalized/date'
       - tailwindcss
 
-  '@viamrobotics/prime-editor@0.1.1(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
+  '@viamrobotics/prime-editor@0.2.0(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
     dependencies:
       '@codemirror/autocomplete': 6.20.4
       '@codemirror/commands': 6.11.1
@@ -6998,20 +6972,21 @@ snapshots:
       '@codemirror/state': 6.6.0
       '@codemirror/view': 6.43.1
       '@lezer/highlight': 1.2.5
-      '@viamrobotics/tailwind-config': 1.11.0(tailwindcss@4.3.1)
+      '@viamrobotics/tailwind-config': 1.12.0(tailwindcss@4.3.1)
       svelte: 5.58.1(@typescript-eslint/types@8.73.0)
     transitivePeerDependencies:
       - tailwindcss
 
-  '@viamrobotics/prime-ui@0.6.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
+  '@viamrobotics/prime-ui@0.7.0(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(tailwindcss@4.3.1)':
     dependencies:
       '@internationalized/date': 3.12.2
       '@mdi/js': 7.4.47
-      '@viamrobotics/tailwind-config': 1.11.0(tailwindcss@4.3.1)
+      '@viamrobotics/tailwind-config': 1.12.0(tailwindcss@4.3.1)
       '@zag-js/interact-outside': 1.49.0
       '@zag-js/svelte': 1.49.0(svelte@5.58.1(@typescript-eslint/types@8.73.0))
       '@zag-js/toast': 1.49.0
       bits-ui: 2.22.0(@internationalized/date@3.12.2)(@sveltejs/kit@3.4.0(@opentelemetry/api@1.10.0)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.58.1(@typescript-eslint/types@8.73.0))(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))(typescript@6.0.3)(vite@8.1.6(@types/node@25.6.0)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.20.5)(yaml@2.8.1)))(svelte@5.58.1(@typescript-eslint/types@8.73.0))
+      esm-env: 1.2.2
       prismjs: 1.30.0
       svelte: 5.58.1(@typescript-eslint/types@8.73.0)
     transitivePeerDependencies:
@@ -7039,7 +7014,7 @@ snapshots:
       - '@sveltejs/kit'
       - zod
 
-  '@viamrobotics/tailwind-config@1.11.0(tailwindcss@4.3.1)':
+  '@viamrobotics/tailwind-config@1.12.0(tailwindcss@4.3.1)':
     dependencies:
       '@fontsource-variable/public-sans': 5.3.0
       '@fontsource-variable/roboto-mono': 5.3.0
@@ -7727,17 +7702,17 @@ snapshots:
       '@codemirror/state': 6.6.0
       '@codemirror/view': 6.43.1
       '@lezer/common': 1.5.2
-      '@lezer/highlight': 1.2.3
+      '@lezer/highlight': 1.2.5
       json5: 2.2.3
       lezer-json5: 2.0.2
 
   codemirror@6.0.1:
     dependencies:
-      '@codemirror/autocomplete': 6.20.3
-      '@codemirror/commands': 6.3.0
+      '@codemirror/autocomplete': 6.20.4
+      '@codemirror/commands': 6.11.1
       '@codemirror/language': 6.12.3
       '@codemirror/lint': 6.9.7
-      '@codemirror/search': 6.7.1
+      '@codemirror/search': 6.7.2
       '@codemirror/state': 6.6.0
       '@codemirror/view': 6.43.1
 
