@@ -42,6 +42,7 @@ const spawnFolder = (id: string): Entity =>
 			order: 0,
 			sources: [],
 			placeholder: undefined,
+			pinned: false,
 			collapsed: false,
 			sceneless: false,
 			refreshRate: undefined,

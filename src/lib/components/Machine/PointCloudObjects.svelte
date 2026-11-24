@@ -20,11 +20,13 @@
 			sources: [traits.PointCloudObjectAPI],
 			refreshRate: 'vision',
 		},
-		() =>
-			connectionStatus.current === MachineConnectionEvent.CONNECTED &&
-			pointcloudObjects.services.length > 0
-				? 'No point cloud objects drawn'
-				: undefined
+		{
+			placeholder: () =>
+				connectionStatus.current === MachineConnectionEvent.CONNECTED &&
+				pointcloudObjects.services.length > 0
+					? 'No point cloud objects drawn'
+					: undefined,
+		}
 	)
 </script>
 

@@ -15,5 +15,8 @@
 	// A producer declares its sources once, at mount, so only the first value is meant here.
 	const initialSources = untrack(() => sources)
 
-	useFolder({ id: 'drawn', name: 'Drawn', order: 700, sources: initialSources }, () => placeholder)
+	useFolder(
+		{ id: 'drawn', name: 'Drawn', order: 700, sources: initialSources },
+		{ placeholder: () => placeholder }
+	)
 </script>

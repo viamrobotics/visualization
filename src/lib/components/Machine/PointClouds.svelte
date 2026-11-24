@@ -22,11 +22,13 @@
 			sources: [traits.PointCloudAPI],
 			refreshRate: 'pointclouds',
 		},
-		() =>
-			connectionStatus.current === MachineConnectionEvent.CONNECTED &&
-			pointclouds.cameras.length > 0
-				? 'No point clouds drawn'
-				: undefined
+		{
+			placeholder: () =>
+				connectionStatus.current === MachineConnectionEvent.CONNECTED &&
+				pointclouds.cameras.length > 0
+					? 'No point clouds drawn'
+					: undefined,
+		}
 	)
 </script>
 

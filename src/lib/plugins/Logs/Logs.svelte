@@ -61,12 +61,15 @@
 			.map((log) => log.uuid)
 			.join('\0')
 	)
-	const resourceRows = useQuery(traits.Name)
+	// Only rows a line can target, so world-state churn never reruns the mirror.
+	const frameRows = useQuery(traits.Name, traits.FramesAPI)
+	const framelessRows = useQuery(traits.Name, traits.FramelessComponent)
 	const folderRows = useQuery(traits.Folder)
 
 	$effect(() => {
 		void alertSignature
-		void resourceRows.current
+		void frameRows.current
+		void framelessRows.current
 		void folderRows.current
 		untrack(() => issueMirror.apply(logs.current))
 	})

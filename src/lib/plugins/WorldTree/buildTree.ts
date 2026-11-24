@@ -95,6 +95,13 @@ const rollupWithChild = (into: IssueRollup | undefined, child: TreeNode): IssueR
 		child.rollup?.count ?? 0
 	)
 
+/** The rollup a row with these children carries. Each child's own `rollup` must already be set. */
+export const rollupOfChildren = (children: readonly TreeNode[]): IssueRollup | undefined => {
+	let rollup: IssueRollup | undefined
+	for (const child of children) rollup = rollupWithChild(rollup, child)
+	return rollup
+}
+
 const sourceFoldersOf = (world: World, fallback: FallbackFolders): Entity[] =>
 	world
 		.query(traits.Folder)
@@ -103,7 +110,7 @@ const sourceFoldersOf = (world: World, fallback: FallbackFolders): Entity[] =>
 
 /**
  * Named entities grouped into the world's `Folder` entities, in `order`. A folder that
- * claims nothing is left out unless it has a placeholder. Orphans sit in
+ * claims nothing is left out unless it is pinned or has a placeholder. Orphans sit in
  * `fallback.missingParent` until the resolver places them, and anything unclaimed
  * lands in `fallback.other`.
  */
@@ -187,10 +194,9 @@ export const buildTree = (world: World, fallback: FallbackFolders): Tree => {
 			children.sort(compareByName)
 			node.children = children.map((child) => {
 				parents.set(`${child}`, `${entity}`)
-				const childNode = walk(child)
-				node.rollup = rollupWithChild(node.rollup, childNode)
-				return childNode
+				return walk(child)
 			})
+			node.rollup = rollupOfChildren(node.children)
 		}
 
 		return node
@@ -203,23 +209,11 @@ export const buildTree = (world: World, fallback: FallbackFolders): Tree => {
 		const spec = folder.get(traits.Folder)
 		const isEmpty = roots.length === 0
 
-		if (isEmpty && spec?.placeholder === undefined) continue
+		if (isEmpty && !spec?.pinned && spec?.placeholder === undefined) continue
 
 		roots.sort(compareByName)
 
-		const node: TreeNode = {
-			entity: folder,
-			folder: {
-				id: spec?.id ?? '',
-				name: spec?.name ?? '',
-				collapsed: spec?.collapsed ?? false,
-				refreshRate: spec?.refreshRate,
-				itemCount: folderCounts.get(folder) ?? 0,
-				placeholder: isEmpty ? spec?.placeholder : undefined,
-			},
-		}
-
-		node.children = roots.map((entity) => {
+		const children = roots.map((entity) => {
 			parents.set(`${entity}`, `${folder}`)
 
 			const child = walk(entity)
@@ -229,12 +223,22 @@ export const buildTree = (world: World, fallback: FallbackFolders): Tree => {
 			const missingParent = entity.get(traits.Orphan)
 			if (missingParent) child.missingParent = missingParent
 
-			node.rollup = rollupWithChild(node.rollup, child)
-
 			return child
 		})
 
-		nodes.push(node)
+		nodes.push({
+			entity: folder,
+			folder: {
+				id: spec?.id ?? '',
+				name: spec?.name ?? '',
+				collapsed: spec?.collapsed ?? false,
+				refreshRate: spec?.refreshRate,
+				itemCount: folderCounts.get(folder) ?? 0,
+				placeholder: isEmpty ? spec?.placeholder : undefined,
+			},
+			children,
+			rollup: rollupOfChildren(children),
+		})
 	}
 
 	return { nodes, parents }

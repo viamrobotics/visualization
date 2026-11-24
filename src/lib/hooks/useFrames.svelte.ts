@@ -80,13 +80,17 @@ export const provideFrames = (partID: () => string) => {
 		enabled: partID() !== '' && isConnected,
 	}))
 
-	// Shown while connected, so a machine with no frames reads as that rather than as
-	// frames that failed to load.
-	const folder = useFolder(FRAMES_FOLDER, () => {
-		if (!isConnected) return undefined
-		if (query.isLoading) return 'Loading frames…'
-		if (query.data?.length === 0) return 'This machine has no frames'
-		return undefined
+	// Kept while connected, so a machine with no frames reads as that rather than as frames that
+	// failed to load, and the folder's refresh control and staleness badge stay reachable while
+	// reported frames have yet to spawn or all sit under Missing parent.
+	const folder = useFolder(FRAMES_FOLDER, {
+		pinned: () => isConnected,
+		placeholder: () => {
+			if (!isConnected) return undefined
+			if (query.isLoading) return 'Loading frames…'
+			if (query.data?.length === 0) return 'This machine has no frames'
+			return undefined
+		},
 	})
 
 	$effect(() => {

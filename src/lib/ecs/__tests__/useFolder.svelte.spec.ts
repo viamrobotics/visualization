@@ -60,4 +60,11 @@ describe('useFolder', () => {
 
 		expect(world.query(traits.Folder)[0]?.get(traits.Folder)?.placeholder).toBe('Nothing drawn')
 	})
+
+	it('keeps one producer’s placeholder when another without one joins', () => {
+		mountHost({ sources: [traits.DrawAPI], placeholder: 'Nothing drawn' })
+		mountHost({ sources: [traits.SnapshotAPI] })
+
+		expect(world.query(traits.Folder)[0]?.get(traits.Folder)?.placeholder).toBe('Nothing drawn')
+	})
 })

@@ -24,10 +24,12 @@ export interface LogIssueMirror {
  */
 const resourceRowsByName = (world: World): Map<string, Entity[]> => {
 	const rows = new Map<string, Entity[]>()
+	const resourceEntities = [
+		...world.query(traits.Name, traits.FramesAPI),
+		...world.query(traits.Name, traits.FramelessComponent),
+	]
 
-	for (const entity of world.query(traits.Name)) {
-		if (!entity.has(traits.FramesAPI) && !entity.has(traits.FramelessComponent)) continue
-
+	for (const entity of resourceEntities) {
 		const name = entity.get(traits.Name) ?? ''
 		const named = rows.get(name)
 		if (named) named.push(entity)

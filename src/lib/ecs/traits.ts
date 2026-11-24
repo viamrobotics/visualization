@@ -299,8 +299,10 @@ export const Folder = trait(() => ({
 	/** Display position. Lower comes first. */
 	order: 0,
 	sources: [] as Trait[],
-	/** Shown in place of rows while empty. An empty folder without one is left out of the tree. */
+	/** Shown in place of rows while empty. */
 	placeholder: undefined as string | undefined,
+	/** Kept in the tree while empty. An empty folder with neither this nor a placeholder is left out. */
+	pinned: false,
 	/** Starts closed instead of open, for a folder that is a side note. */
 	collapsed: false,
 	/** Rows here have no scene object, so they get no visibility toggle. */

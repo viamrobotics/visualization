@@ -58,10 +58,12 @@ export const useSavedPoseEntities = (): void => {
 			sources: [traits.SavedPose],
 			sceneless: true,
 		},
-		() =>
-			connectionStatus.current === MachineConnectionEvent.CONNECTED && armClient.names.length > 0
-				? 'Select an arm and save its pose'
-				: undefined
+		{
+			placeholder: () =>
+				connectionStatus.current === MachineConnectionEvent.CONNECTED && armClient.names.length > 0
+					? 'Select an arm and save its pose'
+					: undefined,
+		}
 	)
 
 	const savers = $derived(

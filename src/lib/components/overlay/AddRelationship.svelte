@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { Entity } from 'koota'
-
 	import { mdiPlus } from '@mdi/js'
 	import { Select, TextField } from '@viamrobotics/prime-controls'
 	import { Icon } from '@viamrobotics/prime-ui'
+	import { type Entity, Not } from 'koota'
 
 	import { relations, traits, useQuery, useTrait } from '#lib/ecs/index.js'
 	import { SubEntityLinkType } from '#lib/ecs/relations.js'
@@ -14,7 +13,8 @@
 
 	const { entity }: Props = $props()
 
-	const allNamed = useQuery(traits.Name)
+	// A frameless component is a world tree row with no scene object, so there is nothing to relate to.
+	const allNamed = useQuery(traits.Name, Not(traits.FramelessComponent))
 	const name = useTrait(() => entity, traits.Name)
 	const drawAPI = useTrait(() => entity, traits.DrawAPI)
 	const isDrawn = $derived(!!drawAPI.current)

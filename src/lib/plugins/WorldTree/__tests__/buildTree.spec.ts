@@ -12,7 +12,7 @@ const spawnFolder = (
 	name: string,
 	order: number,
 	sources: Trait[],
-	options: { placeholder?: string; collapsed?: boolean; sceneless?: boolean } = {}
+	options: { placeholder?: string; pinned?: boolean; collapsed?: boolean; sceneless?: boolean } = {}
 ): Entity =>
 	world.spawn(
 		traits.Folder({
@@ -21,6 +21,7 @@ const spawnFolder = (
 			order,
 			sources,
 			placeholder: options.placeholder,
+			pinned: options.pinned ?? false,
 			collapsed: options.collapsed ?? false,
 			sceneless: options.sceneless ?? false,
 			refreshRate: undefined,
@@ -296,6 +297,15 @@ describe('buildTree', () => {
 		expect(frames?.children).toEqual([])
 		expect(frames?.folder?.itemCount).toBe(0)
 		expect(frames?.folder?.placeholder).toBe('This machine has no frames')
+	})
+
+	it('keeps an empty pinned folder that has no placeholder', () => {
+		world = createWorld()
+		spawnFolder('Frames', 100, [traits.FramesAPI], { pinned: true })
+
+		const { nodes } = buildTree(world, spawnFallback())
+
+		expect(folderNamed(nodes, 'Frames')?.children).toEqual([])
 	})
 
 	it('drops the placeholder once the folder has rows', () => {

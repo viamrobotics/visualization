@@ -16,28 +16,62 @@ export interface FolderSpec {
 	refreshRate?: RefreshRateId
 }
 
+/** What a producer says about its folder while mounted. Each is reread reactively. */
+export interface FolderState {
+	/** Shown in place of rows while the folder is empty. */
+	placeholder?: () => string | undefined
+	/** Keeps the folder in the tree while empty, with no placeholder text. */
+	pinned?: () => boolean
+}
+
+/** One mounted producer's share of a folder. */
+interface Contribution {
+	sources: Trait[]
+	placeholder: string | undefined
+	pinned: boolean
+}
+
 interface SharedFolder {
 	entity: Entity
-	/** One source list per mounted producer, unioned into the trait. */
-	contributions: Set<Trait[]>
+	contributions: Set<Contribution>
 }
 
 const foldersByWorld = new WeakMap<World, Map<string, SharedFolder>>()
 
-const unionOf = (contributions: Set<Trait[]>): Trait[] => [...new Set([...contributions].flat())]
+/**
+ * Writes what every mounted producer says into the folder trait: their sources
+ * unioned, the first placeholder any of them sets, and pinned if any of them pins.
+ * Writes nothing when that is what the trait holds already.
+ */
+const syncFolder = ({ entity, contributions }: SharedFolder): void => {
+	const current = entity.get(Folder)
+	if (!current) return
+
+	const all = [...contributions]
+	const sources = [...new Set(all.flatMap((contribution) => contribution.sources))]
+	const placeholder = all.find(
+		(contribution) => contribution.placeholder !== undefined
+	)?.placeholder
+	const pinned = all.some((contribution) => contribution.pinned)
+
+	const isSameSources =
+		sources.length === current.sources.length &&
+		sources.every((source, index) => source === current.sources[index])
+
+	if (isSameSources && placeholder === current.placeholder && pinned === current.pinned) return
+
+	entity.set(Folder, { ...current, sources, placeholder, pinned })
+}
 
 /**
  * Keeps a world tree folder alive while the calling component is mounted. Producers
- * that name the same `id` share one entity: their sources are unioned, and the entity
- * is destroyed when the last of them unmounts. `placeholder` is reread reactively, and
- * an empty folder shows only while it returns a string.
+ * that name the same `id` share one entity, and each keeps its own sources, placeholder
+ * and pin, so one producer never overwrites another's. The entity is destroyed when the
+ * last of them unmounts.
  *
  * @returns The folder entity, for writing `Issues` about the folder as a whole.
  */
-export const useFolder = (
-	spec: FolderSpec,
-	placeholder: () => string | undefined = () => undefined
-): Entity => {
+export const useFolder = (spec: FolderSpec, state: FolderState = {}): Entity => {
 	const world = useWorld()
 
 	let folders = foldersByWorld.get(world)
@@ -46,58 +80,58 @@ export const useFolder = (
 		foldersByWorld.set(world, folders)
 	}
 
-	const contribution = spec.sources
+	const contribution: Contribution = {
+		sources: spec.sources,
+		placeholder: undefined,
+		pinned: false,
+	}
 	let shared = folders.get(spec.id)
 
-	if (shared?.entity.isAlive()) {
-		shared.contributions.add(contribution)
-		shared.entity.set(Folder, {
-			...shared.entity.get(Folder)!,
-			sources: unionOf(shared.contributions),
-		})
-	} else {
+	if (!shared?.entity.isAlive()) {
 		shared = {
 			entity: world.spawn(
 				Folder({
 					id: spec.id,
 					name: spec.name,
 					order: spec.order,
-					sources: spec.sources,
+					sources: [],
 					placeholder: undefined,
+					pinned: false,
 					collapsed: spec.collapsed ?? false,
 					sceneless: spec.sceneless ?? false,
 					refreshRate: spec.refreshRate,
 				})
 			),
-			contributions: new Set([contribution]),
+			contributions: new Set(),
 		}
 		folders.set(spec.id, shared)
 	}
 
-	const { entity, contributions } = shared
+	shared.contributions.add(contribution)
+	syncFolder(shared)
+
+	const folder = shared
 	const registry = folders
 
 	$effect(() => {
-		const next = placeholder()
-		const current = entity.get(Folder)
-		if (current && current.placeholder !== next)
-			entity.set(Folder, { ...current, placeholder: next })
+		contribution.placeholder = state.placeholder?.()
+		contribution.pinned = state.pinned?.() ?? false
+		syncFolder(folder)
 	})
 
 	$effect(() => {
 		return () => {
-			contributions.delete(contribution)
+			folder.contributions.delete(contribution)
 
-			if (contributions.size > 0) {
-				const current = entity.get(Folder)
-				if (current) entity.set(Folder, { ...current, sources: unionOf(contributions) })
+			if (folder.contributions.size > 0) {
+				syncFolder(folder)
 				return
 			}
 
 			registry.delete(spec.id)
-			if (entity.isAlive()) entity.destroy()
+			if (folder.entity.isAlive()) folder.entity.destroy()
 		}
 	})
 
-	return entity
+	return folder.entity
 }
