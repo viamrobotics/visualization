@@ -67,10 +67,7 @@ describe('PoseDetails', () => {
 
 			renderPose()
 
-			expect(screen.getByRole('tab', { name: 'OV (deg)' })).toHaveAttribute(
-				'aria-selected',
-				'true'
-			)
+			expect(screen.getByRole('tab', { name: 'OV (deg)' })).toHaveAttribute('aria-selected', 'true')
 		})
 	})
 
