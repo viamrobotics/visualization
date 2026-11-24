@@ -120,6 +120,30 @@ describe('MonitorDetails', () => {
 		)
 	})
 
+	it('offers no Test tab while no test section applies to the selection', () => {
+		const sections = createDetailsSections()
+		sections.register({
+			snippet: sectionFor('arm controls'),
+			label: 'test',
+			tab: 'test',
+			when: () => false,
+		})
+
+		renderPanel(sections)
+
+		expect(screen.queryByRole('tab', { name: 'Test' })).not.toBeInTheDocument()
+	})
+
+	it('renders the registered test section in the Test tab', async () => {
+		const sections = createDetailsSections()
+		sections.register({ snippet: sectionFor('arm controls'), label: 'test', tab: 'test' })
+
+		renderPanel(sections)
+		await userEvent.click(screen.getByRole('tab', { name: 'Test' }))
+
+		expect(screen.getByText('arm controls')).toBeInTheDocument()
+	})
+
 	it('titles a selection of several objects by its count', () => {
 		renderPanel(undefined, [entity, world.spawn(traits.Name('Other Object'))])
 

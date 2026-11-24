@@ -3,10 +3,13 @@
 	import type { Entity } from 'koota'
 	import type { Snippet } from 'svelte'
 
+	import { Canvas } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { provideToast, ToastContainer, ToastVariant } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
+	import { NeutralToneMapping } from 'three'
+	import { WebGPURenderer } from 'three/webgpu'
 
 	import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 
@@ -30,9 +33,11 @@
 	import { provideFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 	import { domPortal } from '#lib/portal.js'
 
+	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import { provideSettingsTabs } from './overlay/Portals/useSettingsTabs.svelte'
 	import RenderStats from './overlay/widgets/RenderStats.svelte'
-	import SceneCanvas from './SceneCanvas.svelte'
+	import Scene from './Scene.svelte'
+	import SceneProviders from './SceneProviders.svelte'
 
 	interface LocalConfigProps {
 		current: Struct
@@ -142,10 +147,24 @@
 	]}
 	bind:this={root}
 >
-	<SceneCanvas>
-		{@render appChildren?.()}
+	<Canvas
+		renderMode="on-demand"
+		toneMapping={NeutralToneMapping}
+		createRenderer={(canvas) =>
+			new WebGPURenderer({
+				canvas,
+				antialias: true,
+				// Keeps depth precision near-uniform, so nearby surfaces don't z-fight when zoomed out.
+				reversedDepthBuffer: true,
+			})}
+	>
+		<SceneProviders>
+			<Scene>
+				{@render appChildren?.()}
+			</Scene>
 
-		{#snippet overlays()}
+			<HoveredEntities />
+
 			<!-- Overlays that need Threlte context -->
 			<div {@attach domPortal(root)}>
 				<Dashboard />
@@ -158,8 +177,8 @@
 					<RenderStats />
 				{/if}
 			</div>
-		{/snippet}
-	</SceneCanvas>
+		</SceneProviders>
+	</Canvas>
 
 	<ToastContainer />
 </div>
