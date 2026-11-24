@@ -2,11 +2,14 @@ import type { Entity, World } from 'koota'
 
 import * as traits from './traits'
 
-/** Makes `entity` the only selection, clearing whatever was selected before. */
-export const selectOnly = (world: World, entity: Entity): void => {
+/** Makes `entities` the whole selection, in the order given, clearing whatever was selected before. */
+export const selectOnly = (world: World, ...entities: Entity[]): void => {
+	const keep = new Set(entities)
 	for (const selected of world.query(traits.Selected)) {
-		if (selected !== entity) selected.remove(traits.Selected)
+		if (!keep.has(selected)) selected.remove(traits.Selected)
 	}
 
-	if (!entity.has(traits.Selected)) entity.add(traits.Selected)
+	for (const entity of entities) {
+		if (!entity.has(traits.Selected)) entity.add(traits.Selected)
+	}
 }

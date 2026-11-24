@@ -17,9 +17,7 @@
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
-	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
-	import ResourceTestTab from '#lib/plugins/ControlWidgets/ResourceTestTab.svelte'
-	import { resourceWidgetToggles } from '#lib/plugins/ControlWidgets/resourceWidgetToggles.js'
+	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
 	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
 	import SessionAppearanceDetails, {
@@ -35,30 +33,29 @@
 
 	const { entities, notice, ...rest }: Props = $props()
 
-	const resourceByName = useResourceByName()
+	const sections = useDetailsSections()
 
 	const reads = useMappedEntitiesTraits(
 		() => entities,
 		[traits.Name, traits.FramesAPI, traits.CustomDetails],
-		(entity) => {
-			const name = entity.get(traits.Name)
-			const resource = name ? resourceByName.current[name] : undefined
-			return {
-				entity,
-				name,
-				isFrame: entity.has(traits.FramesAPI),
-				hasCustomDetails: entity.has(traits.CustomDetails),
-				testableResource:
-					resource && resourceWidgetToggles(resource).length > 0 ? resource : undefined,
-			}
-		}
+		(entity) => ({
+			entity,
+			name: entity.get(traits.Name),
+			isFrame: entity.has(traits.FramesAPI),
+			hasCustomDetails: entity.has(traits.CustomDetails),
+		})
 	)
 
 	const only = $derived(entities.length === 1 ? reads.current[0] : undefined)
 	const isAllCustom = $derived(reads.current.every((read) => read.hasCustomDetails))
 	const isAnyCustom = $derived(reads.current.some((read) => read.hasCustomDetails))
 	const hasFrame = $derived(reads.current.some((read) => read.isFrame && read.name !== undefined))
-	const hasTestable = $derived(reads.current.some((read) => read.testableResource))
+	// Whatever registers a `test` section owns the tab's content. Monitor only decides whether it shows.
+	const hasTestable = $derived(
+		sectionsForTab(sections?.current ?? [], 'test').some((section) =>
+			entities.some((entity) => section.when?.(entity) ?? true)
+		)
+	)
 
 	// A frame's edits follow the same rules as a saved appearance, so they reach the frames inside it.
 	const sessionTargets = $derived(
@@ -147,16 +144,10 @@
 {/snippet}
 
 {#snippet testTab()}
-	{#if only?.testableResource}
-		<ResourceTestTab resource={only.testableResource} />
-	{:else}
-		<div class="pt-3">
-			<SectionNotice
-				label="test"
-				message="Select a single resource to test it."
-			/>
-		</div>
-	{/if}
+	<DetailsSections
+		{entities}
+		tab="test"
+	/>
 {/snippet}
 
 <DetailsPanel

@@ -2,13 +2,30 @@
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
 	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
-	import { provideLogs } from '#lib/hooks/useLogs.svelte.js'
+	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 	import LogPanel from './LogPanel.svelte'
 
 	const logs = provideLogs()
 	const partID = usePartID()
+	const bus = useEventBus()
+
+	// `.pre` so the subscription is in place before any plain `$effect` in the first flush
+	// publishes, including the scene's own fetch notices.
+	$effect.pre(() => {
+		const stopDiagnostics = bus.subscribe('diagnostic', ({ message, level, target }) => {
+			logs.add(message, level, target)
+		})
+		const stopClears = bus.subscribe('diagnostic-cleared', ({ target }) => {
+			logs.retractTarget(target)
+		})
+
+		return () => {
+			stopDiagnostics()
+			stopClears()
+		}
+	})
 
 	// The sink lives as long as the app, so nothing else evicts the previous
 	// machine's lines. Seeded at setup rather than left unset so the first flush

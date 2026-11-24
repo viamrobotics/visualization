@@ -10,9 +10,9 @@
 
 	import { Visualizer } from '#lib'
 	import { backendIP, drawServicePort } from '#lib/defines.js'
+	import { ControlWidgets } from '#lib/plugins/ControlWidgets/index.js'
 	import {
 		BuildFrames,
-		ControlWidgets,
 		DrawService,
 		FileDrop,
 		FramePov,
@@ -55,7 +55,8 @@
 
 	let { children } = $props()
 
-	let pluginsEnabled = true
+	// `?plugins=false` renders the bare scene, with every plugin unmounted.
+	const pluginsEnabled = $derived(page.url.searchParams.get('plugins') !== 'false')
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
 

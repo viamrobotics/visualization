@@ -5,7 +5,7 @@ import { getContext, setContext, untrack } from 'svelte'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 import { traits, useParentName, useQuery, useTrait } from '#lib/ecs/index.js'
-import { useLogs } from '#lib/hooks/useLogs.svelte.js'
+import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { originFrameName } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 
@@ -49,7 +49,7 @@ export interface Context {
  */
 export const providePoses = (partID: () => string) => {
 	const settings = useSettings()
-	const logs = useLogs()
+	const bus = useEventBus()
 	const robotClient = useRobotClient(partID)
 	const connectionStatus = useConnectionStatus(partID)
 	const frames = useFrames()
@@ -184,21 +184,27 @@ export const providePoses = (partID: () => string) => {
 
 	$effect(() => {
 		if (isLiveRate) {
-			logs.add(`Fetching poses every ${interval}ms...`, 'info', { folder: 'frames' })
+			bus.publish('diagnostic', {
+				message: `Fetching poses every ${interval}ms...`,
+				level: 'info',
+				target: { folder: 'frames' },
+			})
 		}
 
 		for (const { name, query } of entries) {
 			untrack(() => {
 				$effect(() => {
 					if (query.error) {
-						logs.add(`Error fetching pose for ${name.current}: ${query.error.message}`, 'error', {
-							resource: name.current,
-							folder: 'frames',
+						bus.publish('diagnostic', {
+							message: `Error fetching pose for ${name.current}: ${query.error.message}`,
+							level: 'error',
+							target: { resource: name.current, folder: 'frames' },
 						})
 					} else if (query.isFetching && !isLiveRate) {
-						logs.add(`Fetching pose for ${name.current}...`, 'info', {
-							resource: name.current,
-							folder: 'frames',
+						bus.publish('diagnostic', {
+							message: `Fetching pose for ${name.current}...`,
+							level: 'info',
+							target: { resource: name.current, folder: 'frames' },
 						})
 					}
 				})

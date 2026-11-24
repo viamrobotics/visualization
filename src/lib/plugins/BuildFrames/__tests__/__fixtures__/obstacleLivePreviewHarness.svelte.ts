@@ -48,7 +48,6 @@ export const createObstacleLivePreviewHarness = (name: string, saved: ObstacleGe
 			return isDirty
 		},
 	} as ReturnType<typeof usePartConfig>)
-	vi.mocked(useLogs).mockReturnValue({ add: vi.fn() } as unknown as ReturnType<typeof useLogs>)
 	vi.mocked(useConnectionStatus).mockReturnValue({
 		current: MachineConnectionEvent.CONNECTED,
 	} as ReturnType<typeof useConnectionStatus>)

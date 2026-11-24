@@ -142,7 +142,7 @@ describe('NewObstacleDialog', () => {
 		expect(createComponent).not.toHaveBeenCalled()
 	})
 
-	it('names the component the taken name collides with', async () => {
+	it('names the taken name a component already uses', async () => {
 		mockPartConfig(['barrier'])
 		renderDialog()
 
@@ -150,8 +150,18 @@ describe('NewObstacleDialog', () => {
 		await userEvent.clear(nameField)
 		await userEvent.type(nameField, 'barrier')
 
-		expect(
-			screen.getByText('This machine already has a component named barrier.')
-		).toBeInTheDocument()
+		expect(screen.getByText('This machine already uses the name barrier.')).toBeInTheDocument()
+	})
+
+	it('treats the name of a frame in the scene as taken, such as a service frame', async () => {
+		mockPartConfig([])
+		world.spawn(traits.Name('navigation'), traits.FramesAPI)
+		renderDialog()
+
+		const nameField = screen.getByLabelText('Name')
+		await userEvent.clear(nameField)
+		await userEvent.type(nameField, 'navigation')
+
+		expect(screen.getByText('This machine already uses the name navigation.')).toBeInTheDocument()
 	})
 })

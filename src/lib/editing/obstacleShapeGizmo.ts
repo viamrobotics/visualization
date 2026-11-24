@@ -4,7 +4,7 @@ import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import { Pose } from '#lib/math/index.js'
 import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
-import { type ObstacleGeometryPatch, patchObstacleGeometry } from '#lib/obstacleGeometryList.js'
+import { type ObstacleGeometryPatch, patchObstacleGeometries } from '#lib/obstacleGeometryList.js'
 
 const tempInverse = new Matrix4()
 const tempOffset = new Matrix4()
@@ -20,12 +20,15 @@ export const shapeOffsetFromGizmo = (shapeFrameWorld: Matrix4, gizmoWorld: Matri
 	return new Pose().setFromMatrix4(tempOffset)
 }
 
-/** The obstacle's attributes with `patch` applied to the shape at `index`. */
-export const withObstacleShapePatch = (
+/**
+ * The obstacle's attributes with each patch applied to the shape at its index. Several shapes of
+ * one obstacle move in one write, since a write per shape would each start from the same stale
+ * config and undo the others.
+ */
+export const withObstacleShapePatches = (
 	component: PartComponent,
-	index: number,
-	patch: ObstacleGeometryPatch
+	patches: ReadonlyMap<number, ObstacleGeometryPatch>
 ): Record<string, unknown> => ({
 	...component.attributes,
-	geometries: patchObstacleGeometry(obstacleGeometriesOf(component), index, patch),
+	geometries: patchObstacleGeometries(obstacleGeometriesOf(component), patches),
 })

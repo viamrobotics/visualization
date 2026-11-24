@@ -3,10 +3,10 @@
 	import { untrack } from 'svelte'
 
 	import Dialog from '#lib/components/overlay/Dialog.svelte'
-	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
+	import { useTakenResourceNames } from '#lib/hooks/useTakenResourceNames.js'
 	import { nextObstacleName } from '#lib/obstacle.js'
 
 	import { OBSTACLE_TYPE_OPTIONS, type ObstacleType } from './obstacleTypeOptions'
@@ -21,15 +21,11 @@
 
 	const option = $derived(OBSTACLE_TYPE_OPTIONS[type])
 
-	const world = useWorld()
 	const environment = useEnvironment()
-	const fragmentInfo = useFragmentInfo()
 	const partConfig = usePartConfig()
+	const takenResourceNames = useTakenResourceNames()
 
-	const takenNames = $derived([
-		...(partConfig.current.components ?? []).map(({ name }) => name),
-		...Object.keys(fragmentInfo.current ?? {}),
-	])
+	const takenNames = $derived(takenResourceNames.current)
 
 	let name = $state('')
 
@@ -47,31 +43,16 @@
 
 	const error = $derived.by(() => {
 		if (trimmedName === '') return 'Enter a name.'
-		if (takenNames.includes(trimmedName))
-			return `This machine already has a component named ${trimmedName}.`
+		if (takenNames.has(trimmedName)) return `This machine already uses the name ${trimmedName}.`
 		return undefined
 	})
 
-	/**
-	 * The obstacle the frame reconciler owes us an entity for. Creating writes the
-	 * config, and the entity only exists once `useFrames` has reconciled it, so
-	 * the selection waits for the row rather than racing it.
-	 */
-	let pendingName: string | undefined
-
-	$effect(() => {
-		return world.onAdd(traits.Name, (entity) => {
-			if (pendingName === undefined || entity.get(traits.Name) !== pendingName) return
-
-			pendingName = undefined
-			selectOnly(world, entity)
-		})
-	})
+	const pendingSelection = useSelectOnArrival()
 
 	const create = () => {
 		if (error !== undefined) return
 
-		pendingName = trimmedName
+		pendingSelection.select([trimmedName])
 
 		// Config-only frames are merged into the scene in build mode. Creating an
 		// obstacle anywhere else would write it to the config and show nothing.

@@ -15,7 +15,7 @@
 		TRANSLUCENT_GEOMETRY_OPACITY,
 		useWorld,
 	} from '#lib/ecs/index.js'
-	import { useLogs } from '#lib/hooks/useLogs.svelte.js'
+	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { usePointcloudObjects } from '#lib/hooks/usePointcloudObjects.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
@@ -33,7 +33,7 @@
 	const matrix4 = new Matrix4()
 
 	const world = useWorld()
-	const logs = useLogs()
+	const bus = useEventBus()
 	const settings = useSettings()
 	const { refetchers } = usePointcloudObjects()
 	const { refreshRates, disabledVisionServices } = $derived(settings.current)
@@ -86,14 +86,16 @@
 
 	$effect(() => {
 		if (query.isFetching) {
-			logs.add(`Fetching pointcloud for ${name}...`, 'info', {
-				resource: name,
-				folder: 'pointcloud-objects',
+			bus.publish('diagnostic', {
+				message: `Fetching pointcloud for ${name}...`,
+				level: 'info',
+				target: { resource: name, folder: 'pointcloud-objects' },
 			})
 		} else if (query.error) {
-			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', {
-				resource: name,
-				folder: 'pointcloud-objects',
+			bus.publish('diagnostic', {
+				message: `Error fetching pointcloud from ${name}: ${query.error.message}`,
+				level: 'error',
+				target: { resource: name, folder: 'pointcloud-objects' },
 			})
 		}
 	})
@@ -202,9 +204,10 @@
 							return
 						}
 
-						logs.add(error?.reason ?? error?.message ?? 'Failed to parse pointcloud', 'error', {
-							resource: name,
-							folder: 'pointcloud-objects',
+						bus.publish('diagnostic', {
+							message: error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
+							level: 'error',
+							target: { resource: name, folder: 'pointcloud-objects' },
 						})
 					})
 			}

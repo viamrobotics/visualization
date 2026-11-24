@@ -839,6 +839,10 @@
 			"types": "./dist/scoped-scene.d.ts",
 			"svelte": "./dist/scoped-scene.js"
 		},
+		"./control-widgets": {
+			"types": "./dist/plugins/ControlWidgets/index.d.ts",
+			"svelte": "./dist/plugins/ControlWidgets/index.js"
+		},
 		"./scene-builder": {
 			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",
 			"default": "./dist/plugins/LLMSceneBuilder/index.js"

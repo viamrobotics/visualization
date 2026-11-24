@@ -10,7 +10,7 @@ import {
 } from '@viamrobotics/sdk'
 import { Matrix4 } from 'three'
 
-import type { useLogs } from '#lib/hooks/useLogs.svelte.js'
+import type { EventBus } from '#lib/hooks/useEventBus.js'
 import type { useRelationships } from '#lib/hooks/useRelationships.svelte.js'
 
 import { createChunkLoader } from '#lib/chunking.js'
@@ -65,7 +65,7 @@ const READ_CONCURRENCY = 64
 interface WorldStateSyncOptions {
 	world: World
 	relationships: ReturnType<typeof useRelationships>
-	logs: Pick<ReturnType<typeof useLogs>, 'add'>
+	bus: Pick<EventBus, 'publish'>
 	invalidate: () => void
 	/** Runs `callback` before the next render, and returns a function that cancels it. */
 	requestFrame: (callback: () => void) => () => void
@@ -121,7 +121,7 @@ interface Session {
 export const createWorldStateSync = ({
 	world,
 	relationships,
-	logs,
+	bus,
 	invalidate,
 	requestFrame,
 	timing,
@@ -484,13 +484,11 @@ export const createWorldStateSync = ({
 		const newlyFailing = failedUUIDs.filter((uuid) => !loggedFailingUUIDs.has(uuid))
 		if (newlyFailing.length === 0) return
 
-		logs.add(
-			`World state store: ${newlyFailing.length} of ${requested} transforms failed`,
-			'error',
-			{
-				folder: 'world-state-store',
-			}
-		)
+		bus.publish('diagnostic', {
+			message: `World state store: ${newlyFailing.length} of ${requested} transforms failed`,
+			level: 'error',
+			target: { folder: 'world-state-store' },
+		})
 		for (const uuid of newlyFailing) loggedFailingUUIDs.add(uuid)
 	}
 
@@ -551,8 +549,10 @@ export const createWorldStateSync = ({
 			if (signal.aborted) return
 
 			if (!isSnapshotFailureLogged) {
-				logs.add('World state store: could not load the current transforms', 'error', {
-					folder: 'world-state-store',
+				bus.publish('diagnostic', {
+					message: 'World state store: could not load the current transforms',
+					level: 'error',
+					target: { folder: 'world-state-store' },
 				})
 				isSnapshotFailureLogged = true
 			}
@@ -736,16 +736,19 @@ export const createWorldStateSync = ({
 
 			// The stream will never come, but snapshots still can. The session stays open for them.
 			if (ConnectError.from(error).code === Code.Unimplemented) {
-				logs.add(
-					'World state store: this store does not stream changes, so the scene will not update live',
-					'error',
-					{ folder: 'world-state-store' }
-				)
+				bus.publish('diagnostic', {
+					message:
+						'World state store: this store does not stream changes, so the scene will not update live',
+					level: 'error',
+					target: { folder: 'world-state-store' },
+				})
 				return
 			}
 
-			logs.add('World state store: transform stream failed', 'error', {
-				folder: 'world-state-store',
+			bus.publish('diagnostic', {
+				message: 'World state store: transform stream failed',
+				level: 'error',
+				target: { folder: 'world-state-store' },
 			})
 		}
 

@@ -5,7 +5,7 @@ import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
 import { createComplexObstacleComponent } from '#lib/obstacle.js'
 
-import { shapeOffsetFromGizmo, withObstacleShapePatch } from '../obstacleShapeGizmo'
+import { shapeOffsetFromGizmo, withObstacleShapePatches } from '../obstacleShapeGizmo'
 
 describe('shapeOffsetFromGizmo', () => {
 	it('measures the dragged shape from its obstacle frame, in millimetres', () => {
@@ -28,20 +28,23 @@ describe('shapeOffsetFromGizmo', () => {
 	})
 })
 
-describe('withObstacleShapePatch', () => {
-	it('patches only the shape at the index and keeps the other attributes', () => {
-		const obstacle: PartComponent = {
-			...createComplexObstacleComponent('cage'),
-			attributes: {
-				extra: 'kept',
-				geometries: [
-					{ label: 'a', type: 'box', x: 10, y: 10, z: 10 },
-					{ label: 'b', type: 'sphere', r: 5 },
-				],
-			},
-		}
+describe('withObstacleShapePatches', () => {
+	const cage = (): PartComponent => ({
+		...createComplexObstacleComponent('cage'),
+		attributes: {
+			extra: 'kept',
+			geometries: [
+				{ label: 'a', type: 'box', x: 10, y: 10, z: 10 },
+				{ label: 'b', type: 'sphere', r: 5 },
+			],
+		},
+	})
 
-		const attributes = withObstacleShapePatch(obstacle, 1, { translation: { x: 1, y: 2, z: 3 } })
+	it('patches only the shape at the index and keeps the other attributes', () => {
+		const attributes = withObstacleShapePatches(
+			cage(),
+			new Map([[1, { translation: { x: 1, y: 2, z: 3 } }]])
+		)
 
 		expect(attributes).toEqual({
 			extra: 'kept',
@@ -50,5 +53,20 @@ describe('withObstacleShapePatch', () => {
 				{ label: 'b', type: 'sphere', r: 5, translation: { x: 1, y: 2, z: 3 } },
 			],
 		})
+	})
+
+	it('moves every patched shape, so moving one never undoes another', () => {
+		const attributes = withObstacleShapePatches(
+			cage(),
+			new Map([
+				[0, { translation: { x: 1, y: 0, z: 0 } }],
+				[1, { translation: { x: 0, y: 1, z: 0 } }],
+			])
+		)
+
+		expect(attributes.geometries).toEqual([
+			{ label: 'a', type: 'box', x: 10, y: 10, z: 10, translation: { x: 1, y: 0, z: 0 } },
+			{ label: 'b', type: 'sphere', r: 5, translation: { x: 0, y: 1, z: 0 } },
+		])
 	})
 })
