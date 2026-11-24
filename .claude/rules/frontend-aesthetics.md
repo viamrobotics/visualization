@@ -25,7 +25,7 @@ Prefer PRIME over native or hand-rolled UI. Never import `@viamrobotics/prime-co
 
 - Stateful primitives prime-ui doesn't cover (floating-panel, tree-view, the local `Popover`) → `@zag-js/*`. Never build a local tooltip, dialog, or toggle group: use prime-ui `Tooltip` and `Dialog`, and prime-controls `ToggleButtons`. A multi-select toggle is a `button-group` of `aria-pressed` buttons.
 - Control panels (number fields, points, sliders, selects, tabs, folders) → `@viamrobotics/prime-controls`. Bind with a function binding (`bind:value={() => current, write}`): its setter runs only on user input, so it needs no echo guard. A standalone number field is `HeldNumberField`, which never writes `undefined` when cleared. Shared values across a selection use `SharedNumberFields`. Colors are prime-ui `Input type="color"` through `SharedColor`.
-- `svelte-tweakpane-ui` remains only for `RenderStats`, whose graphs and monitors prime-controls lacks. Don't use it anywhere else.
+- `svelte-tweakpane-ui` remains only for the `<RenderStats />` plugin (`src/lib/plugins/RenderStats/`), whose graphs and monitors prime-controls lacks. Its panel takes the prime theme through `<Pane theme={primeTheme}>`. Don't use tweakpane anywhere else.
 - Icons: prime-ui `Icon` with an `@mdi/js` path (`<Icon icon={mdiCog} />`), or a Viam glyph from `@viamrobotics/prime-ui/icons`. `lucide-svelte` exists, use only where neither has an equivalent. prime-ui `Icon` is decorative by default. Pass `aria-label` only when it carries meaning.
 
 ## Color & tokens

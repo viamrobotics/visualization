@@ -6,8 +6,6 @@
 	import { Canvas } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { provideToast, Toast } from '@viamrobotics/prime-ui'
-	import { primeTheme } from '@viamrobotics/tweakpane-config'
-	import { ThemeUtils } from 'svelte-tweakpane-ui'
 	import { NeutralToneMapping } from 'three'
 	import { WebGPURenderer } from 'three/webgpu'
 
@@ -35,7 +33,6 @@
 
 	import HoveredEntities from './hover/HoveredEntities.svelte'
 	import { provideSettingsTabs } from './overlay/Portals/useSettingsTabs.svelte'
-	import RenderStats from './overlay/widgets/RenderStats.svelte'
 	import Scene from './Scene.svelte'
 	import SceneProviders from './SceneProviders.svelte'
 
@@ -83,19 +80,12 @@
 		details,
 	}: Props = $props()
 
-	// In setup, not `onMount`: children build their Tweakpane instances during
-	// their own setup, so by App's `onMount` the panes already painted dark.
-	// Reset first because the theme call removes any variable it already matches,
-	// so a repeat call (second instance, remount, HMR) would wipe the theme.
-	ThemeUtils.setGlobalDefaultTheme(undefined)
-	ThemeUtils.setGlobalDefaultTheme(primeTheme)
-
 	provideWorld()
 	provideSettingsTabs()
 	provideKeybindings()
 	provideTransformGizmos()
 
-	const settings = provideSettings()
+	provideSettings()
 	const environment = provideEnvironment()
 	const fullscreen = provideFullscreen()
 
@@ -172,10 +162,6 @@
 				<Controls />
 
 				<PortalTarget id="dom" />
-
-				{#if settings.current.renderStats && !environment.current.isImmersive}
-					<RenderStats />
-				{/if}
 			</div>
 		</SceneProviders>
 	</Canvas>

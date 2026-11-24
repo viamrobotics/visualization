@@ -5,11 +5,12 @@ The **Sensors** settings tab: the master switch for coverage frusta, how far the
 and which cameras draw one.
 -->
 <script lang="ts">
-	import { NumberField } from '@viamrobotics/prime-controls'
 	import { Switch } from '@viamrobotics/prime-ui'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
 	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
+
+	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
@@ -60,7 +61,7 @@ and which cameras draw one.
 		</label>
 
 		<div class="w-20">
-			<NumberField
+			<HeldNumberField
 				id="{uid}-range"
 				aria-labelledby="{uid}-range-label"
 				min={0}

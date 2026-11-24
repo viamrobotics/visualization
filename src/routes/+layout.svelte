@@ -28,6 +28,7 @@
 		WorldTree,
 		XR,
 	} from '#lib/plugins/index.js'
+	import { RenderStats } from '#lib/plugins/RenderStats/index.js'
 	import { page } from '$app/state'
 
 	import MachineConnectionProvider from './lib/components/MachineConnectionProvider.svelte'
@@ -140,6 +141,7 @@
 					<WorldTree />
 					<SceneExport />
 					<Settings />
+					<RenderStats />
 					<FileDrop />
 					<FramePov />
 				{/if}

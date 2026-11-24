@@ -796,6 +796,10 @@
 			"types": "./dist/plugins/ControlWidgets/index.d.ts",
 			"svelte": "./dist/plugins/ControlWidgets/index.js"
 		},
+		"./render-stats": {
+			"types": "./dist/plugins/RenderStats/index.d.ts",
+			"svelte": "./dist/plugins/RenderStats/index.js"
+		},
 		"./scene-builder": {
 			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",
 			"default": "./dist/plugins/LLMSceneBuilder/index.js"
