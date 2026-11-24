@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
+
 import GeometryFields from '../GeometryFields.svelte'
 import { MIXED, type Shared } from '../sharedValue'
 
@@ -53,6 +55,14 @@ describe('GeometryFields', () => {
 		await userEvent.type(screen.getByRole('spinbutton', { name: 'X' }), '5')
 
 		expect(ondimensionchange).toHaveBeenLastCalledWith({ x: 105 })
+	})
+
+	it('reports no size of 0 or less, since typing is not clamped to the minimum', async () => {
+		const { ondimensionchange } = renderBox()
+
+		await enterNumber(axisField('box dimensions (mm)', 'X'), '-5')
+
+		expect(ondimensionchange).not.toHaveBeenCalled()
 	})
 
 	it('shows a mixed dimension empty', () => {

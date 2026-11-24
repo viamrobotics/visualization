@@ -3,17 +3,23 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 	import type { Matrix4 } from 'three'
 
-	import { Point, type PointValue, Select, Tabs } from '@viamrobotics/prime-controls'
+	import { Select, Tabs } from '@viamrobotics/prime-controls'
 	import { useToast } from '@viamrobotics/prime-ui'
 	import { MotionClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { PersistedState } from 'runed'
 
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
-	import type { Pose } from '#lib/math/index.js'
+	import type { Pose, PosePatch } from '#lib/math/index.js'
 
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
 	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
+	import {
+		DEFAULT_ORIENTATION_FORMAT,
+		ORIENTATION_FORMAT_KEY,
+		type OrientationFormat,
+	} from '#lib/components/overlay/details/orientationFormat.js'
+	import SharedNumberFields from '#lib/components/overlay/details/SharedNumberFields.svelte'
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
@@ -151,12 +157,33 @@
 			: undefined
 	)
 
-	/** The orientation as Euler angles (deg), for the alternate rotation tab. */
-	const eulerValue = $derived.by<PointValue>(() => {
-		if (!targetPose) return { x: 0, y: 0, z: 0 }
-		const { roll, pitch, yaw } = targetPose.toEulerDegrees()
-		return { x: roll, y: pitch, z: yaw }
+	const orientationFormat = new PersistedState<OrientationFormat>(
+		ORIENTATION_FORMAT_KEY,
+		DEFAULT_ORIENTATION_FORMAT
+	)
+
+	/** The orientation as Euler angles (deg), for the Euler rotation tab. */
+	const eulerValue = $derived.by(() => {
+		if (!targetPose) return { roll: 0, pitch: 0, yaw: 0 }
+		return targetPose.toEulerDegrees()
 	})
+
+	const POSITION_FIELDS = [
+		{ key: 'x', label: 'X' },
+		{ key: 'y', label: 'Y' },
+		{ key: 'z', label: 'Z' },
+	] as const
+	const ORIENTATION_FIELDS = [
+		{ key: 'oX', label: 'X' },
+		{ key: 'oY', label: 'Y' },
+		{ key: 'oZ', label: 'Z' },
+		{ key: 'theta', label: 'Th' },
+	] as const
+	const EULER_FIELDS = [
+		{ key: 'roll', label: 'X' },
+		{ key: 'pitch', label: 'Y' },
+		{ key: 'yaw', label: 'Z' },
+	] as const
 
 	/** Numbers render as an em dash until the frame's pose has resolved. */
 	const num = (value: number | undefined, digits: number) => value?.toFixed(digits) ?? '—'
@@ -177,20 +204,14 @@
 	 */
 	const stagePose = (pose: Pose) => (targetWorldMatrix = fromDestinationPose(pose))
 
-	const stagePosition = (next: PointValue) => {
-		if (!targetPose) return
-		stagePose(targetPose.clone().merge({ x: next.x, y: next.y, z: next.z }))
+	const stagePosePatch = (patch: PosePatch) => {
+		if (targetPose) stagePose(targetPose.clone().merge(patch))
 	}
 
-	const stageOrientationOV = (next: PointValue) => {
-		if (!targetPose) return
-		stagePose(targetPose.clone().merge({ oX: next.x, oY: next.y, oZ: next.z, theta: next.w }))
-	}
-
-	const stageOrientationEuler = (next: PointValue) => {
+	const stageEulerPatch = (patch: Partial<Record<'roll' | 'pitch' | 'yaw', number>>) => {
 		if (!targetPose) return
 		const pose = targetPose.clone()
-		setOrientationFromEuler(targetPose, { roll: next.x, pitch: next.y, yaw: next.z ?? 0 }, pose)
+		setOrientationFromEuler(targetPose, patch, pose)
 		stagePose(pose)
 	}
 
@@ -354,42 +375,49 @@
 				<strong class="font-semibold">world position</strong>
 				<span class="text-subtle-2">(mm)</span>
 
-				<Point
+				<SharedNumberFields
 					aria-label="move target position (mm)"
+					fields={POSITION_FIELDS}
+					values={{ x: targetPose.x, y: targetPose.y, z: targetPose.z }}
 					disabled={executing}
-					bind:value={() => ({ x: targetPose.x, y: targetPose.y, z: targetPose.z }), stagePosition}
+					onchange={stagePosePatch}
 				/>
 			</div>
 
 			<div>
 				<strong class="font-semibold">world orientation</strong>
 
-				<Tabs>
+				<Tabs
+					bind:value={
+						() => orientationFormat.current,
+						(next) => (orientationFormat.current = next as OrientationFormat)
+					}
+				>
 					<Tabs.List aria-label="move target orientation format">
 						<Tabs.Trigger value="ov">OV (deg)</Tabs.Trigger>
 						<Tabs.Trigger value="euler">Euler (deg)</Tabs.Trigger>
 					</Tabs.List>
 					<Tabs.Content value="ov">
-						<Point
+						<SharedNumberFields
 							aria-label="move target orientation (OV, deg)"
-							labels={{ w: 'Th' }}
+							fields={ORIENTATION_FIELDS}
+							values={{
+								oX: targetPose.oX,
+								oY: targetPose.oY,
+								oZ: targetPose.oZ,
+								theta: targetPose.theta,
+							}}
 							disabled={executing}
-							bind:value={
-								() => ({
-									x: targetPose.oX,
-									y: targetPose.oY,
-									z: targetPose.oZ,
-									w: targetPose.theta,
-								}),
-								stageOrientationOV
-							}
+							onchange={stagePosePatch}
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="euler">
-						<Point
+						<SharedNumberFields
 							aria-label="move target orientation (Euler, deg)"
+							fields={EULER_FIELDS}
+							values={eulerValue}
 							disabled={executing}
-							bind:value={() => eulerValue, stageOrientationEuler}
+							onchange={stageEulerPatch}
 						/>
 					</Tabs.Content>
 				</Tabs>

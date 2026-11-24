@@ -3,6 +3,7 @@
 
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { Slider } from '@viamrobotics/prime-controls'
+	import { MathUtils } from 'three'
 
 	import { resolveOpacity, setOrAddTrait, traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 
@@ -28,10 +29,12 @@
 	/**
 	 * Writes `OpacityOverride`, never `Opacity`: reconcilers own the latter and
 	 * rewrite it from the source on every tick, which is what used to drop the
-	 * edit a moment after it was made.
+	 * edit a moment after it was made. Clamped, because the slider's readout
+	 * takes typed values outside its range.
 	 */
 	const writeOpacity = (next: number) => {
-		for (const entity of entities) setOrAddTrait(entity, traits.OpacityOverride, next)
+		const opacity = MathUtils.clamp(next, 0, 1)
+		for (const entity of entities) setOrAddTrait(entity, traits.OpacityOverride, opacity)
 		invalidate()
 	}
 </script>

@@ -56,6 +56,13 @@ that differs across the selection shows as a dash, and an edit reports only the 
 	] as const
 
 	const shown = (key: GeometryDimension): Shared<number> => dimensions[key] ?? MIXED
+
+	// Typing isn't clamped to `min`, and a size of 0 or less is not a shape, so it is never reported.
+	const changeDimension = (patch: Partial<Record<GeometryDimension, number>>) => {
+		if (Object.values(patch).every((size) => size !== undefined && size > 0)) {
+			ondimensionchange(patch)
+		}
+	}
 </script>
 
 <div>
@@ -84,7 +91,7 @@ that differs across the selection shows as a dash, and an edit reports only the 
 					fields={BOX_FIELDS}
 					values={{ x: shown('x'), y: shown('y'), z: shown('z') }}
 					min={0}
-					onchange={(patch) => ondimensionchange(patch)}
+					onchange={(patch) => changeDimension(patch)}
 				/>
 			</Tabs.Content>
 		{:else if type === 'sphere'}
@@ -94,7 +101,7 @@ that differs across the selection shows as a dash, and an edit reports only the 
 					fields={SPHERE_FIELDS}
 					values={{ r: shown('r') }}
 					min={0}
-					onchange={(patch) => ondimensionchange(patch)}
+					onchange={(patch) => changeDimension(patch)}
 				/>
 			</Tabs.Content>
 		{:else if type === 'capsule'}
@@ -104,7 +111,7 @@ that differs across the selection shows as a dash, and an edit reports only the 
 					fields={CAPSULE_FIELDS}
 					values={{ r: shown('r'), l: shown('l') }}
 					min={0}
-					onchange={(patch) => ondimensionchange(patch)}
+					onchange={(patch) => changeDimension(patch)}
 				/>
 			</Tabs.Content>
 		{/if}

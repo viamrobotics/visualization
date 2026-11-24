@@ -1,12 +1,14 @@
 import { render, screen, within } from '@testing-library/svelte'
+import userEvent from '@testing-library/user-event'
 import { createWorld } from 'koota'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
 import { Pose } from '#lib/math/index.js'
 
+import { ORIENTATION_FORMAT_KEY } from '../orientationFormat'
 import PoseDetails from '../PoseDetails.svelte'
 
 describe('PoseDetails', () => {
@@ -35,7 +37,41 @@ describe('PoseDetails', () => {
 		expect(position.getByRole('spinbutton', { name: 'X' })).toHaveValue(1)
 		expect(position.getByRole('spinbutton', { name: 'Y' })).toHaveValue(2)
 		expect(position.getByRole('spinbutton', { name: 'Z' })).toHaveValue(3)
-		expect(screen.getByRole('group', { name: 'local orientation (OV, deg)' })).toBeInTheDocument()
+		expect(
+			screen.getByRole('group', { name: 'local orientation (Euler, deg)' })
+		).toBeInTheDocument()
+	})
+
+	describe('orientation format', () => {
+		afterEach(() => localStorage.removeItem(ORIENTATION_FORMAT_KEY))
+
+		const renderPose = () =>
+			render(PoseDetails, {
+				props: { entities: [world.spawn(traits.Matrix(new Pose().toMatrix4()))], editable: true },
+				context: new Map([[WORLD_CONTEXT_KEY, world]]),
+			})
+
+		it('opens on Euler angles', () => {
+			renderPose()
+
+			expect(screen.getByRole('tab', { name: 'Euler (deg)' })).toHaveAttribute(
+				'aria-selected',
+				'true'
+			)
+		})
+
+		it('keeps the picked format for the next panel', async () => {
+			const { unmount } = renderPose()
+			await userEvent.click(screen.getByRole('tab', { name: 'OV (deg)' }))
+			unmount()
+
+			renderPose()
+
+			expect(screen.getByRole('tab', { name: 'OV (deg)' })).toHaveAttribute(
+				'aria-selected',
+				'true'
+			)
+		})
 	})
 
 	it('folds a drawn geometry center into the local and world poses', () => {

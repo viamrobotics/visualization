@@ -19,7 +19,7 @@
 
 <script lang="ts">
 	import { Slider } from '@viamrobotics/prime-controls'
-	import { Color as ThreeColor } from 'three'
+	import { MathUtils, Color as ThreeColor } from 'three'
 
 	import type { ResourceAppearancePatch } from '#lib/resourceAppearance.js'
 
@@ -98,8 +98,9 @@
 		)
 	)
 
+	// Clamped, because the slider's readout takes typed values outside its range.
 	const writeOpacity = (next: number) => {
-		const patch = { opacity: Number(next.toFixed(OPACITY_DECIMALS)) }
+		const patch = { opacity: Number(MathUtils.clamp(next, 0, 1).toFixed(OPACITY_DECIMALS)) }
 		onchange(targets.map(() => patch))
 	}
 

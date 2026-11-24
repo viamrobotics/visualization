@@ -125,8 +125,8 @@ describe('BuildDetails', () => {
 		const position = screen.getByRole('group', { name: 'local position (mm)' })
 		expect(within(position).getAllByRole('spinbutton')).toHaveLength(3)
 
-		const orientation = screen.getByRole('group', { name: 'local orientation (OV, deg)' })
-		expect(within(orientation).getAllByRole('spinbutton')).toHaveLength(4)
+		const orientation = screen.getByRole('group', { name: 'local orientation (Euler, deg)' })
+		expect(within(orientation).getAllByRole('spinbutton')).toHaveLength(3)
 	})
 
 	const useComponentModel = (model: string) => {

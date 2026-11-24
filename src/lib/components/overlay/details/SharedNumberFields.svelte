@@ -27,9 +27,18 @@ field it changed, so every selected entity keeps its own value for the others.
 		onchange: (patch: Partial<Record<TKey, number>>) => void
 		min?: number
 		step?: number
+		disabled?: boolean
 	}
 
-	const { 'aria-label': ariaLabel, fields, values, onchange, min, step = 1 }: Props = $props()
+	const {
+		'aria-label': ariaLabel,
+		fields,
+		values,
+		onchange,
+		min,
+		step = 1,
+		disabled,
+	}: Props = $props()
 
 	const valueOf = (key: TKey): Shared<number> => values[key]
 </script>
@@ -46,6 +55,7 @@ field it changed, so every selected entity keeps its own value for the others.
 			labelPlacement="inset"
 			{min}
 			{step}
+			{disabled}
 			placeholder={value === MIXED ? MIXED_TEXT : undefined}
 			class="min-w-0"
 			bind:value={

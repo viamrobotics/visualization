@@ -18,8 +18,15 @@ The local position and orientation of one or more poses. A value that differs ac
 
 <script lang="ts">
 	import { Tabs } from '@viamrobotics/prime-controls'
+	import { PersistedState } from 'runed'
 
 	import type { Pose, PosePatch } from '#lib/math/index.js'
+
+	import {
+		DEFAULT_ORIENTATION_FORMAT,
+		ORIENTATION_FORMAT_KEY,
+		type OrientationFormat,
+	} from './orientationFormat'
 
 	import SharedNumberFields from './SharedNumberFields.svelte'
 	import { orientationEuler, sharedEuler, sharedPose } from './sharedPose'
@@ -38,6 +45,11 @@ The local position and orientation of one or more poses. A value that differs ac
 	}
 
 	const { poses, editable, onchange }: Props = $props()
+
+	const orientationFormat = new PersistedState<OrientationFormat>(
+		ORIENTATION_FORMAT_KEY,
+		DEFAULT_ORIENTATION_FORMAT
+	)
 
 	const localPose = $derived(sharedPose(poses))
 	const eulerValue = $derived(sharedEuler(poses))
@@ -160,7 +172,12 @@ The local position and orientation of one or more poses. A value that differs ac
 	<strong class="font-semibold">local orientation</strong>
 
 	{#if editable}
-		<Tabs>
+		<Tabs
+			bind:value={
+				() => orientationFormat.current,
+				(next) => (orientationFormat.current = next as OrientationFormat)
+			}
+		>
 			<Tabs.List aria-label="local orientation format">
 				<Tabs.Trigger value="ov">OV (deg)</Tabs.Trigger>
 				<Tabs.Trigger value="euler">Euler (deg)</Tabs.Trigger>

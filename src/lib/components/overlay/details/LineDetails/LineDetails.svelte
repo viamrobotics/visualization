@@ -3,6 +3,7 @@
 
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { Point, type PointValue, Slider } from '@viamrobotics/prime-controls'
+	import { MathUtils } from 'three'
 
 	import { rgbToHex } from '#lib/color.js'
 	import { traits, useTrait } from '#lib/ecs/index.js'
@@ -71,8 +72,12 @@
 		invalidate()
 	}
 
+	const LINE_WIDTH = { min: 0.1, max: 50, default: 5 }
+	const DOT_SIZE = { min: 0, max: 50, default: 10 }
+
+	// The sizes are clamped, because a slider's readout takes typed values outside its range.
 	const writeLineWidth = (next: number) => {
-		entity.set(traits.LineWidth, next)
+		entity.set(traits.LineWidth, MathUtils.clamp(next, LINE_WIDTH.min, LINE_WIDTH.max))
 		invalidate()
 	}
 
@@ -82,7 +87,7 @@
 	}
 
 	const writeDotSize = (next: number) => {
-		entity.set(traits.DotSize, next)
+		entity.set(traits.DotSize, MathUtils.clamp(next, DOT_SIZE.min, DOT_SIZE.max))
 		invalidate()
 	}
 
@@ -138,10 +143,10 @@
 		<strong class="font-semibold">line width</strong>
 		<Slider
 			aria-label="line width"
-			min={0.1}
-			max={50}
+			min={LINE_WIDTH.min}
+			max={LINE_WIDTH.max}
 			step={0.1}
-			bind:value={() => lineWidth.current ?? 5, writeLineWidth}
+			bind:value={() => lineWidth.current ?? LINE_WIDTH.default, writeLineWidth}
 		/>
 	</div>
 
@@ -159,10 +164,10 @@
 		<strong class="font-semibold">dot size</strong>
 		<Slider
 			aria-label="dot size"
-			min={0}
-			max={50}
+			min={DOT_SIZE.min}
+			max={DOT_SIZE.max}
 			step={0.1}
-			bind:value={() => dotSize.current ?? 10, writeDotSize}
+			bind:value={() => dotSize.current ?? DOT_SIZE.default, writeDotSize}
 		/>
 	</div>
 

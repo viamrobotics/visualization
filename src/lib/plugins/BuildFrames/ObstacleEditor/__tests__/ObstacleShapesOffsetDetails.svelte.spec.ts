@@ -1,5 +1,4 @@
-import { render, screen } from '@testing-library/svelte'
-import userEvent from '@testing-library/user-event'
+import { render } from '@testing-library/svelte'
 import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
@@ -69,8 +68,6 @@ describe('ObstacleShapesOffsetDetails', () => {
 				orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 45 } },
 			},
 		])
-		await userEvent.click(screen.getByRole('tab', { name: 'Euler (deg)' }))
-
 		await enterNumber(axisField('local orientation (Euler, deg)', 'X'), '10')
 
 		expect(writtenGeometries(partConfig)).toHaveLength(2)

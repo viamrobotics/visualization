@@ -2,11 +2,11 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { Point } from '@viamrobotics/prime-controls'
 
 	import { traits, useTrait } from '#lib/ecs/index.js'
 
 	import HeldNumberField from '../HeldNumberField.svelte'
+	import SharedNumberFields from './SharedNumberFields.svelte'
 
 	interface Props {
 		entity: Entity
@@ -18,6 +18,15 @@
 	const box = useTrait(() => entity, traits.Box)
 	const sphere = useTrait(() => entity, traits.Sphere)
 	const capsule = useTrait(() => entity, traits.Capsule)
+
+	const BOX_FIELDS = [
+		{ key: 'x', label: 'X' },
+		{ key: 'y', label: 'Y' },
+		{ key: 'z', label: 'Z' },
+	] as const
+
+	// Typing isn't clamped to `min`, and a size of 0 or less is not a shape, so it is never written.
+	const isSize = (value: number | undefined): value is number => value !== undefined && value > 0
 </script>
 
 {#if box.current}
@@ -25,16 +34,16 @@
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(box) (mm)</span>
-		<Point
+		<SharedNumberFields
 			aria-label="box dimensions (mm)"
+			fields={BOX_FIELDS}
+			values={current}
 			min={0}
-			bind:value={
-				() => current,
-				(next) => {
-					entity.set(traits.Box, { x: next.x, y: next.y, z: next.z ?? current.z })
-					invalidate()
-				}
-			}
+			onchange={(patch) => {
+				if (!Object.values(patch).every(isSize)) return
+				entity.set(traits.Box, { ...current, ...patch })
+				invalidate()
+			}}
 		/>
 	</div>
 {:else if sphere.current}
@@ -47,7 +56,7 @@
 			bind:value={
 				() => sphere.current?.r,
 				(r) => {
-					if (r === undefined) return
+					if (!isSize(r)) return
 					entity.set(traits.Sphere, { r })
 					invalidate()
 				}
@@ -65,7 +74,7 @@
 			bind:value={
 				() => current.r,
 				(r) => {
-					if (r === undefined) return
+					if (!isSize(r)) return
 					entity.set(traits.Capsule, { r, l: current.l })
 					invalidate()
 				}
@@ -77,7 +86,7 @@
 			bind:value={
 				() => current.l,
 				(l) => {
-					if (l === undefined) return
+					if (!isSize(l)) return
 					entity.set(traits.Capsule, { r: current.r, l })
 					invalidate()
 				}

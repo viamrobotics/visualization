@@ -181,7 +181,7 @@ describe('MoveControls', () => {
 		expect(axisField('move target position (mm)', 'Y')).toHaveValue(-250)
 		expect(axisField('move target position (mm)', 'Z')).toHaveValue(40)
 		expect(
-			screen.getByRole('group', { name: 'move target orientation (OV, deg)' })
+			screen.getByRole('group', { name: 'move target orientation (Euler, deg)' })
 		).toBeInTheDocument()
 	})
 
