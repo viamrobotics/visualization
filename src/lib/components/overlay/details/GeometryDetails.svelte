@@ -40,7 +40,7 @@
 			values={current}
 			min={0}
 			onchange={(patch) => {
-				if (!Object.values(patch).every(isSize)) return
+				if (!Object.values(patch).every((size) => isSize(size))) return
 				entity.set(traits.Box, { ...current, ...patch })
 				invalidate()
 			}}

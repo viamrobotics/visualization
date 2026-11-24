@@ -27,7 +27,6 @@ The local position and orientation of one or more poses. A value that differs ac
 		ORIENTATION_FORMAT_KEY,
 		type OrientationFormat,
 	} from './orientationFormat'
-
 	import SharedNumberFields from './SharedNumberFields.svelte'
 	import { orientationEuler, sharedEuler, sharedPose } from './sharedPose'
 	import { formatSharedNumber, MIXED, type Shared } from './sharedValue'
