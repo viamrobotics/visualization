@@ -11,7 +11,6 @@
 
 	import { traits, useMappedEntitiesTraits, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 	import { detailsClipboardText } from './detailsClipboardText'
 	import { MIXED, sharedValue } from './sharedValue'
@@ -31,29 +30,22 @@
 	const { entities, children, sceneActions = true, ...rest }: Props = $props()
 
 	const world = useWorld()
-	const resourceByName = useResourceByName()
 	const environment = useEnvironment()
 	const toast = useToast()
 
 	const headers = useMappedEntitiesTraits(
 		() => entities,
-		[traits.Name, traits.FramesAPI, traits.Removable],
-		(entity) => {
-			const name = entity.get(traits.Name)
-			return {
-				name,
-				// Only a frame names a resource, so only a frame shows its subtype.
-				subtype: entity.has(traits.FramesAPI)
-					? (name ? resourceByName.current[name] : undefined)?.subtype
-					: '',
-				isRemovable: entity.has(traits.Removable),
-			}
-		}
+		[traits.Name, traits.Kind, traits.Removable],
+		(entity) => ({
+			name: entity.get(traits.Name),
+			kind: entity.get(traits.Kind) ?? '',
+			isRemovable: entity.has(traits.Removable),
+		})
 	)
 
 	const isSingle = $derived(entities.length === 1)
 	const title = $derived(isSingle ? headers.current[0]?.name : `${entities.length} selected`)
-	const subtype = $derived(sharedValue(headers.current.map((header) => header.subtype)))
+	const kind = $derived(sharedValue(headers.current.map((header) => header.kind)))
 	const isRemovable = $derived(headers.current.every((header) => header.isRemovable))
 
 	/** How long the copy button shows its check mark after a copy. */
@@ -91,8 +83,8 @@ just the inputs) raises it via `focus-within:z-5`. -->
 			>
 				<div class="flex w-[90%] items-center gap-1">
 					<strong class="overflow-hidden text-nowrap text-ellipsis">{title}</strong>
-					{#if subtype !== MIXED}
-						<span class="text-subtle-2">{subtype}</span>
+					{#if kind !== MIXED}
+						<span class="text-subtle-2">{kind}</span>
 					{/if}
 				</div>
 

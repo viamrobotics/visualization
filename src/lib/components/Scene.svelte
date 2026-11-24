@@ -9,7 +9,6 @@
 	import Entities from '#lib/components/Entities/Entities.svelte'
 	import RealisticLighting from '#lib/components/RealisticLighting.svelte'
 	import Selected from '#lib/components/Selected.svelte'
-	import SelectedTransformControls from '#lib/components/SelectedTransformControls.svelte'
 	import { traits, useQuery } from '#lib/ecs/index.js'
 	import { bvh } from '#lib/hooks/plugins/bvh.svelte.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
@@ -113,7 +112,6 @@
 <Environment url={hdrImage} />
 
 <PointerMissBox />
-<SelectedTransformControls />
 
 {#if !environment.current.isImmersive && settings.current.grid}
 	<Grid

@@ -21,7 +21,6 @@ import {
 vi.mock('#lib/hooks/use3DModels.svelte.js', () => ({
 	use3DModels: () => ({ current: {}, arms: [], shouldRender: false, parseArm: vi.fn() }),
 	matchModel: () => undefined,
-	modelKey: () => undefined,
 }))
 
 const dump = parsePlan(planJson)

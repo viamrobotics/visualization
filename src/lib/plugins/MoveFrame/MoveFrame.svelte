@@ -15,11 +15,13 @@
 	import MoveDashboard from './MoveDashboard.svelte'
 	import SavedPoseControls from './savedPoses/SavedPoseControls.svelte'
 	import SavedPoses from './savedPoses/SavedPoses.svelte'
+	import { useGhostModels } from './useGhostModels.svelte'
 
 	const environment = useEnvironment()
 	const selected = useSelectionOrder()
 
 	useEnvironmentMode('move')
+	useGhostModels()
 
 	/**
 	 * The name the motion service can move an entity by, or `undefined` when it has

@@ -1,7 +1,7 @@
 import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
 import { type Entity, type Trait, trait } from 'koota'
-import { Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
+import { Group, Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
 import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
@@ -104,10 +104,17 @@ export const InheritedInvisible = trait(() => true)
 /**
  * Marks a geometry entity whose 3D arm model is being rendered in place of its
  * collider, so the collider renderers (`Mesh`, `Boxes`, `Capsules`, `Cylinders`,
- * `Spheres`) skip it. Maintained by `provide3DModels`; kept separate from `Invisible` so
+ * `Spheres`) skip it. Maintained by `useModelColliderHiding`. Kept separate from `Invisible` so
  * it never disturbs the user's own visibility toggles or hides the CAD model.
  */
 export const ColliderHidden = trait()
+
+/**
+ * A loaded 3D model drawn at the entity's pose, offset by its `Center`. The value is shared
+ * between every entity showing the same model, so the renderer clones it rather than mounting it.
+ * Whoever loads the model attaches it, and removes it when the model should no longer show.
+ */
+export const Model = trait(() => new Group())
 
 /**
  * The `<component>:<id>` of the arm link this ghost copies, so it finds that link's 3D model the
@@ -215,6 +222,9 @@ export const GLTF = trait(() => ({
 }))
 
 export const FramesAPI = trait(() => true)
+
+/** What sort of thing the entity stands for, such as `arm` or `camera`, shown beside its name. */
+export const Kind = trait(() => '')
 
 /**
  * A frame the part config declares that the machine's frame system does not

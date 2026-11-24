@@ -2,7 +2,6 @@
 	import { Not } from 'koota'
 
 	import { traits, useQuery } from '#lib/ecs/index.js'
-	import { matchModel, modelKey, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
@@ -13,6 +12,7 @@
 	import Cylinders from './Cylinders.svelte'
 	import GeometryModel from './GeometryModel.svelte'
 	import GLTF from './GLTF.svelte'
+	import { useModelColliderHiding } from './hooks/useModelColliderHiding.svelte'
 	import Labels from './Labels.svelte'
 	import Line from './Line.svelte'
 	import Mesh from './Mesh.svelte'
@@ -20,8 +20,7 @@
 	import ShapeBatches from './ShapeBatches.svelte'
 	import Spheres from './Spheres.svelte'
 
-	const frameEntities = useQuery(traits.FramesAPI)
-	const ghostEntities = useQuery(traits.GhostModelKey)
+	const modelEntities = useQuery(traits.Model)
 	const meshEntities = useQuery(Not(traits.Points), traits.BufferGeometry)
 	const points = useQuery(traits.Points)
 	const lines = useQuery(traits.LinePositions)
@@ -29,26 +28,13 @@
 
 	const settings = useSettings()
 	const environment = useEnvironment()
-	const models = use3DModels()
 
 	const enableLabels = $derived(settings.current.enableLabels)
 
-	/**
-	 * A CAD model stands in for a collider named `<component>:<id>`, which reaches
-	 * the scene as a kinematics link frame. Narrowed to frames a model actually
-	 * covers: every other frame would mount a component that renders nothing, and
-	 * this list is every frame in the scene. Reading `Name` untracked is safe
-	 * because a renamed frame is respawned — `useFrames` keys its entities by name.
-	 * Ghosts of those frames join through `GhostModelKey`, which is set at spawn.
-	 */
-	const modelFrameEntities = $derived(
-		[...frameEntities.current, ...ghostEntities.current].filter(
-			(entity) => matchModel(modelKey(entity), models.current) !== undefined
-		)
-	)
+	useModelColliderHiding()
 </script>
 
-{#each modelFrameEntities as entity (entity)}
+{#each modelEntities.current as entity (entity)}
 	<GeometryModel {entity} />
 {/each}
 

@@ -6,6 +6,8 @@ export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
 export { type DetailsSection, useDetailsSection } from './hooks/useDetailsSections.svelte'
 export {
 	type EnvironmentMode,
+	type LeaveConfirmation,
+	type ModeOptions,
 	useEnvironmentMode,
 	useEnvironment,
 } from './hooks/useEnvironment.svelte'

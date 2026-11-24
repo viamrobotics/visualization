@@ -3,10 +3,8 @@
 	import { Download, LoaderCircle } from 'lucide-svelte'
 
 	import { useWorld } from '#lib/ecs/index.js'
-	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
-	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
 
 	import { exportSimScene } from './export-sim-scene'
@@ -19,8 +17,6 @@
 
 	const world = useWorld()
 	const frames = useFrames()
-	const models = use3DModels()
-	const settings = useSettings()
 	const bus = useEventBus()
 
 	let isExporting = $state(false)
@@ -42,8 +38,6 @@
 			const result = await exportSimScene({
 				world,
 				kinematics: kinematicsByComponent(frames.parts),
-				// The export shows what the scene draws, and `GeometryModel` draws arm models only in this mode.
-				armModels: settings.current.renderArmModels.includes('model') ? models.current : {},
 			})
 			download(result.zip)
 			bus.publish('diagnostic', {

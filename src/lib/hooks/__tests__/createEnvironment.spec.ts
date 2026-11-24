@@ -95,6 +95,34 @@ describe('createEnvironment mode availability', () => {
 		expect(environment.current.mode).toBe('monitor')
 	})
 
+	it('asks only the active mode what leaving it would lose', () => {
+		const environment = createEnvironment()
+		const discard = () => {}
+		environment.registerMode('monitor', {
+			confirmLeave: () => ({ description: 'monitor', discard }),
+		})
+		environment.registerMode('build', { confirmLeave: () => ({ description: 'build', discard }) })
+		environment.current.mode = 'build'
+
+		const confirmation = environment.leaveConfirmation()
+
+		expect(confirmation?.description).toBe('build')
+	})
+
+	it('stops asking a registration once it is released', () => {
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('build')
+		const release = environment.registerMode('build', {
+			confirmLeave: () => ({ description: 'build', discard: () => {} }),
+		})
+		environment.current.mode = 'build'
+
+		release()
+
+		expect(environment.leaveConfirmation()).toBeUndefined()
+	})
+
 	it('ignores a release called more than once', () => {
 		const environment = createEnvironment()
 		const release = environment.registerMode('build')

@@ -168,7 +168,7 @@
 	})
 
 	// No frame kind carries a named scene object to attach a gizmo to. See
-	// `SelectedTransformControls.svelte` for why this anchor stands in for one.
+	// `BuildFrames/BuildTransformControls.svelte` for why this anchor stands in for one.
 	const anchor = new Group()
 	anchor.matrixAutoUpdate = false
 

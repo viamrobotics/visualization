@@ -1,7 +1,7 @@
 <!--
 @component
 
-Renders a Viam Geometry object
+Renders an entity's `Model`
 -->
 <script lang="ts">
 	import type { Entity } from 'koota'
@@ -10,7 +10,6 @@ Renders a Viam Geometry object
 	import { Group } from 'three'
 
 	import { traits, useTrait } from '#lib/ecs/index.js'
-	import { matchModel, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { Pose } from '#lib/math/index.js'
 
@@ -29,9 +28,8 @@ Renders a Viam Geometry object
 	const settings = useSettings()
 
 	const { invalidate } = useThrelte()
-	const models = use3DModels()
 
-	const name = useTrait(() => entity, traits.Name)
+	const source = useTrait(() => entity, traits.Model)
 	const worldMatrix = useTrait(() => entity, traits.WorldMatrix)
 	const center = useTrait(() => entity, traits.Center)
 	const invisible = useTrait(() => entity, traits.InheritedInvisible)
@@ -50,14 +48,7 @@ Renders a Viam Geometry object
 	const isGhost = $derived(ghostModelKey.current !== undefined)
 	const opacity = $derived(isGhost ? (ghostOpacity.current ?? 1) : (override.current ?? 1))
 
-	const model = $derived.by(() => {
-		if (!settings.current.renderArmModels.includes('model')) {
-			return
-		}
-
-		const match = matchModel(ghostModelKey.current ?? name.current, models.current)
-		return match ? cloneWithOwnMaterials(match) : undefined
-	})
+	const model = $derived(source.current ? cloneWithOwnMaterials(source.current) : undefined)
 
 	const group = new Group()
 	group.matrixAutoUpdate = false

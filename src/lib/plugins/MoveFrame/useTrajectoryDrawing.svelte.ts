@@ -4,8 +4,7 @@ import type { JointMotions } from '#lib/motion/interpolateTrajectory.js'
 import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-import { useWorld } from '#lib/ecs/index.js'
-import { matchModel, modelKey, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+import { traits, useWorld } from '#lib/ecs/index.js'
 import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
 import { frameSystemToPlanFrames } from '#lib/motion/frameSystemToPlanFrames.js'
 import {
@@ -104,10 +103,8 @@ export const useTrajectoryDrawing = ({
 	// `spawnPreviewGhosts` fills it in place, keeping it the only handle teardown has.
 	const ghosts: PreviewGhosts = createPreviewGhosts()
 
-	const models = use3DModels()
-	const drawsAnyModel = () =>
-		models.shouldRender &&
-		ghosts.entities.some((entity) => matchModel(modelKey(entity), models.current) !== undefined)
+	// `useGhostModels` attaches a twin's model as it spawns, so this is current right after a draw.
+	const drawsAnyModel = () => ghosts.entities.some((entity) => entity.has(traits.Model))
 
 	// Held alongside the ghosts rather than derived where it is used: `set detail` reframes the same
 	// plan without a descriptor in scope, and it needs the same answer `draw` built.
