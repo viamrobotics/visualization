@@ -55,7 +55,8 @@
 
 	let { children } = $props()
 
-	let pluginsEnabled = false
+	// `?plugins=false` renders the bare scene, with every plugin unmounted.
+	const pluginsEnabled = $derived(page.url.searchParams.get('plugins') !== 'false')
 
 	const portOverride = $derived(readDrawServicePortOverride(page.url.search))
 
