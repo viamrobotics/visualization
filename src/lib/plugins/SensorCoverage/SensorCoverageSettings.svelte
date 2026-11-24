@@ -11,7 +11,6 @@ and which cameras draw one.
 	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
 
 	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
-
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
