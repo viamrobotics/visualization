@@ -189,27 +189,37 @@ const defaults = (): Settings => ({
 	},
 })
 
-export const provideSettings = () => {
-	let isLoaded = $state(false)
+interface SettingsOptions {
+	/**
+	 * Load and save the settings in IndexedDB under `motion-tools-settings`, in the host's origin.
+	 * Off, the settings start from the defaults and are never read or written there.
+	 */
+	persist: boolean
+}
+
+export const provideSettings = ({ persist }: SettingsOptions = { persist: true }) => {
+	let isLoaded = $state(!persist)
 	let settings = $state<Settings>(defaults())
 
 	// Key kept as `motion-tools-settings` after the rename to visualization; renaming it
 	// would silently discard every existing user's saved settings.
-	get<StoredSettings>('motion-tools-settings')
-		.then((response) => {
-			if (response) {
-				settings = { ...settings, ...migrateStoredSettings(response) }
-			}
-		})
-		.finally(() => {
-			isLoaded = true
-		})
+	if (persist) {
+		get<StoredSettings>('motion-tools-settings')
+			.then((response) => {
+				if (response) {
+					settings = { ...settings, ...migrateStoredSettings(response) }
+				}
+			})
+			.finally(() => {
+				isLoaded = true
+			})
+	}
 
 	// A record is stamped with the migration count on the way out, so the next load
 	// runs only what it has not seen. A user with no stored record never runs one,
 	// because `defaults()` is already current.
 	$effect(() => {
-		if (isLoaded) {
+		if (persist && isLoaded) {
 			set(
 				'motion-tools-settings',
 				$state.snapshot({

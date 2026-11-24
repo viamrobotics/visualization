@@ -30,6 +30,7 @@
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { setOrientationFromEuler } from '#lib/math/transform.js'
+	import { executeCommand } from '#lib/motion/planDoCommand.js'
 
 	import Collisions from './collisions/Collisions.svelte'
 	import { defaultMotionService, motionServiceNames } from './moveControls'
@@ -42,7 +43,6 @@
 	import MoveTargetGhost from './MoveTargetGhost.svelte'
 	import { fromDestinationPose, moveDelta, toDestinationPose } from './moveTargetPose'
 	import { parseMoveOptions } from './parseMoveOptions'
-	import { executeCommand } from './planDoCommand'
 	import SavePoseButton from './savedPoses/SavePoseButton.svelte'
 	import StopMoveButton from './StopMoveButton.svelte'
 	import { useMovedFrameMatrix } from './useMovedFrameMatrix.svelte'

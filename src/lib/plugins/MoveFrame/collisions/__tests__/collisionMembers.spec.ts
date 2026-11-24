@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { relations, traits } from '#lib/ecs/index.js'
 
+import { GhostOf } from '../../ghostOfRelation'
+import { PreviewGhost } from '../../previewGhostTrait'
 import { previewName } from '../../previewNames'
-import { GhostOf } from '../../relations'
-import { PreviewGhost } from '../../traits'
 import { armBitFor, collectMembers, isGhost } from '../collisionMembers'
 import { ENVIRONMENT_BIT } from '../interactionGroups'
 

@@ -4,10 +4,10 @@
 	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { useWorld } from '#lib/ecs/index.js'
 	import { use3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { kinematicsByComponent } from '#lib/kinematicsByComponent.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 	import { exportSimScene } from './export-sim-scene'
 
@@ -21,7 +21,7 @@
 	const frames = useFrames()
 	const models = use3DModels()
 	const settings = useSettings()
-	const logs = useLogs()
+	const bus = useEventBus()
 
 	let isExporting = $state(false)
 
@@ -46,13 +46,16 @@
 				armModels: settings.current.renderArmModels.includes('model') ? models.current : {},
 			})
 			download(result.zip)
-			logs.add(
-				`Exported ${result.bodyCount} bodies as URDF and MJCF, with ${result.noteCount} notes in export-notes.txt.`,
-				'info'
-			)
+			bus.publish('diagnostic', {
+				message: `Exported ${result.bodyCount} bodies as URDF and MJCF, with ${result.noteCount} notes in export-notes.txt.`,
+				level: 'info',
+			})
 		} catch (error) {
 			const reason = error instanceof Error ? error.message : String(error)
-			logs.add(`URDF and MJCF export failed: ${reason}`, 'error')
+			bus.publish('diagnostic', {
+				message: `URDF and MJCF export failed: ${reason}`,
+				level: 'error',
+			})
 		} finally {
 			isExporting = false
 		}

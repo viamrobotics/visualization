@@ -10,8 +10,8 @@ import { parsePlan } from '#lib/plugins/MotionPlanReplayer/parse-plan.js'
 
 import planJson from '../../MotionPlanReplayer/__tests__/__fixtures__/plan.json?raw'
 import { parseMoveOptions } from '../parseMoveOptions'
+import { PreviewGhost } from '../previewGhostTrait'
 import { liveFrameName } from '../previewNames'
-import { PreviewGhost } from '../traits'
 import { previewFrameIntervalMs } from '../usePreviewMove.svelte'
 import {
 	createPreviewMoveHarness,

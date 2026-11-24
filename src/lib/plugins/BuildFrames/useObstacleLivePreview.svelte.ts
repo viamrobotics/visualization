@@ -8,6 +8,7 @@ import { createResourceClient, useConnectionStatus } from '@viamrobotics/svelte-
 import { untrack } from 'svelte'
 
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
@@ -16,7 +17,6 @@ import {
 	obstacleGeometriesOf,
 	type ObstacleGeometryConfig,
 } from '#lib/obstacleAttributes.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import type { ObstaclePreviewToggle } from './obstaclePreviewToggle.svelte'
 
@@ -39,7 +39,7 @@ export const useObstacleLivePreview = (): ObstaclePreviewToggle => {
 	const environment = useEnvironment()
 	const frames = useFrames()
 	const partConfig = usePartConfig()
-	const logs = useLogs()
+	const bus = useEventBus()
 	const connectionStatus = useConnectionStatus(() => partID.current)
 
 	let isEnabled = $state(false)
@@ -90,8 +90,10 @@ export const useObstacleLivePreview = (): ObstaclePreviewToggle => {
 			)
 			.catch((error: unknown) => {
 				const reason = error instanceof Error ? error.message : String(error)
-				logs.add(`Failed to preview obstacle "${name}": ${reason}`, 'error', {
-					folder: 'frames',
+				bus.publish('diagnostic', {
+					message: `Failed to preview obstacle "${name}": ${reason}`,
+					level: 'error',
+					target: { folder: 'frames' },
 				})
 			})
 	}

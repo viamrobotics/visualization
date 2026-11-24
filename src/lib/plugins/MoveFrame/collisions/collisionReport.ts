@@ -5,8 +5,8 @@ import { traits } from '#lib/ecs/index.js'
 import type { CollisionReport } from './collisionStore.svelte'
 import type { CollisionPair } from './collisionWorld'
 
+import { GhostOf } from '../ghostOfRelation'
 import { liveFrameName } from '../previewNames'
-import { GhostOf } from '../relations'
 import { isGhost } from './collisionMembers'
 
 /**

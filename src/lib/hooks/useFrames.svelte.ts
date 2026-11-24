@@ -14,11 +14,11 @@ import {
 	TRANSLUCENT_GEOMETRY_OPACITY,
 	useWorld,
 } from '#lib/ecs/index.js'
+import { useEventBus } from '#lib/hooks/useEventBus.js'
 import { kinematicsByComponent as kinematicsByComponentOf } from '#lib/kinematicsByComponent.js'
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 
 import { machineFrameNames } from './machineFrameNames'
 import { mergeObstacleFrames } from './mergeObstacleFrames'
@@ -54,7 +54,7 @@ export const provideFrames = (partID: () => string) => {
 	const resourceByName = useResourceByName()
 	const client = useRobotClient(partID)
 	const connectionStatus = useConnectionStatus(partID)
-	const logs = useLogs()
+	const bus = useEventBus()
 
 	// In build mode the user authors the scene from the part config, so config
 	// frames win the merge below.
@@ -74,9 +74,17 @@ export const provideFrames = (partID: () => string) => {
 
 	$effect(() => {
 		if (query.isFetching) {
-			logs.add('Fetching frames...', 'info', { folder: 'frames' })
+			bus.publish('diagnostic', {
+				message: 'Fetching frames...',
+				level: 'info',
+				target: { folder: 'frames' },
+			})
 		} else if (query.error) {
-			logs.add(`Frames: ${query.error.message}`, 'error', { folder: 'frames' })
+			bus.publish('diagnostic', {
+				message: `Frames: ${query.error.message}`,
+				level: 'error',
+				target: { folder: 'frames' },
+			})
 		}
 	})
 

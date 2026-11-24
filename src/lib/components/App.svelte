@@ -5,7 +5,7 @@
 
 	import { Canvas } from '@threlte/core/webgpu'
 	import { PortalTarget } from '@threlte/extras/webgpu'
-	import { provideToast, ToastContainer } from '@viamrobotics/prime-core'
+	import { provideToast, ToastContainer, ToastVariant } from '@viamrobotics/prime-core'
 	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { ThemeUtils } from 'svelte-tweakpane-ui'
 	import { NeutralToneMapping } from 'three'
@@ -108,7 +108,7 @@
 	createPartIDContext(() => partID)
 
 	provideWeblabs()
-	provideToast()
+	const toast = provideToast()
 
 	let root = $state.raw<HTMLElement>()
 
@@ -120,7 +120,8 @@
 
 	providePartConfig(
 		() => partID,
-		() => localConfigProps
+		() => localConfigProps,
+		(message) => toast({ message, variant: ToastVariant.Danger })
 	)
 
 	$effect(() => {

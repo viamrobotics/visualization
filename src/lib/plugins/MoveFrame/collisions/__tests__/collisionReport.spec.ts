@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { traits } from '#lib/ecs/index.js'
 
+import { GhostOf } from '../../ghostOfRelation'
+import { PreviewGhost } from '../../previewGhostTrait'
 import { previewName } from '../../previewNames'
-import { GhostOf } from '../../relations'
-import { PreviewGhost } from '../../traits'
 import { toReports } from '../collisionReport'
 
 let world: ReturnType<typeof createWorld>

@@ -1,10 +1,10 @@
 import type { JsonValue } from '@bufbuild/protobuf'
 
+import { Constraints, WorldState } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
 import { Pose } from '#lib/math/index.js'
 
-import { parseMoveOptions } from '../parseMoveOptions'
 import {
 	executeCommand,
 	isAlreadyAtGoal,
@@ -34,6 +34,14 @@ const request = (overrides: Partial<Parameters<typeof planCommand>[0]> = {}) =>
 /** RDK `protojson.Unmarshal`s the command's value, so the payload is a JSON *string*. */
 const moveRequestOf = (command: Record<string, JsonValue>) =>
 	JSON.parse(command.plan as string) as Record<string, JsonValue>
+
+/** A sphere obstacle and a linear constraint, as the message instances a caller builds from JSON. */
+const moveOptions = () => ({
+	worldState: WorldState.fromJsonString(
+		'{"obstacles":[{"referenceFrame":"world","geometries":[{"sphere":{"radiusMm":50}}]}]}'
+	),
+	constraints: Constraints.fromJsonString('{"linearConstraint":[{"lineToleranceMm":5}]}'),
+})
 
 describe('planCommand', () => {
 	it('addresses the motion service and the frame being moved', () => {
@@ -65,19 +73,14 @@ describe('planCommand', () => {
 		)
 	})
 
-	it("omits world state and constraints when the panel's fields are empty", () => {
-		const moveRequest = moveRequestOf(request(parseMoveOptions('', '')))
+	it('omits world state and constraints when none are given', () => {
+		const moveRequest = moveRequestOf(request({ worldState: undefined, constraints: undefined }))
 		expect(moveRequest.worldState).toBeUndefined()
 		expect(moveRequest.constraints).toBeUndefined()
 	})
 
 	it('passes through the same world state and constraints `move` would receive', () => {
-		const options = parseMoveOptions(
-			'{"obstacles":[{"referenceFrame":"world","geometries":[{"sphere":{"radiusMm":50}}]}]}',
-			'{"linearConstraint":[{"lineToleranceMm":5}]}'
-		)
-
-		const moveRequest = moveRequestOf(request(options))
+		const moveRequest = moveRequestOf(request(moveOptions()))
 		expect(moveRequest.worldState).toEqual({
 			obstacles: [{ referenceFrame: 'world', geometries: [{ sphere: { radiusMm: 50 } }] }],
 		})
@@ -85,14 +88,11 @@ describe('planCommand', () => {
 	})
 
 	/**
-	 * `parseMoveOptions` returns real message instances, for which the rebuild is a no-op, so with
-	 * only that input deleting the rebuild passes every other test here.
+	 * The other tests pass real message instances, for which the rebuild is a no-op, so with only
+	 * that input deleting the rebuild passes every other test here.
 	 */
 	it('accepts the plain-message shape its signature actually describes', () => {
-		const options = parseMoveOptions(
-			'{"obstacles":[{"referenceFrame":"world","geometries":[{"sphere":{"radiusMm":50}}]}]}',
-			'{"linearConstraint":[{"lineToleranceMm":5}]}'
-		)
+		const options = moveOptions()
 
 		const moveRequest = moveRequestOf(
 			request({

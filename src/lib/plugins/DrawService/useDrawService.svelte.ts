@@ -21,7 +21,7 @@ import {
 } from '#lib/draw.js'
 import { hierarchy, traits, useWorld } from '#lib/ecs/index.js'
 import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
-import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
+import { useEventBus } from '#lib/hooks/useEventBus.js'
 
 import {
 	clearsDrawings,
@@ -63,12 +63,12 @@ export function provideDrawService() {
 	const drawConnectionConfig = useDrawConnectionConfig()
 	const serverRelationships = createServerRelationships()
 
-	const logs = useLogs()
+	const bus = useEventBus()
 
 	// Everything this service reports lands in the world tree's Drawn folder, which
 	// is the only row standing for the draw server's connection.
-	const log = (message: string, level?: 'info' | 'warn' | 'error') => {
-		logs.add(message, level, { folder: 'drawn' })
+	const log = (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
+		bus.publish('diagnostic', { message, level, target: { folder: 'drawn' } })
 	}
 
 	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)

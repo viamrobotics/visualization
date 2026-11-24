@@ -8,10 +8,10 @@
 	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
 	import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 	import { hierarchy, setOrAddTrait, traits, useWorld } from '#lib/ecs/index.js'
+	import { useEventBus } from '#lib/hooks/useEventBus.js'
 	import { usePointClouds } from '#lib/hooks/usePointclouds.svelte.js'
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { parsePcdInWorker } from '#lib/loaders/pcd/index.js'
-	import { useLogs } from '#lib/plugins/Logs/useLogs.svelte.js'
 	import { attachPointsBvh } from '#lib/three/pointsBvh.js'
 
 	interface Props {
@@ -22,7 +22,7 @@
 	let { partID, name }: Props = $props()
 
 	const world = useWorld()
-	const logs = useLogs()
+	const bus = useEventBus()
 	const settings = useSettings()
 	const { refetchers } = usePointClouds()
 	const { refreshRates, disabledCameras } = $derived(settings.current)
@@ -80,7 +80,7 @@
 		if (!enabled) return
 
 		const target = logTarget
-		return () => logs.retractTarget(target)
+		return () => bus.publish('diagnostic-cleared', { target })
 	})
 
 	$effect(() => {
@@ -88,9 +88,17 @@
 		if (!enabled) return
 
 		if (query.isFetching) {
-			logs.add(`Fetching pointcloud for ${name}...`, 'info', logTarget)
+			bus.publish('diagnostic', {
+				message: `Fetching pointcloud for ${name}...`,
+				level: 'info',
+				target: logTarget,
+			})
 		} else if (query.error) {
-			logs.add(`Error fetching pointcloud from ${name}: ${query.error.message}`, 'error', logTarget)
+			bus.publish('diagnostic', {
+				message: `Error fetching pointcloud from ${name}: ${query.error.message}`,
+				level: 'error',
+				target: logTarget,
+			})
 		}
 	})
 
@@ -167,11 +175,11 @@
 					return
 				}
 
-				logs.add(
-					error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
-					'error',
-					logTarget
-				)
+				bus.publish('diagnostic', {
+					message: error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
+					level: 'error',
+					target: logTarget,
+				})
 			})
 
 		return () => {

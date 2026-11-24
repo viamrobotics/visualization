@@ -185,7 +185,7 @@ export default defineConfig(
 						{
 							name: '#lib/plugins',
 							message:
-								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, including ControlWidgets, which imports @viamrobotics/test-widgets and closes an import cycle back into this package.",
+								"Import the plugin module directly (e.g. '#lib/plugins/Logs/useLogs.svelte'). The barrel pulls in every plugin, so reaching for it from inside src/lib loads plugins the importing module never uses.",
 						},
 					],
 					patterns: [

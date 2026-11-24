@@ -3,7 +3,7 @@ title: <Logs />
 description: Collect and display info, warning, and error messages inside a Viam visualizer.
 ---
 
-`<Logs />` adds a logs button to the workspace toolbar and a floating, filterable log panel. Code elsewhere — other plugins or your own app — pushes messages through the `useLogs` hook; the button badges unread warning and error counts, and the panel lists entries newest-first with per-level (**info** / **warn** / **error**) toggles.
+`<Logs />` adds a logs button to the workspace toolbar and a floating, filterable log panel. It collects the diagnostics the scene and other plugins report, and your own app can push messages through the `useLogs` hook; the button badges unread warning and error counts, and the panel lists entries newest-first with per-level (**info** / **warn** / **error**) toggles.
 
 Identical messages are de-duplicated into a single entry with a running count, and the buffer keeps only the 200 most recent entries.
 

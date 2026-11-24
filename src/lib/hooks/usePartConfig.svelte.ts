@@ -1,6 +1,5 @@
 import type { JsonValue } from '@viamrobotics/sdk'
 
-import { ToastVariant, useToast } from '@viamrobotics/prime-core'
 import { Struct } from '@viamrobotics/sdk'
 import { createAppMutation, createAppQuery } from '@viamrobotics/svelte-sdk'
 import { StateHistory } from 'runed'
@@ -164,7 +163,7 @@ export interface PartConfigContext {
 	 */
 	deleteComponents: (componentNames: readonly string[]) => void
 	/**
-	 * Writes the staged edits. A failure is reported to the user as a toast.
+	 * Writes the staged edits. A failure goes to the `onError` given to `providePartConfig`.
 	 *
 	 * @returns Whether the config was saved.
 	 */
@@ -178,9 +177,14 @@ export interface PartConfigContext {
 	endFrameEditHistoryEntry: () => void
 }
 
+/**
+ * @param onError Shows the user a failure they need to know about, such as a save that did not
+ * land. Omit it and the failure is only reported by `save` resolving `false`.
+ */
 export const providePartConfig = (
 	partID: () => string,
-	params: () => AppEmbeddedPartConfigProps | undefined
+	params: () => AppEmbeddedPartConfigProps | undefined,
+	onError?: (message: string) => void
 ) => {
 	const props = $derived(params())
 	const hasAppClient = hasViamAppClient()
@@ -191,7 +195,6 @@ export const providePartConfig = (
 	})
 	const fragmentInfo = useFragmentInfo()
 	const world = useWorld()
-	const toast = useToast()
 
 	const getCurrent = () => {
 		return (config.current?.toJson?.() ?? { components: [] }) as unknown as PartConfig
@@ -666,7 +669,7 @@ export const providePartConfig = (
 				return true
 			} catch (error) {
 				const reason = error instanceof Error ? error.message : String(error)
-				toast({ message: `Couldn't save the config: ${reason}`, variant: ToastVariant.Danger })
+				onError?.(`Couldn't save the config: ${reason}`)
 				return false
 			}
 		},

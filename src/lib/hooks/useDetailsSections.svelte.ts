@@ -6,8 +6,11 @@ import { SvelteSet } from 'svelte/reactivity'
 
 export const DETAILS_SECTIONS_CONTEXT_KEY = Symbol('details-sections')
 
-/** Which of a details card's tabs a section renders into. */
-export type DetailsTabId = 'details' | 'appearance'
+/**
+ * Which of a details card's tabs a section renders into. `test` is a tab of its own that a mode
+ * shows only while some section for it applies to the selection.
+ */
+export type DetailsTabId = 'details' | 'appearance' | 'test'
 
 export interface DetailsSection {
 	/**
@@ -28,7 +31,8 @@ export interface DetailsSection {
 	/**
 	 * Where the section lands. Defaults to `details`, the tab that carries pose,
 	 * dimensions, and relationships. Use `appearance` for a control over how the
-	 * entity is drawn, beside colour and opacity.
+	 * entity is drawn, beside colour and opacity, and `test` for controls that
+	 * exercise the resource behind the entity.
 	 */
 	tab?: DetailsTabId
 }

@@ -3,7 +3,6 @@
 
 	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { TransformControls } from '@threlte/extras/webgpu'
-	import { onDestroy } from 'svelte'
 	import { Group, Matrix4, Vector3 } from 'three'
 
 	import { transformSnaps } from '#lib/hooks/transformSnaps.js'
@@ -79,7 +78,7 @@
 
 	// Unmounting mid-drag (panel closed, tab switched, gizmo handed off) never
 	// fires `mouseUp`, which would leave the camera controls parked for good.
-	onDestroy(() => {
+	$effect(() => () => {
 		if (dragging) transformControls.setActive(false)
 	})
 

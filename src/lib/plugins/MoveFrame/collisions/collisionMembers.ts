@@ -4,8 +4,8 @@ import { hierarchy, traits } from '#lib/ecs/index.js'
 
 import type { CollisionMember } from './collisionWorld'
 
-import { GhostOf } from '../relations'
-import { PreviewGhost } from '../traits'
+import { GhostOf } from '../ghostOfRelation'
+import { PreviewGhost } from '../previewGhostTrait'
 import { ENVIRONMENT_BIT } from './interactionGroups'
 
 /** Cycle guard for the parent walk, mirroring `recomputeWorldMatrix`. */
