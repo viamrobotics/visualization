@@ -20,7 +20,7 @@ entities sharing a mesh share the upload.
 
 	import { asColor } from '#lib/buffer.js'
 	import { colors } from '#lib/color.js'
-	import { dimColor, traits, useOpacity, useTag, useTrait } from '#lib/ecs/index.js'
+	import { traits, useOpacity, useTag, useTrait } from '#lib/ecs/index.js'
 
 	import { composeMeshMatrix } from './composeMeshMatrix'
 	import { useShapeBatches } from './useShapeBatches'
@@ -40,19 +40,10 @@ entities sharing a mesh share the upload.
 	const colliderHidden = useTag(() => entity, traits.ColliderHidden)
 	const entityColors = useTrait(() => entity, traits.Colors)
 	const entityColor = useTrait(() => entity, traits.Color)
-	const dimmed = useTag(() => entity, traits.Dimmed)
 	const opacity = useOpacity(() => entity)
 	const bufferGeometry = useTrait(() => entity, traits.BufferGeometry)
 
-	const resolveBaseColor = (): Color => {
-		if (hasVertexColors) return new Color(0xffffff)
-		if (entityColors.current) return asColor(entityColors.current, new Color())
-
-		const rgb = entityColor.current
-		if (rgb) return new Color(rgb.r, rgb.g, rgb.b)
-
-		return new Color(colors.default)
-	}
+	const colorUtil = new Color()
 	const matrix = new Matrix4()
 
 	/**
@@ -71,10 +62,14 @@ entities sharing a mesh share the upload.
 	 */
 	const hasVertexColors = $derived(geometry?.getAttribute('color') !== undefined)
 
-	/** A fresh `Color` each time: a `$derived` returning the shared scratch instance would not propagate. */
 	const color = $derived.by(() => {
-		const picked = resolveBaseColor()
-		return dimmed.current ? dimColor(picked) : picked
+		if (hasVertexColors) return colorUtil.set(0xffffff)
+		if (entityColors.current) return asColor(entityColors.current, colorUtil)
+
+		const rgb = entityColor.current
+		if (rgb) return colorUtil.setRGB(rgb.r, rgb.g, rgb.b)
+
+		return colorUtil.set(colors.default)
 	})
 
 	let instance = $state.raw<ShapeInstanceIds | undefined>()

@@ -23,8 +23,6 @@ const https = process.argv.includes('--https')
  */
 const REAL_CANVAS_SPECS = [
 	'src/lib/components/ScopedScene/__tests__/**/*.{test,spec}.{js,ts}',
-	'src/lib/components/motion/__tests__/MoveTargetGizmo.svelte.spec.ts',
-	'src/lib/components/motion/__tests__/TrajectoryPreview.svelte.spec.ts',
 	'src/lib/three/__tests__/clampPointSize.spec.ts',
 ]
 

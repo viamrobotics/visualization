@@ -13,7 +13,6 @@
 	interface Props {
 		sceneCount?: number
 		withoutPartID?: boolean
-		frame?: string
 		inputBindingsEnabled?: boolean
 		snapping?: boolean
 		poseRefreshRate?: number
@@ -32,7 +31,6 @@
 	let {
 		sceneCount = 1,
 		withoutPartID = false,
-		frame,
 		inputBindingsEnabled,
 		snapping,
 		poseRefreshRate,
@@ -48,7 +46,6 @@
 		>
 			<ScopedScene
 				partID={withoutPartID ? undefined : `part-${index}`}
-				{frame}
 				{inputBindingsEnabled}
 				{snapping}
 				{poseRefreshRate}

@@ -9,14 +9,13 @@ Renders a Viam Geometry object
 	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { Group } from 'three'
 
-	import { dimOpacity, traits, useTag, useTrait } from '#lib/ecs/index.js'
+	import { traits, useTrait } from '#lib/ecs/index.js'
 	import { matchModel, use3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { Pose } from '#lib/math/index.js'
 
 	import { cloneWithOwnMaterials } from './cloneWithOwnMaterials'
 	import { useEntityEvents } from './hooks/useEntityEvents.svelte'
-	import { setModelDimmed } from './setModelDimmed'
 	import { setModelGhostAppearance } from './setModelGhostAppearance'
 	import { setModelOpacity } from './setModelOpacity'
 	import { setModelWireframe } from './setModelWireframe'
@@ -48,14 +47,8 @@ Renders a Viam Geometry object
 	// A ghost's `Opacity` is its translucency as a ghost, not a collider's, so it does apply.
 	const ghostOpacity = useTrait(() => entity, traits.Opacity)
 
-	const dimmed = useTag(() => entity, traits.Dimmed)
-
 	const isGhost = $derived(ghostModelKey.current !== undefined)
-	const opacity = $derived.by(() => {
-		if (isGhost) return ghostOpacity.current ?? 1
-		const userOpacity = override.current ?? 1
-		return dimmed.current ? dimOpacity(userOpacity) : userOpacity
-	})
+	const opacity = $derived(isGhost ? (ghostOpacity.current ?? 1) : (override.current ?? 1))
 
 	const model = $derived.by(() => {
 		if (!settings.current.renderArmModels.includes('model')) {
@@ -100,12 +93,6 @@ Renders a Viam Geometry object
 	$effect(() => {
 		if (!model || !isGhost || !ghostColor.current) return
 		setModelGhostAppearance(model, ghostColor.current)
-		invalidate()
-	})
-
-	$effect(() => {
-		if (!model || isGhost) return
-		setModelDimmed(model, dimmed.current)
 		invalidate()
 	})
 

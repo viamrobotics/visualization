@@ -1,10 +1,2 @@
-export type { TrajectoryStep } from '#lib/motion/jointPose.js'
-export { parsePlanResult } from '#lib/motion/planDoCommand.js'
-
-export type { MoveTarget } from './components/motion/MoveTarget'
-export { default as MoveTargetGizmo } from './components/motion/MoveTargetGizmo.svelte'
-export type { MoveTargetGizmoProps } from './components/motion/MoveTargetGizmoProps'
 export { default as ScopedScene } from './components/ScopedScene/ScopedScene.svelte'
 export type { ScopedSceneProps } from './components/ScopedScene/ScopedSceneProps'
-export { default as TrajectoryPreview } from './components/motion/TrajectoryPreview.svelte'
-export type { TrajectoryPreviewProps } from './components/motion/TrajectoryPreviewProps'

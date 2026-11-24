@@ -9,18 +9,6 @@ export interface ScopedSceneProps {
 	 */
 	partID?: string
 
-	/**
-	 * The frame the scene focuses on. That frame, every frame under it, and every frame above it
-	 * render opaque and in their own colors, so an arm's kinematic links and a gripper mounted on
-	 * it stay in focus. Every other collidable geometry still renders, at reduced opacity and with
-	 * its color muted. Point clouds and drawn shapes are left as they are.
-	 *
-	 * A component's bare name, such as `arm-1`, keeps its whole arm in focus, and `<name>_origin`
-	 * resolves to the same frame. A name that matches no frame de-emphasizes every geometry. Omit
-	 * it, or pass an empty string, and the scene renders as it does without focus.
-	 */
-	frame?: string
-
 	/** The camera pose the scene starts from. Omit it for the default view. */
 	cameraPose?: CameraPose
 

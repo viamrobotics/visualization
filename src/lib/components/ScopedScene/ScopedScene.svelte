@@ -21,13 +21,10 @@ and mounting with no provider is planned.
 
 	import type { ScopedSceneProps } from './ScopedSceneProps'
 
-	import { useFrameFocus } from './useFrameFocus.svelte'
-
 	const DEFAULT_POSE_REFRESH_RATE_MS = 1000
 
 	let {
 		partID = '',
-		frame,
 		cameraPose,
 		inputBindingsEnabled = false,
 		children,
@@ -37,7 +34,6 @@ and mounting with no provider is planned.
 	}: ScopedSceneProps = $props()
 
 	provideWorld()
-	useFrameFocus(() => frame)
 	provideKeybindings()
 
 	const settings = provideSettings({ persist: false })

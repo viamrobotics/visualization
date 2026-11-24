@@ -17,7 +17,7 @@ and one `invalidate()`.
 
 	import { asColor } from '#lib/buffer.js'
 	import { colors } from '#lib/color.js'
-	import { dimColor, resolveOpacity, traits, useWorld } from '#lib/ecs/index.js'
+	import { resolveOpacity, traits, useWorld } from '#lib/ecs/index.js'
 
 	import { composeSphereMatrix } from './composeSphereMatrix'
 	import { useShapeBatches } from './useShapeBatches'
@@ -32,7 +32,7 @@ and one `invalidate()`.
 	const colorUtil = new Color()
 
 	/** Same resolution order as `Boxes.svelte` / `Capsules.svelte`. */
-	const resolveBaseColor = (entity: Entity): Color => {
+	const resolveColor = (entity: Entity): Color => {
 		const vertexColors = entity.get(traits.Colors)
 		if (vertexColors && vertexColors.length >= 3) {
 			return asColor(vertexColors, colorUtil)
@@ -44,12 +44,6 @@ and one `invalidate()`.
 		}
 
 		return colorUtil.set(colors.default)
-	}
-
-	/** Blends a `Dimmed` entity's color toward gray in place, which is safe because `colorUtil` is scratch. */
-	const resolveColor = (entity: Entity): Color => {
-		const color = resolveBaseColor(entity)
-		return entity.has(traits.Dimmed) ? dimColor(color) : color
 	}
 
 	const writeAppearance = (entity: Entity, ids: ShapeInstanceIds) => {
@@ -176,8 +170,6 @@ and one `invalidate()`.
 			world.onAdd(traits.OpacityOverride, enqueueAppearance),
 			world.onChange(traits.OpacityOverride, enqueueAppearance),
 			world.onRemove(traits.OpacityOverride, enqueueAppearance),
-			world.onAdd(traits.Dimmed, enqueueAppearance),
-			world.onRemove(traits.Dimmed, enqueueAppearance),
 			world.onAdd(traits.InheritedInvisible, enqueueAppearance),
 			world.onRemove(traits.InheritedInvisible, enqueueAppearance),
 			world.onAdd(traits.ColliderHidden, enqueueAppearance),
