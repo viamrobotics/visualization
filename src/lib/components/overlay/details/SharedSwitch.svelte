@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Switch } from '@viamrobotics/prime-core'
+	import { Switch } from '@viamrobotics/prime-ui'
 
 	import { MIXED, MIXED_TEXT, type Shared } from './sharedValue'
 
@@ -29,9 +29,8 @@
 
 		<Switch
 			aria-label={isMixed ? `${label}, mixed` : label}
-			on={value === true}
+			bind:checked={() => value === true, (next) => onchange(next)}
 			{disabled}
-			on:change={(event) => onchange(event.detail)}
 		/>
 	</span>
 </div>

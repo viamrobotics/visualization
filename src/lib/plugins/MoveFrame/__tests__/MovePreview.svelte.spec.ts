@@ -121,7 +121,7 @@ describe('MovePreview', () => {
 		})
 		render(MovePreview, { props: { preview: state, frameName: 'arm' } })
 
-		await userEvent.click(screen.getByRole('button', { name: 'Interpolated' }))
+		await userEvent.click(screen.getByRole('radio', { name: 'Interpolated' }))
 
 		expect(setDetail).toHaveBeenCalledWith('interpolated')
 	})
@@ -134,14 +134,8 @@ describe('MovePreview', () => {
 			},
 		})
 
-		expect(screen.getByRole('button', { name: 'Interpolated' })).toHaveAttribute(
-			'aria-pressed',
-			'true'
-		)
-		expect(screen.getByRole('button', { name: 'Waypoints' })).toHaveAttribute(
-			'aria-pressed',
-			'false'
-		)
+		expect(screen.getByRole('radio', { name: 'Interpolated' })).toBeChecked()
+		expect(screen.getByRole('radio', { name: 'Waypoints' })).not.toBeChecked()
 	})
 
 	it('plans when the panel has a goal staged', async () => {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlert } from '@mdi/js'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
 	import { poseStalenessSummary } from '#lib/hooks/poseStaleness/poseStalenessSummary.js'
 	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
 
@@ -11,25 +11,23 @@
 </script>
 
 <Tooltip
-	placement="right-start"
 	interactive
 	openDelay={150}
 >
-	{#snippet children(tooltipID)}
+	<Tooltip.Trigger class="inline-flex items-center">
 		<span
 			class="bg-warning-bright flex size-4 shrink-0 items-center justify-center rounded-sm text-white"
-			aria-describedby={tooltipID}
 			role="img"
 			aria-label={summary}
 		>
 			<Icon
-				name="alert"
+				icon={mdiAlert}
 				size="xs"
 			/>
 		</span>
-	{/snippet}
+	</Tooltip.Trigger>
 
-	{#snippet content()}
+	<Tooltip.Content placement="right">
 		<div class="font-public-sans flex flex-col gap-1.5">
 			<p class="font-medium">{summary}</p>
 
@@ -50,5 +48,5 @@
 				</p>
 			{/if}
 		</div>
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

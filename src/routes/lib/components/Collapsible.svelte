@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiChevronDown } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import * as collapsible from '@zag-js/collapsible'
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 
@@ -17,8 +18,8 @@
 		aria-label="Expand connection config"
 	>
 		<Icon
-			name="chevron-down"
-			cx={api.open ? 'rotate-180' : ''}
+			icon={mdiChevronDown}
+			class={[api.open && 'rotate-180']}
 		/>
 	</button>
 

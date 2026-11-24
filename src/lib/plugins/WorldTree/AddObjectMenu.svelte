@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiChevronLeft, mdiChevronRight, mdiPlus } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
+	import { ViamComponent } from '@viamrobotics/prime-ui/icons'
 	import { tick } from 'svelte'
 
 	import Popover from '#lib/components/overlay/Popover.svelte'
@@ -66,7 +68,7 @@
 					'focus-visible:outline-gray-6 focus-visible:outline focus-visible:-outline-offset-1',
 				]}
 			>
-				<Icon name="plus" />
+				<Icon icon={mdiPlus} />
 			</button>
 		{/snippet}
 
@@ -97,7 +99,7 @@
 						<span
 							class="bg-light text-gray-6 flex size-9 shrink-0 items-center justify-center mix-blend-multiply"
 						>
-							<Icon name="viam-component" />
+							<Icon icon={ViamComponent} />
 						</span>
 
 						<span class="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -111,7 +113,7 @@
 							class="text-subtle-2 self-center"
 							aria-hidden="true"
 						>
-							<Icon name="chevron-right" />
+							<Icon icon={mdiChevronRight} />
 						</span>
 					</button>
 				</div>
@@ -129,7 +131,7 @@
 							class="text-gray-7 hover:bg-ghost-light focus-visible:outline-gray-6 grid size-6 cursor-pointer place-content-center focus-visible:outline focus-visible:-outline-offset-1"
 							onclick={() => showScreen('objects')}
 						>
-							<Icon name="chevron-left" />
+							<Icon icon={mdiChevronLeft} />
 						</button>
 						<p
 							id={obstacleHeadingId}
@@ -172,7 +174,7 @@
 		title={partConfig.error ?? 'This machine’s configuration is not editable here.'}
 		class="text-disabled grid size-7 cursor-not-allowed place-content-center"
 	>
-		<Icon name="plus" />
+		<Icon icon={mdiPlus} />
 	</button>
 {/if}
 

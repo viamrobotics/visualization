@@ -6,7 +6,7 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { useToast } from '@viamrobotics/prime-ui'
 
 	import Kbd from '#lib/components/overlay/Kbd.svelte'
 	import { traits } from '#lib/ecs/index.js'
@@ -54,13 +54,11 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 		pendingSelection.select(copies.map(({ name }) => name))
 		partConfig.createComponents(copies)
 
-		toast({
-			message:
-				copies.length === 1
-					? `Duplicated ${sources[0]?.name} as ${copies[0]?.name}.`
-					: `Duplicated ${copies.length} obstacles.`,
-			variant: ToastVariant.Success,
-		})
+		toast.success(
+			copies.length === 1
+				? `Duplicated ${sources[0]?.name} as ${copies[0]?.name}.`
+				: `Duplicated ${copies.length} obstacles.`
+		)
 	}
 
 	const duplicateKeybinding = useHotkey({
@@ -73,8 +71,9 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 	})
 </script>
 
-<Button
-	class="flex-1"
+<button
+	type="button"
+	class="button button-compact flex-1"
 	aria-label={label}
 	onclick={handleDuplicate}
 >
@@ -82,4 +81,4 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 		Duplicate
 		<Kbd binding={duplicateKeybinding} />
 	</div>
-</Button>
+</button>

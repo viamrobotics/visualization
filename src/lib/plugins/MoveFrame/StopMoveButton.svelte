@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { IconButton, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { mdiStopCircleOutline } from '@mdi/js'
+	import { Icon, useToast } from '@viamrobotics/prime-ui'
 
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 
@@ -19,20 +20,21 @@
 		try {
 			await armClient.stop(arm)
 		} catch (error) {
-			toast({
-				message: error instanceof Error ? error.message : `Failed to stop "${arm}".`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(error instanceof Error ? error.message : `Failed to stop "${arm}".`)
 		}
 	}
 </script>
 
 {#if armClient.names.includes(arm)}
-	<IconButton
-		icon="stop-circle-outline"
-		label={`Stop "${arm}"`}
-		variant="danger"
-		disabled={!isMoving}
-		onclick={() => void stop()}
-	/>
+	<button
+		type="button"
+		class="icon-button button-danger button-ghost"
+		aria-label={`Stop "${arm}"`}
+		aria-disabled={!isMoving || undefined}
+		onclick={() => {
+			if (isMoving) void stop()
+		}}
+	>
+		<Icon icon={mdiStopCircleOutline} />
+	</button>
 {/if}

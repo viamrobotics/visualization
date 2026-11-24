@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Button, Input, Select } from '@viamrobotics/prime-core'
+	import { mdiPlus } from '@mdi/js'
+	import { Select, TextField } from '@viamrobotics/prime-controls'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import { relations, traits, useQuery, useTrait } from '#lib/ecs/index.js'
 	import { SubEntityLinkType } from '#lib/ecs/relations.js'
@@ -29,6 +31,16 @@
 			.map((e: Entity) => e.get(traits.Name)!)
 			.toSorted()
 	})
+
+	const relationshipTypeItems = [
+		{ value: '', label: 'Select a relationship type...' },
+		{ value: SubEntityLinkType.HoverLink, label: 'HoverLink' },
+	]
+
+	const entityItems = $derived([
+		{ value: '', label: 'Select an entity...' },
+		...entityNames.map((entityName) => ({ value: entityName, label: entityName })),
+	])
 
 	let showRelationshipOptions = $state(false)
 	let selectedRelationshipType = $state<string>('')
@@ -65,63 +77,47 @@
 	}
 </script>
 
-<Button
-	class="mt-2 w-full"
-	icon={showRelationshipOptions ? undefined : 'plus'}
-	variant={showRelationshipOptions ? 'dark' : 'primary'}
+<button
+	type="button"
+	class={['button button-compact mt-2 w-full', showRelationshipOptions && 'button-dark']}
 	onclick={() => {
 		if (showRelationshipOptions) {
 			resetForm()
 		}
 		showRelationshipOptions = !showRelationshipOptions
-	}}>{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}</Button
+	}}
 >
+	{#if !showRelationshipOptions}
+		<Icon icon={mdiPlus} />
+	{/if}
+	{showRelationshipOptions ? 'Cancel' : 'Add Relationship'}
+</button>
 
 {#if showRelationshipOptions}
 	<div class="mt-2 flex flex-col gap-2">
 		<div>
-			<label
-				for="relationship-type-select"
-				class="text-subtle-2 mb-1 block text-xs">Relationship type</label
-			>
+			<span class="text-subtle-2 mb-1 block text-xs">Relationship type</span>
 			<Select
-				id="relationship-type-select"
 				aria-label="Select relationship type"
-				value={selectedRelationshipType}
-				onchange={(event: InputEvent) => {
-					selectedRelationshipType = (event.target as HTMLSelectElement).value as 'HoverLink'
-				}}
-			>
-				<option value="">Select a relationship type...</option>
-				<option value="HoverLink">HoverLink</option>
-			</Select>
+				items={relationshipTypeItems}
+				bind:value={selectedRelationshipType}
+			/>
 		</div>
 		<div>
-			<label
-				for="relationship-entity-select"
-				class="text-subtle-2 mb-1 block text-xs">Entity</label
-			>
+			<span class="text-subtle-2 mb-1 block text-xs">Entity</span>
 			<Select
-				id="relationship-entity-select"
 				aria-label="Select entity for relationship"
-				value={selectedRelationshipEntity}
-				onchange={(event: InputEvent) => {
-					selectedRelationshipEntity = (event.target as HTMLSelectElement).value
-				}}
-			>
-				<option value="">Select an entity...</option>
-				{#each entityNames as entityName (entityName)}
-					<option value={entityName}>{entityName}</option>
-				{/each}
-			</Select>
+				items={entityItems}
+				bind:value={selectedRelationshipEntity}
+			/>
 		</div>
 		<div>
 			<label
 				for="relationship-formula-input"
 				class="text-subtle-2 mb-1 block text-xs">Index mapping</label
 			>
-			<Input
-				on:keydown={(e) => e.stopPropagation()}
+			<TextField
+				onkeydown={(event) => event.stopPropagation()}
 				id="relationship-formula-input"
 				aria-label="Math formula for index mapping"
 				bind:value={relationshipFormula}
@@ -129,13 +125,13 @@
 			/>
 		</div>
 		<div>
-			<Button
-				class="w-full"
-				variant="primary"
+			<button
+				type="button"
+				class="button button-compact w-full"
 				onclick={handleAdd}
 			>
 				Add
-			</Button>
+			</button>
 		</div>
 	</div>
 {/if}

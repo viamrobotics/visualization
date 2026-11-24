@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { NumericInput } from '@viamrobotics/prime-core'
+	import { NumberField } from '@viamrobotics/prime-controls'
 
 	import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
@@ -36,6 +36,9 @@
 	}: Props = $props()
 
 	const stepsInputID = $props.id()
+	const stepsLabelID = `${stepsInputID}-label`
+
+	const ARROW_STEP: Record<string, number> = { ArrowUp: 1, ArrowDown: -1 }
 
 	let expanded = $state(false)
 
@@ -116,19 +119,29 @@
 		<div class="flex flex-col gap-1">
 			<div class="flex items-center gap-2">
 				<label
+					id={stepsLabelID}
 					class="text-subtle-1"
 					for={stepsInputID}>Interpolate</label
 				>
-				<NumericInput
-					type="integer"
+				<!--
+					Typing commits on change, since each commit rebuilds the path and a partly typed
+					number would clamp under the user. Arrow keys commit each step, as a native input did.
+				-->
+				<NumberField
 					id={stepsInputID}
+					aria-labelledby={stepsLabelID}
 					value={pathSteps}
 					min={MIN_PATH_STEPS}
 					max={MAX_PATH_STEPS}
 					step={1}
-					cx="w-16"
-					onchange={(event: Event) =>
-						setPathSteps(Number((event.target as HTMLInputElement).value))}
+					class="w-16"
+					onchange={(event) => setPathSteps(Number(event.currentTarget.value))}
+					onkeydown={(event) => {
+						const direction = ARROW_STEP[event.key]
+						if (direction === undefined) return
+						event.preventDefault()
+						setPathSteps(pathSteps + direction)
+					}}
 				/>
 				<span class="text-subtle-1">steps from start to end</span>
 			</div>

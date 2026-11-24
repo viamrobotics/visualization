@@ -91,8 +91,9 @@ That's a complete, working plugin. Now give it a control. Because the button liv
 ```svelte
 <!-- Waypoint.svelte -->
 <script lang="ts">
+	import { mdiEyeOffOutline, mdiEyeOutline } from '@mdi/js'
 	import { T } from '@threlte/core/webgpu'
-	import { IconButton } from '@viamrobotics/prime-core'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import { DashboardPortal } from '@viamrobotics/visualization'
 
@@ -105,12 +106,14 @@ That's a complete, working plugin. Now give it a control. Because the button liv
 </script>
 
 <DashboardPortal>
-	<IconButton
-		icon={visible ? 'eye-outline' : 'eye-off-outline'}
-		label="Toggle waypoint"
-		variant="secondary"
+	<button
+		type="button"
+		class="icon-button button-ghost"
+		aria-label="Toggle waypoint"
 		onclick={() => (visible = !visible)}
-	/>
+	>
+		<Icon icon={visible ? mdiEyeOutline : mdiEyeOffOutline} />
+	</button>
 </DashboardPortal>
 
 {#if visible}
@@ -161,16 +164,18 @@ To place DOM chrome in the visualizer's overlay, render it into one of the expor
 	type="tip"
 	title="Bring your own button"
 >
-	The dashboard `Button` the built-in plugins use is internal and **not** exported. Put a prime-core
-	[`IconButton`](https://design.viam.com/) (or any element of your own) inside the Portal instead —
-	it keeps you aligned with the visualizer's design system.
+	The dashboard `Button` the built-in plugins use is internal and **not** exported. Put a `<button>`
+	with the [`icon-button`](https://viamrobotics.github.io/prime/packages/tailwind-config/component-classes/)
+	class inside the Portal instead, or any element of your own. The class keeps you aligned with the
+	visualizer's design system.
 </Aside>
 
 For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `FloatingPanel` whose `isOpen` you bind — this is exactly how [`<ControlWidgets />`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/ControlWidgets/ControlWidgets.svelte) works:
 
 ```svelte
 <script lang="ts">
-	import { IconButton } from '@viamrobotics/prime-core'
+	import { mdiCog } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import { FloatingPanel, WorkspacePortal } from '@viamrobotics/visualization'
 
@@ -178,12 +183,14 @@ For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `Float
 </script>
 
 <WorkspacePortal>
-	<IconButton
-		icon="cog"
-		label="Diagnostics"
-		variant="secondary"
+	<button
+		type="button"
+		class="icon-button button-ghost"
+		aria-label="Diagnostics"
 		onclick={() => (open = !open)}
-	/>
+	>
+		<Icon icon={mdiCog} />
+	</button>
 </WorkspacePortal>
 
 <FloatingPanel

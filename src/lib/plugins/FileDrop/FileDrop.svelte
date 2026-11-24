@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements'
 
-	import { ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { useToast } from '@viamrobotics/prime-ui'
 
 	import type { FileDropperSuccess } from '#lib/fileDropper.js'
 
@@ -81,9 +81,9 @@
 				}
 			}
 
-			toast({ message: `${result.name} loaded.`, variant: ToastVariant.Success })
+			toast.success(`${result.name} loaded.`)
 		},
-		(message) => toast({ message, variant: ToastVariant.Danger })
+		(message) => toast.danger(message)
 	)
 </script>
 

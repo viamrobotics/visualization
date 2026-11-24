@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlertCircleOutline } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
@@ -166,10 +167,7 @@
 			{#if sceneBuilder.uiState === 'error'}
 				<div class="border-danger-medium bg-danger-light flex flex-col gap-2 rounded border p-2.5">
 					<div class="text-danger-dark flex items-center gap-1.5 font-medium">
-						<Icon
-							name="alert-circle-outline"
-							aria-hidden="true"
-						/>
+						<Icon icon={mdiAlertCircleOutline} />
 						Error
 					</div>
 					<p class="text-danger-dark">{sceneBuilder.errorMessage}</p>

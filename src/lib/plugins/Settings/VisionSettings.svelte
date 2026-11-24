@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Switch } from '@viamrobotics/prime-core'
+	import { Switch } from '@viamrobotics/prime-ui'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
 	import RefreshRate from '#lib/components/overlay/RefreshRate.svelte'
@@ -31,10 +31,13 @@
 		<div class="flex items-center justify-between py-0.5">
 			{visionService}
 			<Switch
-				on={disabledVisionServices[visionService] !== true}
-				on:change={(event) => {
-					disabledVisionServices[visionService] = !event.detail
-				}}
+				aria-label={visionService}
+				bind:checked={
+					() => disabledVisionServices[visionService] !== true,
+					(isEnabled) => {
+						disabledVisionServices[visionService] = !isEnabled
+					}
+				}
 			/>
 		</div>
 	{:else}

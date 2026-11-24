@@ -8,13 +8,12 @@ drives its arm there through the saver's "go to" switch position.
 	import type { Entity } from 'koota'
 	import type { HTMLAttributes } from 'svelte/elements'
 
-	import { Button, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Dialog, useToast } from '@viamrobotics/prime-ui'
 	import { SwitchClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { List, type ListChangeEvent } from 'svelte-tweakpane-ui'
 
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
-	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import { traits, useQuery, useTrait } from '#lib/ecs/index.js'
 	import { useResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
@@ -141,13 +140,11 @@ drives its arm there through the saver's "go to" switch position.
 
 		try {
 			await client.setPosition(GO_TO_POSITION)
-			toast({ message: `Moved "${arm}" to ${saverName}.`, variant: ToastVariant.Success })
+			toast.success(`Moved "${arm}" to ${saverName}.`)
 		} catch (error) {
-			toast({
-				message:
-					error instanceof Error ? error.message : `Failed to move "${arm}" to ${saverName}.`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(
+				error instanceof Error ? error.message : `Failed to move "${arm}" to ${saverName}.`
+			)
 		} finally {
 			moveExecutionOwner.release(arm)
 		}
@@ -160,12 +157,11 @@ drives its arm there through the saver's "go to" switch position.
 		partConfig.deleteComponent(saverName)
 		// A failed save already shows its own error toast.
 		if (partConfig.canSave && !(await partConfig.save())) return
-		toast({
-			message: partConfig.canSave
+		toast.success(
+			partConfig.canSave
 				? `Deleted ${saverName}.`
-				: `Removed ${saverName} from the config. Save the config to keep the change.`,
-			variant: ToastVariant.Success,
-		})
+				: `Removed ${saverName} from the config. Save the config to keep the change.`
+		)
 	}
 </script>
 
@@ -208,24 +204,30 @@ drives its arm there through the saver's "go to" switch position.
 
 			<div>
 				<div class="flex flex-wrap items-center gap-2">
-					<Button
-						variant="success"
-						aria-disabled={disabledReason !== undefined}
-						class={disabledReason === undefined ? undefined : 'cursor-not-allowed opacity-50'}
-						progress={isMoving ? 'indeterminate' : undefined}
+					<button
+						type="button"
+						class="button button-compact button-success"
+						aria-disabled={disabledReason !== undefined || undefined}
+						aria-busy={isMoving || undefined}
 						title={disabledReason ?? `Move "${arm}" to ${saverName}`}
 						onclick={() => void moveToPose()}
 					>
+						{#if isMoving}
+							<span
+								class="progress-dots"
+								aria-hidden="true"
+							></span>
+						{/if}
 						Move to pose
-					</Button>
+					</button>
 					<StopMoveButton
 						{arm}
 						{isMoving}
 					/>
-					<Button
-						variant="outline-danger"
-						aria-disabled={!canEditConfig || isMoving}
-						class={canEditConfig && !isMoving ? undefined : 'cursor-not-allowed opacity-50'}
+					<button
+						type="button"
+						class="button button-compact button-danger button-outline"
+						aria-disabled={!canEditConfig || isMoving || undefined}
 						title={canEditConfig
 							? `Remove ${saverName} from the machine config`
 							: 'You do not have permission to edit this machine’s config.'}
@@ -234,7 +236,7 @@ drives its arm there through the saver's "go to" switch position.
 						}}
 					>
 						Delete
-					</Button>
+					</button>
 				</div>
 				{#if disabledReason !== undefined && !isMoving}
 					<p class="text-subtle-2 mt-1 text-xs">{disabledReason}</p>
@@ -244,23 +246,22 @@ drives its arm there through the saver's "go to" switch position.
 	</div>
 </DetailsPanel>
 
-<Dialog
-	bind:open={deleteOpen}
-	title={`Delete ${saverName}?`}
-	description={`Removes the saved pose of "${arm}" from the machine config.`}
->
-	{#snippet actions({ close })}
-		<Button
-			variant="ghost"
-			onclick={close}
-		>
-			Cancel
-		</Button>
-		<Button
-			variant="danger"
-			onclick={deleteSaver}
-		>
-			Delete
-		</Button>
-	{/snippet}
+<Dialog bind:open={deleteOpen}>
+	<Dialog.Content class="w-full max-w-sm gap-3">
+		<Dialog.Title>{`Delete ${saverName}?`}</Dialog.Title>
+		<Dialog.Description>
+			Removes the saved pose of "{arm}" from the machine config.
+		</Dialog.Description>
+
+		<div class="mt-1 flex justify-end gap-2">
+			<Dialog.Close class="button button-compact button-ghost">Cancel</Dialog.Close>
+			<button
+				type="button"
+				class="button button-compact button-danger"
+				onclick={deleteSaver}
+			>
+				Delete
+			</button>
+		</div>
+	</Dialog.Content>
 </Dialog>

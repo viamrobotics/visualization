@@ -8,13 +8,18 @@
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '#lib/components/overlay/dashboard/DropdownPane.svelte'
 	import DashboardPortal from '#lib/components/overlay/Portals/DashboardPortal.svelte'
-	import ToggleGroup from '#lib/components/overlay/ToggleGroup.svelte'
 	import { useMouseRaycaster } from '#lib/hooks/useMouseRaycaster.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import MeasurePoint from './MeasurePoint.svelte'
 
 	const settings = useSettings()
+
+	const AXIS_SETTINGS = [
+		{ label: 'x', key: 'enableMeasureAxisX' },
+		{ label: 'y', key: 'enableMeasureAxisY' },
+		{ label: 'z', key: 'enableMeasureAxisZ' },
+	] as const
 
 	const htmlPosition = new Vector3()
 
@@ -97,20 +102,24 @@
 			>
 				<Element>
 					<div class="font-public-sans text-subtle-1 flex items-center gap-2 text-xs">
-						<span>Axes</span>
-						<ToggleGroup
-							multiple
-							options={[
-								{ label: 'x', selected: settings.current.enableMeasureAxisX },
-								{ label: 'y', selected: settings.current.enableMeasureAxisY },
-								{ label: 'z', selected: settings.current.enableMeasureAxisZ },
-							]}
-							onSelect={(details) => {
-								settings.current.enableMeasureAxisX = details.includes('x')
-								settings.current.enableMeasureAxisY = details.includes('y')
-								settings.current.enableMeasureAxisZ = details.includes('z')
-							}}
-						/>
+						<span id="measure-axes-label">Axes</span>
+						<div
+							class="button-group"
+							role="group"
+							aria-labelledby="measure-axes-label"
+						>
+							{#each AXIS_SETTINGS as axis (axis.key)}
+								{@const isOn = settings.current[axis.key]}
+								<button
+									type="button"
+									class={['button button-compact', isOn && 'button-dark']}
+									aria-pressed={isOn}
+									onclick={() => (settings.current[axis.key] = !isOn)}
+								>
+									{axis.label}
+								</button>
+							{/each}
+						</div>
 					</div>
 				</Element>
 			</DropdownPane>

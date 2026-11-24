@@ -5,7 +5,8 @@ The **Sensors** settings tab: the master switch for coverage frusta, how far the
 and which cameras draw one.
 -->
 <script lang="ts">
-	import { Input, Switch } from '@viamrobotics/prime-core'
+	import { NumberField } from '@viamrobotics/prime-controls'
+	import { Switch } from '@viamrobotics/prime-ui'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 
 	import type { IntrinsicsStatus } from '#lib/hooks/useCameraIntrinsics.svelte.js'
@@ -29,6 +30,7 @@ and which cameras draw one.
 	}
 
 	const settings = useSettings()
+	const uid = $props.id()
 	const partID = usePartID()
 	const machineStatus = useMachineStatus(() => partID.current)
 	// An empty list means nothing until the machine's first status reply arrives.
@@ -41,12 +43,7 @@ and which cameras draw one.
 	<label class="flex items-center justify-between gap-2">
 		Camera coverage
 
-		<Switch
-			on={settings.current.enableSensorCoverage}
-			on:change={(event) => {
-				settings.current.enableSensorCoverage = event.detail
-			}}
-		/>
+		<Switch bind:checked={settings.current.enableSensorCoverage} />
 	</label>
 
 	<p class="text-subtle-2">
@@ -54,18 +51,29 @@ and which cameras draw one.
 		a feed.
 	</p>
 
-	<label class="flex items-center justify-between gap-2">
-		Range (m)
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-range-label"
+			for="{uid}-range"
+		>
+			Range (m)
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
+			<NumberField
+				id="{uid}-range"
+				aria-labelledby="{uid}-range-label"
 				min={0}
-				bind:value={settings.current.sensorCoverageRange}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				bind:value={
+					() => settings.current.sensorCoverageRange,
+					(range) => {
+						if (range !== undefined) settings.current.sensorCoverageRange = range
+					}
+				}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
 	<p class="text-subtle-2">
 		How far out the frustum is drawn. Cameras report no depth range, so this is a display choice.
@@ -84,10 +92,13 @@ and which cameras draw one.
 			</span>
 
 			<Switch
-				on={disabledCoverageCameras[camera] !== true}
-				on:change={(event) => {
-					disabledCoverageCameras[camera] = !event.detail
-				}}
+				aria-label={camera}
+				bind:checked={
+					() => disabledCoverageCameras[camera] !== true,
+					(isEnabled) => {
+						disabledCoverageCameras[camera] = !isEnabled
+					}
+				}
 			/>
 		</div>
 	{:else}

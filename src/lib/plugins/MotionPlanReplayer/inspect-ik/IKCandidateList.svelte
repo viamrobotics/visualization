@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Tooltip } from '@viamrobotics/prime-core'
+	import { Tooltip } from '@viamrobotics/prime-ui'
 
 	import IKCandidateDetail from './IKCandidateDetail.svelte'
 	import IKCandidateRow from './IKCandidateRow.svelte'
@@ -28,56 +28,52 @@
 		<div class="flex flex-wrap items-center gap-1">
 			{#each ORDER as status (status)}
 				{@const active = ctx.statusFilter.has(status)}
-				<Tooltip
-					let:tooltipID
-					location="bottom"
-				>
-					<button
-						type="button"
-						aria-pressed={active}
-						aria-describedby={tooltipID}
-						class={[
-							'flex items-center gap-1 rounded border px-1.5 py-0.5 tabular-nums',
-							'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
-							active ? 'border-medium bg-light' : 'border-light text-subtle-2',
-						]}
-						onclick={() => ctx.toggleStatusFilter(status)}
-					>
-						<IKStatusDot {status} />
-						{ctx.counts[status]}
-						<span class="sr-only">{IK_STATUS_LABEL[status]}</span>
-					</button>
-					<span slot="description">
+				<Tooltip openDelay={0}>
+					<Tooltip.Trigger>
+						<button
+							type="button"
+							aria-pressed={active}
+							class={[
+								'flex items-center gap-1 rounded border px-1.5 py-0.5 tabular-nums',
+								'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
+								active ? 'border-medium bg-light' : 'border-light text-subtle-2',
+							]}
+							onclick={() => ctx.toggleStatusFilter(status)}
+						>
+							<IKStatusDot {status} />
+							{ctx.counts[status]}
+							<span class="sr-only">{IK_STATUS_LABEL[status]}</span>
+						</button>
+					</Tooltip.Trigger>
+					<Tooltip.Content placement="bottom">
 						<span class="font-medium">{IK_STATUS_LABEL[status]}</span> — {IK_STATUS_DESCRIPTION[
 							status
 						]}
-					</span>
+					</Tooltip.Content>
 				</Tooltip>
 			{/each}
 
 			<div class="ml-auto flex items-center gap-1">
 				<span class="text-subtle-1">Sort</span>
 				{#each [['seed', 'Seed'], ['cost', 'Cost']] as const as [mode, label] (mode)}
-					<Tooltip
-						let:tooltipID
-						location="bottom"
-					>
-						<button
-							type="button"
-							aria-pressed={ctx.sortMode === mode}
-							aria-describedby={tooltipID}
-							class={[
-								'rounded border px-1.5 py-0.5',
-								'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
-								ctx.sortMode === mode ? 'border-medium bg-light' : 'border-light text-subtle-2',
-							]}
-							onclick={() => ctx.setSortMode(mode)}
-						>
-							{label}
-						</button>
-						<span slot="description">
+					<Tooltip openDelay={0}>
+						<Tooltip.Trigger>
+							<button
+								type="button"
+								aria-pressed={ctx.sortMode === mode}
+								class={[
+									'rounded border px-1.5 py-0.5',
+									'hover:bg-ghost-light focus-visible:ring-info-dark focus-visible:ring-1 focus-visible:outline-none',
+									ctx.sortMode === mode ? 'border-medium bg-light' : 'border-light text-subtle-2',
+								]}
+								onclick={() => ctx.setSortMode(mode)}
+							>
+								{label}
+							</button>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="bottom">
 							<span class="font-medium">{label}</span> — {SORT_DESCRIPTION[mode]}
-						</span>
+						</Tooltip.Content>
 					</Tooltip>
 				{/each}
 			</div>

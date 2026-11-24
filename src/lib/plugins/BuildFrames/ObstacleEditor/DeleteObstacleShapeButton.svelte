@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
 
-	import { Button } from '@viamrobotics/prime-core'
-
 	import { relations, selectOnly, useWorld } from '#lib/ecs/index.js'
 	import { obstacleGeometriesOf } from '#lib/obstacleAttributes.js'
 	import { removeObstacleGeometries } from '#lib/obstacleGeometryList.js'
@@ -57,15 +55,17 @@
 </script>
 
 <div class="flex min-w-0 flex-1 flex-col">
-	<Button
-		variant="danger"
-		class="w-full"
-		disabled={emptiesAnObstacle}
+	<button
+		type="button"
+		class="button button-compact button-danger w-full"
+		aria-disabled={emptiesAnObstacle || undefined}
 		title={emptiesAnObstacle ? 'An obstacle needs at least one geometry' : undefined}
-		onclick={handleDelete}
+		onclick={() => {
+			if (!emptiesAnObstacle) handleDelete()
+		}}
 	>
 		{label}
-	</Button>
+	</button>
 
 	{#if error}
 		<p

@@ -16,11 +16,16 @@ This rule is about **visual craft + design-system fidelity**. Svelte code conven
 
 ## Components first
 
-Prefer PRIME components (`@viamrobotics/prime-core`) over native or hand-rolled ones: `Button`, `IconButton`, `Icon`, `Tooltip`, `Input`, `Select`, `Switch`, `Label`, toasts (`useToast` / `ToastContainer`). Before building a control, check design.viam.com — if PRIME has it (Badge, Banner, Breadcrumbs, Code Snippet, Collapsible, Context menu, Modal, Pill, Progress, Radio, Tabs, Toggle Buttons, Tooltip), use it and extend PRIME rather than replacing it.
+Prefer PRIME over native or hand-rolled UI. Never import `@viamrobotics/prime-core`. It stays installed only because `@viamrobotics/test-widgets` renders it. Docs: https://viamrobotics.github.io/prime/
 
-- Stateful primitives PRIME doesn't cover (tabs, toggle-group, popover, floating-panel, collapsible, tree-view) → `@zag-js/*`, the established pattern.
+- Form input (text, number, select, toggle buttons) → `@viamrobotics/prime-controls` (`TextField`, `NumberField`, `Select`, `ToggleButtons`).
+- Other components → `@viamrobotics/prime-ui`: `Icon`, `Switch`, `Tooltip`, `Banner`, `Collapsible`, `Dialog`, `Popover`, `Menu`, `Tabs`, `Progress`, toasts (`provideToast` / `useToast` / `Toast`).
+- Buttons, icon buttons, badges, pills and progress dots are classes from `@viamrobotics/tailwind-config` on native elements: `button`, `button-danger`, `button-outline`, `button-ghost`, `icon-button`, `badge`, `badge-warning`, `pill`, `progress-dots`. Every `button` also takes `button-compact`, because the default size is too large for this dense UI. Icon buttons are always `icon-button button-ghost`, never `button-outline`.
+- Code editing → `CodeEditor` from `@viamrobotics/prime-editor`.
+
+- Stateful primitives prime-ui doesn't cover (floating-panel, tree-view, the local `Popover`) → `@zag-js/*`. Never build a local tooltip, dialog, or toggle group: use prime-ui `Tooltip` and `Dialog`, and prime-controls `ToggleButtons`. A multi-select toggle is a `button-group` of `aria-pressed` buttons.
 - Control panels (sliders, points, color, rotation) → `svelte-tweakpane-ui`, themed globally by `primeTheme` from `@viamrobotics/tweakpane-config` via `ThemeUtils.setGlobalDefaultTheme(primeTheme)` (set once in `App.svelte`, client-side only). Don't restyle tweakpane ad hoc — fix the theme.
-- Icons: prime-core `Icon` (typed `IconName`) is preferred; `lucide-svelte` exists, use only where PRIME has no equivalent. Decorative icons get `aria-hidden="true"`.
+- Icons: prime-ui `Icon` with an `@mdi/js` path (`<Icon icon={mdiCog} />`), or a Viam glyph from `@viamrobotics/prime-ui/icons`. `lucide-svelte` exists, use only where neither has an equivalent. prime-ui `Icon` is decorative by default. Pass `aria-label` only when it carries meaning.
 
 ## Color & tokens
 

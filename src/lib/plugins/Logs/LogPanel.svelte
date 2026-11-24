@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Badge, Icon } from '@viamrobotics/prime-core'
+	import { mdiTrashCanOutline } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import { PersistedState, Throttled } from 'runed'
 
 	import { useLogs } from './useLogs.svelte'
@@ -32,11 +33,14 @@
 				levels.current.error = !levels.current.error
 			}}
 		>
-			<Badge
-				label="error"
-				variant={levels.current.error ? 'danger' : 'inactive'}
-				cx="transition group-hover:brightness-95"
-			/>
+			<span
+				class={[
+					'badge transition group-hover:brightness-95',
+					levels.current.error && 'badge-danger',
+				]}
+			>
+				error
+			</span>
 		</button>
 
 		<button
@@ -47,11 +51,14 @@
 				levels.current.warn = !levels.current.warn
 			}}
 		>
-			<Badge
-				label="warn"
-				variant={levels.current.warn ? 'warning' : 'inactive'}
-				cx="transition group-hover:brightness-95"
-			/>
+			<span
+				class={[
+					'badge transition group-hover:brightness-95',
+					levels.current.warn && 'badge-warning',
+				]}
+			>
+				warn
+			</span>
 		</button>
 
 		<button
@@ -62,11 +69,14 @@
 				levels.current.info = !levels.current.info
 			}}
 		>
-			<Badge
-				label="info"
-				variant={levels.current.info ? 'neutral' : 'inactive'}
-				cx="transition group-hover:brightness-95"
-			/>
+			<span
+				class={[
+					'badge transition group-hover:brightness-95',
+					levels.current.info && 'badge-neutral',
+				]}
+			>
+				info
+			</span>
 		</button>
 
 		<button
@@ -79,7 +89,7 @@
 			}}
 		>
 			<Icon
-				name="trash-can-outline"
+				icon={mdiTrashCanOutline}
 				size="sm"
 			/>
 		</button>

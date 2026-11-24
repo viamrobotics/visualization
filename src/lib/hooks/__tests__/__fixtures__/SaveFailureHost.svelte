@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { provideToast, ToastContainer, ToastVariant } from '@viamrobotics/prime-core'
+	import { provideToast, Toast } from '@viamrobotics/prime-ui'
 	import { untrack } from 'svelte'
 
 	import { provideWorld } from '#lib/ecs/index.js'
@@ -23,7 +23,7 @@
 	providePartConfig(
 		() => 'part-id',
 		() => undefined,
-		toast && ((message) => toast({ message, variant: ToastVariant.Danger }))
+		toast && ((message) => toast.danger(message))
 	)
 
 	const partConfig = usePartConfig()
@@ -36,7 +36,7 @@
 </script>
 
 {#if notifier === 'toast'}
-	<ToastContainer />
+	<Toast />
 {/if}
 
 <button onclick={save}>Save</button>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { provideToast } from '@viamrobotics/prime-core'
+	import { provideToast } from '@viamrobotics/prime-ui'
 
 	import { provideWorld } from '#lib/ecs/index.js'
 	import { provideFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'

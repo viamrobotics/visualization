@@ -5,19 +5,12 @@ Saves where `arm` is right now as a new `erh:vmodutils:arm-position-saver` in th
 adds the vmodutils module when the machine has nothing to load that model from.
 -->
 <script lang="ts">
-	import {
-		Banner,
-		BannerVariant,
-		Button,
-		Input,
-		InputStates,
-		ToastVariant,
-		useToast,
-	} from '@viamrobotics/prime-core'
+	import { mdiContentSaveOutline } from '@mdi/js'
+	import { TextField } from '@viamrobotics/prime-controls'
+	import { Banner, Dialog, Icon, useToast } from '@viamrobotics/prime-ui'
 	import { useResourceStatuses, useRobotClient } from '@viamrobotics/svelte-sdk'
 	import { untrack } from 'svelte'
 
-	import Dialog from '#lib/components/overlay/Dialog.svelte'
 	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
@@ -140,10 +133,7 @@ adds the vmodutils module when the machine has nothing to load that model from.
 		const descriptors = buildFrameDescriptors(frameSystemToPlanFrames(frames.parts))
 		const joints = armInputsFromJointPositions(descriptors, arm, positions)
 		if (joints === undefined) {
-			toast({
-				message: `Cannot save a pose for "${arm}": its kinematics do not cover every joint.`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(`Cannot save a pose for "${arm}": its kinematics do not cover every joint.`)
 			return
 		}
 
@@ -159,10 +149,7 @@ adds the vmodutils module when the machine has nothing to load that model from.
 		// Unknown is not "absent": a fragment may already load the module, and a second entry beside
 		// it would fight its pinned version.
 		if (isLoaded === undefined && !isModuleInPartConfig()) {
-			toast({
-				message: 'Cannot check which modules the machine runs. Reconnect and try again.',
-				variant: ToastVariant.Danger,
-			})
+			toast.danger('Cannot check which modules the machine runs. Reconnect and try again.')
 			return
 		}
 
@@ -174,97 +161,95 @@ adds the vmodutils module when the machine has nothing to load that model from.
 		open = false
 		// A failed save already shows its own error toast.
 		if (partConfig.canSave && !(await partConfig.save())) return
-		toast({
-			message: partConfig.canSave
+		toast.success(
+			partConfig.canSave
 				? `Saved the current pose of "${arm}" as ${saverName}.`
-				: `Added ${saverName} to the config. Save the config to keep it.`,
-			variant: ToastVariant.Success,
-		})
+				: `Added ${saverName} to the config. Save the config to keep it.`
+		)
 	}
 
 	const id = $props.id()
 	const nameId = `${id}-name`
+	const nameLabelId = `${id}-name-label`
 	const errorId = `${id}-error`
 </script>
 
-<Button
-	variant="ghost"
-	icon="content-save-outline"
-	aria-disabled={disabledReason !== undefined}
-	class={disabledReason === undefined ? undefined : 'cursor-not-allowed opacity-50'}
+<button
+	type="button"
+	class="button button-compact button-ghost"
+	aria-disabled={disabledReason !== undefined || undefined}
 	title={disabledReason ?? `Save where "${arm}" is now as a position saver`}
 	onclick={() => {
 		if (disabledReason === undefined) open = true
 	}}
 >
+	<Icon icon={mdiContentSaveOutline} />
 	Save current pose
-</Button>
+</button>
 
-<Dialog
-	bind:open
-	role="dialog"
-	title="Save current pose"
->
-	{#if hasStagedMove}
-		<Banner
-			variant={BannerVariant.Warning}
-			size="sm"
-		>
-			{#snippet titleContent()}
-				A move is staged
-			{/snippet}
-			{#snippet subtitle()}
-				This saves where "{arm}" is now, not the target shown by the ghost.
-			{/snippet}
-		</Banner>
-	{/if}
+<Dialog bind:open>
+	<Dialog.Content class="w-full max-w-sm gap-3">
+		<Dialog.Title>Save current pose</Dialog.Title>
 
-	<div>
-		<label
-			for={nameId}
-			class="text-subtle-2 mb-1 block text-xs"
-		>
-			Name
-		</label>
-		<Input
-			id={nameId}
-			aria-describedby={nameError === undefined ? undefined : errorId}
-			bind:value={name}
-			onkeydown={(event: KeyboardEvent) => {
-				if (event.key !== 'Enter') return
-				event.preventDefault()
-				void save()
-			}}
-			state={nameError === undefined ? InputStates.NONE : InputStates.ERROR}
-		/>
-		{#if nameError !== undefined}
-			<p
-				id={errorId}
-				class="text-danger-dark mt-1 text-xs"
-			>
-				{nameError}
-			</p>
+		{#if hasStagedMove}
+			<Banner variant="warning">
+				<Banner.Title>A move is staged</Banner.Title>
+				<Banner.Description>
+					This saves where "{arm}" is now, not the target shown by the ghost.
+				</Banner.Description>
+			</Banner>
 		{/if}
-		<p class="text-subtle-2 mt-2 text-xs">
-			Saves the joint positions of "{arm}" right now to the machine config.
-		</p>
-	</div>
 
-	{#snippet actions({ close })}
-		<Button
-			variant="ghost"
-			onclick={close}
-		>
-			Cancel
-		</Button>
-		<Button
-			variant="primary"
-			aria-disabled={nameError !== undefined || saving}
-			class={nameError === undefined ? undefined : 'cursor-not-allowed opacity-50'}
-			progress={saving ? 'indeterminate' : undefined}
-			onclick={() => void save()}
-		>
-			Save
-		</Button>
-	{/snippet}
+		<div>
+			<label
+				id={nameLabelId}
+				for={nameId}
+				class="text-subtle-2 mb-1 block text-xs"
+			>
+				Name
+			</label>
+			<TextField
+				id={nameId}
+				aria-labelledby={nameLabelId}
+				aria-describedby={nameError === undefined ? undefined : errorId}
+				bind:value={name}
+				onkeydown={(event) => {
+					if (event.key !== 'Enter') return
+					event.preventDefault()
+					void save()
+				}}
+				state={nameError === undefined ? undefined : 'error'}
+			/>
+			{#if nameError !== undefined}
+				<p
+					id={errorId}
+					class="text-danger-dark mt-1 text-xs"
+				>
+					{nameError}
+				</p>
+			{/if}
+			<p class="text-subtle-2 mt-2 text-xs">
+				Saves the joint positions of "{arm}" right now to the machine config.
+			</p>
+		</div>
+
+		<div class="mt-1 flex justify-end gap-2">
+			<Dialog.Close class="button button-compact button-ghost">Cancel</Dialog.Close>
+			<button
+				type="button"
+				class="button button-compact"
+				aria-disabled={nameError !== undefined || saving || undefined}
+				aria-busy={saving || undefined}
+				onclick={() => void save()}
+			>
+				{#if saving}
+					<span
+						class="progress-dots"
+						aria-hidden="true"
+					></span>
+				{/if}
+				Save
+			</button>
+		</div>
+	</Dialog.Content>
 </Dialog>

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Icon, ToastVariant, Tooltip, useToast } from '@viamrobotics/prime-core'
+	import { mdiBugOutline } from '@mdi/js'
+	import { Icon, Tooltip, useToast } from '@viamrobotics/prime-ui'
 	import { Eye, EyeOff } from 'lucide-svelte'
 
 	import TrajectoryScrubber from '#lib/components/motion/TrajectoryScrubber.svelte'
@@ -42,7 +43,7 @@
 
 	const handlePlanFile = async (name: string, content: string) => {
 		if (ctx.plans.some((p) => p.name === name)) {
-			toast({ message: `"${truncate(name, 24)}" already loaded.`, variant: ToastVariant.Warning })
+			toast.warning(`"${truncate(name, 24)}" already loaded.`)
 			return
 		}
 
@@ -51,7 +52,7 @@
 			const result = await planDropper({ name, content, resolvePlanSnapshots })
 
 			if (!result.success) {
-				toast({ message: result.error.message, variant: ToastVariant.Danger })
+				toast.danger(result.error.message)
 				return
 			}
 
@@ -68,10 +69,7 @@
 			if (typeof content === 'string') await handlePlanFile(file.name, content)
 		})
 		reader.addEventListener('error', () => {
-			toast({
-				message: `"${truncate(file.name, 24)}" failed to load.`,
-				variant: ToastVariant.Danger,
-			})
+			toast.danger(`"${truncate(file.name, 24)}" failed to load.`)
 		})
 		reader.readAsText(file)
 	}
@@ -135,32 +133,29 @@
 						{/if}
 					</span>
 					<span class="grow truncate">{plan.name}</span>
-					<Tooltip
-						let:tooltipID
-						location="bottom"
-					>
-						<button
-							type="button"
-							class="border-success-medium text-success-dark hover:bg-success-light active:bg-success-light focus-visible:ring-success-dark ml-1 rounded border p-0.5 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
-							aria-label={`Inspect IK for ${plan.name}`}
-							aria-describedby={tooltipID}
-							aria-disabled={ik.status === 'loading'}
-							onclick={(e) => {
-								e.stopPropagation()
-								if (ik.status === 'loading') return
-								// Inspect mode takes the panel over, leaving no control for a replayed plan's
-								// geometry — so it goes rather than lingering unreachable in the scene.
-								ctx.clearActivePlan()
-								void ik.inspect(plan.name, plan.content)
-							}}
-						>
-							<Icon
-								name="bug-outline"
-								size="sm"
-								aria-hidden="true"
-							/>
-						</button>
-						<p slot="description">Inspect IK plans</p>
+					<Tooltip openDelay={0}>
+						<Tooltip.Trigger>
+							<button
+								type="button"
+								class="border-success-medium text-success-dark hover:bg-success-light active:bg-success-light focus-visible:ring-success-dark ml-1 rounded border p-0.5 focus-visible:ring-1 focus-visible:outline-none aria-disabled:opacity-50"
+								aria-label={`Inspect IK for ${plan.name}`}
+								aria-disabled={ik.status === 'loading'}
+								onclick={(e) => {
+									e.stopPropagation()
+									if (ik.status === 'loading') return
+									// Inspect mode takes the panel over, leaving no control for a replayed plan's
+									// geometry — so it goes rather than lingering unreachable in the scene.
+									ctx.clearActivePlan()
+									void ik.inspect(plan.name, plan.content)
+								}}
+							>
+								<Icon
+									icon={mdiBugOutline}
+									size="sm"
+								/>
+							</button>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="bottom">Inspect IK plans</Tooltip.Content>
 					</Tooltip>
 
 					<button

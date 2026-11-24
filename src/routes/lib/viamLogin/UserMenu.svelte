@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiCog, mdiLogout } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import Popover from '#lib/components/overlay/Popover.svelte'
 
@@ -40,7 +41,7 @@
 			{#if initials}
 				{initials}
 			{:else}
-				<Icon name="logout" />
+				<Icon icon={mdiLogout} />
 			{/if}
 		</button>
 	{/snippet}
@@ -64,7 +65,7 @@
 						window.open(USER_SETTINGS_URL, '_blank', 'noopener')
 					}}
 				>
-					<span class="text-gray-6"><Icon name="cog" /></span>
+					<span class="text-gray-6"><Icon icon={mdiCog} /></span>
 					Settings
 				</button>
 				<button
@@ -75,7 +76,7 @@
 						onSignOut()
 					}}
 				>
-					<span class="text-gray-6"><Icon name="logout" /></span>
+					<span class="text-gray-6"><Icon icon={mdiLogout} /></span>
 					Sign out
 				</button>
 			</div>

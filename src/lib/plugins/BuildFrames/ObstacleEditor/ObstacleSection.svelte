@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { Expandable, Icon, Switch } from '@viamrobotics/prime-core'
-
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
+	import { mdiInformationOutline } from '@mdi/js'
+	import { Collapsible, Icon, Switch, Tooltip } from '@viamrobotics/prime-ui'
 
 	import type { ObstaclePreviewToggle } from '../obstaclePreviewToggle.svelte'
 
@@ -20,66 +19,53 @@
 	let open = $state(true)
 </script>
 
-{#snippet trigger({ isOpen }: { isOpen: boolean })}
-	<span class="flex w-full items-center gap-1">
-		<Icon
-			name={isOpen ? 'chevron-down' : 'chevron-right'}
-			aria-hidden="true"
-		/>
+<Collapsible bind:open>
+	<Collapsible.Trigger>
 		<strong class="font-semibold">obstacle</strong>
-	</span>
-{/snippet}
+	</Collapsible.Trigger>
 
-{#snippet content()}
-	<div class="flex flex-col gap-2 pt-2">
-		<div class="flex flex-col gap-1">
-			<div class="flex items-center justify-between gap-2">
-				<span class="flex items-center gap-1">
-					Preview on machine
-					<Tooltip placement="top">
-						{#snippet children(tooltipID)}
-							<button
-								class="text-subtle-2 hover:text-default flex"
-								aria-label="About preview on machine"
-								aria-describedby={tooltipID}
-							>
-								<Icon
-									name="information-outline"
-									aria-hidden="true"
-								/>
-							</button>
-						{/snippet}
-
-						{#snippet content()}
-							While on, the running machine plans around your unsaved edits to this obstacle, before
-							you save. Your saved config is not changed. Turning this off, or leaving Build mode,
-							switches the machine back to the last saved shape.
-						{/snippet}
-					</Tooltip>
-				</span>
-				<Switch
-					aria-label="Preview on machine"
-					on={preview.isEnabled}
-					disabled={unavailableReason !== undefined}
-					on:change={(event) => {
-						preview.isEnabled = event.detail
-					}}
-				/>
+	<Collapsible.Content>
+		<div class="flex flex-col gap-2 pt-2">
+			<div class="flex flex-col gap-1">
+				<div class="flex items-center justify-between gap-2">
+					<span class="flex items-center gap-1">
+						Preview on machine
+						<Tooltip>
+							<Tooltip.Trigger>
+								<button
+									type="button"
+									class="text-subtle-2 hover:text-default flex"
+									aria-label="About preview on machine"
+								>
+									<Icon icon={mdiInformationOutline} />
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Content placement="top">
+								While on, the running machine plans around your unsaved edits to this obstacle,
+								before you save. Your saved config is not changed. Turning this off, or leaving
+								Build mode, switches the machine back to the last saved shape.
+							</Tooltip.Content>
+						</Tooltip>
+					</span>
+					<Switch
+						aria-label="Preview on machine"
+						disabled={unavailableReason !== undefined}
+						bind:checked={
+							() => preview.isEnabled,
+							(next) => {
+								preview.isEnabled = next
+							}
+						}
+					/>
+				</div>
+				{#if unavailableReason}
+					<p class="text-subtle-2">{unavailableReason}</p>
+				{:else if preview.isEnabled}
+					<p class="text-subtle-2">The running machine is planning around this unsaved shape.</p>
+				{/if}
 			</div>
-			{#if unavailableReason}
-				<p class="text-subtle-2">{unavailableReason}</p>
-			{:else if preview.isEnabled}
-				<p class="text-subtle-2">The running machine is planning around this unsaved shape.</p>
-			{/if}
+
+			<ObstacleEditor {name} />
 		</div>
-
-		<ObstacleEditor {name} />
-	</div>
-{/snippet}
-
-<Expandable
-	bind:open
-	{trigger}
-	{content}
-	triggerClass="w-full text-left"
-/>
+	</Collapsible.Content>
+</Collapsible>

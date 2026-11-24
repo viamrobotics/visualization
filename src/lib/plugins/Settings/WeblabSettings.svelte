@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Switch } from '@viamrobotics/prime-core'
+	import { Switch } from '@viamrobotics/prime-ui'
 	import { onMount } from 'svelte'
 
 	import { useWeblabs, WEBLABS_EXPERIMENTS } from '#lib/hooks/useWeblabs.svelte.js'
@@ -16,10 +16,7 @@
 	{#each knownWeblabs as experiment (experiment)}
 		<label class="flex items-center justify-between gap-2 py-0.5">
 			{experiment}
-			<Switch
-				on={weblabs.isActive(experiment)}
-				on:change={() => weblabs.toggle(experiment)}
-			/>
+			<Switch bind:checked={() => weblabs.isActive(experiment), () => weblabs.toggle(experiment)} />
 		</label>
 	{:else}
 		No weblabs defined

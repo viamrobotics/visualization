@@ -1,13 +1,16 @@
 <script lang="ts">
 	import {
-		Banner,
-		BannerVariant,
-		Button,
-		Icon,
-		IconButton,
-		Input,
-		Switch,
-	} from '@viamrobotics/prime-core'
+		mdiBroadcast,
+		mdiBroadcastOff,
+		mdiChevronDown,
+		mdiChevronRight,
+		mdiChevronUp,
+		mdiContentCopy,
+		mdiPlus,
+		mdiRefresh,
+	} from '@mdi/js'
+	import { TextField } from '@viamrobotics/prime-controls'
+	import { Banner, Icon, Switch } from '@viamrobotics/prime-ui'
 	import { MachineConnectionEvent } from '@viamrobotics/sdk'
 
 	import { WorkspacePortal } from '#lib'
@@ -124,11 +127,11 @@
 								},
 							]}
 						>
-							<Icon name={awaitingRetry || disconnected ? 'broadcast-off' : 'broadcast'} />
+							<Icon icon={awaitingRetry || disconnected ? mdiBroadcastOff : mdiBroadcast} />
 							<span class={['truncate whitespace-nowrap', !awaitingRetry && 'capitalize']}>
 								{awaitingRetry ? `Retry in ${machineConnection.secondsUntilRetry}s...` : text}
 							</span>
-							<Icon name="chevron-{open ? 'up' : 'down'}" />
+							<Icon icon={open ? mdiChevronUp : mdiChevronDown} />
 						</button>
 
 						{#if awaitingRetry}
@@ -137,7 +140,7 @@
 								class="border-danger-medium bg-danger-light text-danger-dark flex items-center rounded-r border px-2 py-1.5 text-xs hover:bg-[#F8E1DF] focus:bg-[#F8E1DF]"
 								onclick={machineConnection.retryNow}
 							>
-								<Icon name="refresh" />
+								<Icon icon={mdiRefresh} />
 							</button>
 						{/if}
 					</div>
@@ -154,13 +157,8 @@
 								role="alert"
 								class="shrink-0"
 							>
-								<Banner
-									variant={BannerVariant.Danger}
-									size="sm"
-								>
-									{#snippet titleContent()}
-										Launch file: {launch.error}
-									{/snippet}
+								<Banner variant="danger">
+									<Banner.Description>Launch file: {launch.error}</Banner.Description>
 								</Banner>
 							</div>
 						{/if}
@@ -170,13 +168,10 @@
 								role="alert"
 								class="shrink-0"
 							>
-								<Banner
-									variant={BannerVariant.Danger}
-									size="sm"
-								>
-									{#snippet titleContent()}
+								<Banner variant="danger">
+									<Banner.Description>
 										Connection failed: {machineConnection.error?.message}
-									{/snippet}
+									</Banner.Description>
 								</Banner>
 							</div>
 						{/if}
@@ -206,9 +201,8 @@
 								class="text-subtle-1 hover:text-default flex cursor-pointer items-center gap-1 rounded px-1 py-1 text-xs focus-visible:outline-2"
 							>
 								<Icon
-									name="chevron-right"
-									cx="group-open:rotate-90"
-									aria-hidden="true"
+									icon={mdiChevronRight}
+									class="group-open:rotate-90"
 								/>
 								Manual configs ({connectionConfigs.current.length})
 							</summary>
@@ -217,114 +211,118 @@
 									<form class="flex flex-col gap-2">
 										<div class="flex justify-between gap-2">
 											<Switch
+												aria-label="Use {config.host}"
 												disabled={!!launch.current}
-												on={!launch.current && activeConfig.current?.partId === config.partId}
-												on:change={(event) => {
-													activeConfig.set(event.detail ? index : undefined)
-													if (event.detail) accountPart.set(null)
-												}}
+												bind:checked={
+													() => !launch.current && activeConfig.current?.partId === config.partId,
+													(next) => {
+														activeConfig.set(next ? index : undefined)
+														if (next) accountPart.set(null)
+													}
+												}
 											/>
 
-											<Input
-												class="input w-full grow text-xs"
+											<TextField
+												aria-label="Host"
+												class="grow"
 												placeholder="Host"
 												value={config.host}
-												on:change={(event) => {
-													connectionConfigs.current[index].host = (
-														event.target as HTMLInputElement
-													).value
+												onchange={(event) => {
+													connectionConfigs.current[index].host = event.currentTarget.value
 												}}
 											/>
 
 											{#if !connectionConfigs.isEnvConfig(config)}
-												<Button
+												<button
+													type="button"
+													class="button button-compact"
 													onclick={() => {
 														connectionConfigs.remove(index)
 													}}
 												>
 													Delete
-												</Button>
+												</button>
 											{/if}
 
-											<IconButton
-												icon="content-copy"
-												label="Copy config"
+											<button
+												type="button"
+												class="icon-button button-ghost"
+												aria-label="Copy config"
 												onclick={() => {
 													const data = connectionConfigs.current[index]
 													navigator.clipboard.writeText(JSON.stringify(data))
 												}}
-											/>
+											>
+												<Icon icon={mdiContentCopy} />
+											</button>
 										</div>
 
 										<Collapsible>
 											<div class="grid grid-cols-3 items-center gap-2 pt-2">
 												<label
+													id="{config.host}-partId-label"
 													for="{config.host}-partId"
 													class="text-xs">Part ID</label
 												>
-												<div class="col-span-2">
-													<Input
-														id="{config.host}-partId"
-														placeholder="Part ID"
-														value={config.partId}
-														on:change={(event) => {
-															connectionConfigs.current[index].partId = (
-																event.target as HTMLInputElement
-															).value
-														}}
-													/>
-												</div>
+												<TextField
+													id="{config.host}-partId"
+													aria-labelledby="{config.host}-partId-label"
+													class="col-span-2"
+													placeholder="Part ID"
+													value={config.partId}
+													onchange={(event) => {
+														connectionConfigs.current[index].partId = event.currentTarget.value
+													}}
+												/>
 
 												<label
+													id="{config.host}-apiKeyId-label"
 													for="{config.host}-apiKeyId"
 													class="text-xs">API key ID</label
 												>
-												<div class="col-span-2">
-													<Input
-														id="{config.host}-apiKeyId"
-														placeholder="API key ID"
-														value={config.apiKeyId}
-														on:change={(event) => {
-															connectionConfigs.current[index].apiKeyId = (
-																event.target as HTMLInputElement
-															).value
-														}}
-													/>
-												</div>
+												<TextField
+													id="{config.host}-apiKeyId"
+													aria-labelledby="{config.host}-apiKeyId-label"
+													class="col-span-2"
+													placeholder="API key ID"
+													value={config.apiKeyId}
+													onchange={(event) => {
+														connectionConfigs.current[index].apiKeyId = event.currentTarget.value
+													}}
+												/>
 
 												<label
+													id="{config.host}-apiKeyValue-label"
 													for="{config.host}-apiKeyValue"
 													class="text-xs">API key value</label
 												>
-												<div class="col-span-2">
-													<Input
-														id="{config.host}-apiKeyValue"
-														placeholder="API key value"
-														value={config.apiKeyValue}
-														on:change={(event) => {
-															connectionConfigs.current[index].apiKeyValue = (
-																event.target as HTMLInputElement
-															).value
-														}}
-													/>
-												</div>
+												<TextField
+													id="{config.host}-apiKeyValue"
+													aria-labelledby="{config.host}-apiKeyValue-label"
+													class="col-span-2"
+													placeholder="API key value"
+													value={config.apiKeyValue}
+													onchange={(event) => {
+														connectionConfigs.current[index].apiKeyValue = event.currentTarget.value
+													}}
+												/>
 
 												<label
+													id="{config.host}-address-label"
 													for="{config.host}-address"
 													class="text-xs">Signaling address</label
 												>
-												<div class="col-span-2">
-													<Input
-														id="{config.host}-address"
-														placeholder="Signaling address"
-														value={config.signalingAddress}
-														on:change={(event) => {
-															connectionConfigs.current[index].signalingAddress = (
-																event.target as HTMLInputElement
-															).value
-														}}
-													/>
-												</div>
+												<TextField
+													id="{config.host}-address"
+													aria-labelledby="{config.host}-address-label"
+													class="col-span-2"
+													placeholder="Signaling address"
+													value={config.signalingAddress}
+													onchange={(event) => {
+														connectionConfigs.current[index].signalingAddress =
+															event.currentTarget.value
+													}}
+												/>
 											</div>
 										</Collapsible>
 									</form>
@@ -333,12 +331,14 @@
 								{/each}
 
 								<div class="flex justify-center">
-									<Button
-										icon="plus"
+									<button
+										type="button"
+										class="button button-compact"
 										onclick={() => connectionConfigs.add()}
 									>
+										<Icon icon={mdiPlus} />
 										Add config
-									</Button>
+									</button>
 								</div>
 							</div>
 						</details>

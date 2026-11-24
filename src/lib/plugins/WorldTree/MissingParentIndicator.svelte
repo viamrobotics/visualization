@@ -1,29 +1,26 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
-
-	import Tooltip from '#lib/components/overlay/Tooltip.svelte'
+	import { mdiAlert } from '@mdi/js'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 </script>
 
 <Tooltip
-	placement="right-start"
 	interactive
 	openDelay={150}
 >
-	{#snippet children(tooltipID)}
+	<Tooltip.Trigger class="inline-flex items-center">
 		<span
 			class="bg-warning-bright flex size-4 shrink-0 items-center justify-center rounded-sm text-white"
-			aria-describedby={tooltipID}
 			role="img"
 			aria-label="Parent frames not found"
 		>
 			<Icon
-				name="alert"
+				icon={mdiAlert}
 				size="xs"
 			/>
 		</span>
-	{/snippet}
+	</Tooltip.Trigger>
 
-	{#snippet content()}
+	<Tooltip.Content placement="right">
 		<div class="font-public-sans flex flex-col gap-1.5">
 			<p class="font-roboto-mono text-gray-4">Missing parent</p>
 
@@ -32,5 +29,5 @@
 				world origin.
 			</p>
 		</div>
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Button } from '@viamrobotics/prime-core'
 	import { Redo2, Undo2 } from 'lucide-svelte'
 
 	import Kbd from '#lib/components/overlay/Kbd.svelte'
@@ -77,7 +76,9 @@
 				</div>
 
 				<div class="flex gap-2">
-					<Button
+					<button
+						type="button"
+						class="button button-compact"
 						aria-label="Undo frame edit"
 						disabled={!partConfig.canUndoFrameEdit}
 						onclick={() => partConfig.undoFrameEdit()}
@@ -87,9 +88,11 @@
 							Undo
 							<Kbd binding={undoKeybinding} />
 						</div>
-					</Button>
+					</button>
 
-					<Button
+					<button
+						type="button"
+						class="button button-compact"
 						aria-label="Redo frame edit"
 						disabled={!partConfig.canRedoFrameEdit}
 						onclick={() => partConfig.redoFrameEdit()}
@@ -99,20 +102,22 @@
 							Redo
 							<Kbd binding={redoKeybinding} />
 						</div>
-					</Button>
+					</button>
 
 					{#if environment.current.isStandalone}
-						<Button
+						<button
+							type="button"
+							class="button button-compact"
 							onclick={discard}
 							disabled={!partConfig.isDirty}
 						>
 							Discard
-						</Button>
+						</button>
 
-						<Button
-							variant="dark"
+						<button
+							type="button"
 							aria-label="Save"
-							class="cursor-pointer text-blue-600"
+							class="button button-compact button-dark cursor-pointer text-blue-600"
 							disabled={!partConfig.isDirty}
 							onclick={() => {
 								partConfig.save()
@@ -122,7 +127,7 @@
 								Save
 								<Kbd binding={saveKeybinding} />
 							</div>
-						</Button>
+						</button>
 					{/if}
 				</div>
 			</div>

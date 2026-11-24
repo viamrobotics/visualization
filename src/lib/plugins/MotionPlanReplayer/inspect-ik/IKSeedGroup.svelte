@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import type { IKSeedBucket } from './ik-candidates'
 
@@ -28,9 +29,8 @@
 		onclick={ontoggle}
 	>
 		<Icon
-			name={expanded ? 'chevron-down' : 'chevron-right'}
+			icon={expanded ? mdiChevronDown : mdiChevronRight}
 			size="sm"
-			aria-hidden="true"
 		/>
 		<span class="grow truncate">{bucket.seed}</span>
 		{#each ORDER as status (status)}

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte'
-
-	import { IconButton, Select } from '@viamrobotics/prime-core'
+	import { mdiPause, mdiPlayCircleOutline, mdiRefresh } from '@mdi/js'
+	import { Select } from '@viamrobotics/prime-controls'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
 
@@ -13,63 +13,59 @@
 		id: RefreshRateId
 		label: string
 		onManualRefetch: () => void
-		children?: Snippet
 	}
 
-	let { id, label, onManualRefetch, children }: Props = $props()
+	let { id, label, onManualRefetch }: Props = $props()
+
+	const labelId = $props.id()
 
 	const settings = useSettings()
 	const { refreshRates } = $derived(settings.current)
 	const rate = $derived(refreshRates[id] ?? RefetchRates.MANUAL)
-	const options = $derived(refetchRateOptionsFor(id))
+	const items = $derived(
+		refetchRateOptionsFor(id).map((option) => ({
+			value: String(option.value),
+			label: option.label,
+		}))
+	)
 </script>
 
-<label class="flex flex-col gap-1">
-	{label}
+<div class="flex flex-col gap-1">
+	<span id={labelId}>{label}</span>
 	<div class="flex items-center gap-1">
 		<Select
-			style="
-				-webkit-appearance: none;
-				-moz-appearance: none;
-				appearance: none;
-			"
-			onchange={(event: InputEvent) => {
-				if (event.target instanceof HTMLSelectElement) {
-					const { value } = event.target
-					refreshRates[id] = Number.parseInt(value, 10)
+			aria-labelledby={labelId}
+			{items}
+			bind:value={
+				() => String(rate),
+				(next) => {
+					refreshRates[id] = Number.parseInt(next, 10)
 				}
-			}}
-			value={String(rate)}
-		>
-			{#if children}
-				{@render children()}
-			{:else}
-				{#each options as option (option.value)}
-					<option value={String(option.value)}>{option.label}</option>
-				{/each}
-			{/if}
-		</Select>
+			}
+		/>
 
 		{#if rate === RefetchRates.MANUAL}
-			<IconButton
-				icon="refresh"
-				label="Refetch now"
-				variant="secondary"
-				cx="border-light border"
+			<button
+				type="button"
+				class="icon-button button-ghost"
+				aria-label="Refetch now"
 				onclick={() => {
 					onManualRefetch()
 				}}
-			/>
+			>
+				<Icon icon={mdiRefresh} />
+			</button>
 		{:else}
-			<IconButton
-				icon={rate === RefetchRates.OFF ? 'play-circle-outline' : 'pause'}
-				label={rate === RefetchRates.OFF ? 'Turn on manual fetching' : 'Pause polling'}
-				variant="secondary"
-				cx="border-light border"
+			<button
+				type="button"
+				class="icon-button button-ghost"
+				aria-label={rate === RefetchRates.OFF ? 'Turn on manual fetching' : 'Pause polling'}
 				onclick={() => {
 					refreshRates[id] = RefetchRates.MANUAL
 				}}
-			/>
+			>
+				<Icon icon={rate === RefetchRates.OFF ? mdiPlayCircleOutline : mdiPause} />
+			</button>
 		{/if}
 	</div>
-</label>
+</div>

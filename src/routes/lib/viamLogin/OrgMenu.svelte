@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { appApi } from '@viamrobotics/sdk'
 
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiChevronDown } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import Popover from '#lib/components/overlay/Popover.svelte'
 
@@ -35,8 +36,8 @@
 		>
 			<span class="truncate">{currentName || 'Select organization'}</span>
 			<Icon
-				name="chevron-down"
-				cx={['text-gray-7 shrink-0 transition duration-200', isOpen && 'rotate-180']}
+				icon={mdiChevronDown}
+				class={['text-gray-7 shrink-0 transition duration-200', isOpen && 'rotate-180']}
 			/>
 		</button>
 	{/snippet}

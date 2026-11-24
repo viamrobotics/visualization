@@ -50,9 +50,9 @@ vi.mock('#lib/hooks/useSettings.svelte.js', () => ({
 		current: { interactionMode: 'navigate', refreshRates: { poses: 500 } },
 	}),
 }))
-vi.mock('@viamrobotics/prime-core', async (importOriginal) => ({
-	...(await importOriginal<typeof import('@viamrobotics/prime-core')>()),
-	useToast: () => vi.fn(),
+vi.mock('@viamrobotics/prime-ui', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@viamrobotics/prime-ui')>()),
+	useToast: () => ({ success: vi.fn(), warning: vi.fn(), danger: vi.fn(), info: vi.fn() }),
 }))
 
 vi.mock('@viamrobotics/svelte-sdk', () => ({

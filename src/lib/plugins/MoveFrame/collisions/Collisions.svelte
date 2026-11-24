@@ -8,7 +8,8 @@ open panel. Staged pairs lead, because where the move would put things is the wa
 worth acting on before pressing Execute.
 -->
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiAlertCircle } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	import { type CollisionReport, collisionReports } from './collisionStore.svelte'
 
@@ -41,10 +42,7 @@ worth acting on before pressing Execute.
 	{#if staged.length > 0}
 		<div class="border-danger-medium bg-danger-light flex flex-col gap-1 border px-2 py-1.5">
 			<div class="text-danger-dark flex items-center gap-1.5">
-				<Icon
-					name="alert-circle"
-					aria-hidden="true"
-				/>
+				<Icon icon={mdiAlertCircle} />
 				<span class="font-semibold">
 					Move would collide ({staged.length})
 				</span>

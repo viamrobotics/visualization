@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { Input, Switch } from '@viamrobotics/prime-core'
+	import { NumberField } from '@viamrobotics/prime-controls'
+	import { Switch } from '@viamrobotics/prime-ui'
 
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
+	const uid = $props.id()
 
 	const MIN_SMOOTH_TIME = 0
 	const SMOOTH_TIME_STEP = 0.01
@@ -18,40 +20,62 @@
 			settings.current[key] = Math.max(value, MIN_SMOOTH_TIME)
 		}
 	}
+
+	// NumberField steps on ArrowUp and ArrowDown by writing its value, which fires no change event.
+	const isStepKey = (event: KeyboardEvent): boolean =>
+		event.key === 'ArrowUp' || event.key === 'ArrowDown'
 </script>
 
 <div class="text-gray-9 flex flex-col gap-1 text-xs">
 	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Camera</strong></h3>
 
-	<label class="flex items-center justify-between gap-2">
-		Smoothing (s)
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-smooth-label"
+			for="{uid}-smooth"
+		>
+			Smoothing (s)
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
+			<NumberField
+				id="{uid}-smooth"
+				aria-labelledby="{uid}-smooth-label"
 				min={MIN_SMOOTH_TIME}
 				step={SMOOTH_TIME_STEP}
 				value={settings.current.cameraSmoothTime}
-				on:change={(event) => setSmoothTime('cameraSmoothTime', event)}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				onchange={(event) => setSmoothTime('cameraSmoothTime', event)}
+				onkeyup={(event) => {
+					if (isStepKey(event)) setSmoothTime('cameraSmoothTime', event)
+				}}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
-	<label class="flex items-center justify-between gap-2">
-		Smoothing while dragging (s)
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-dragging-smooth-label"
+			for="{uid}-dragging-smooth"
+		>
+			Smoothing while dragging (s)
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
+			<NumberField
+				id="{uid}-dragging-smooth"
+				aria-labelledby="{uid}-dragging-smooth-label"
 				min={MIN_SMOOTH_TIME}
 				step={SMOOTH_TIME_STEP}
 				value={settings.current.cameraDraggingSmoothTime}
-				on:change={(event) => setSmoothTime('cameraDraggingSmoothTime', event)}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				onchange={(event) => setSmoothTime('cameraDraggingSmoothTime', event)}
+				onkeyup={(event) => {
+					if (isStepKey(event)) setSmoothTime('cameraDraggingSmoothTime', event)
+				}}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
 	<p class="text-subtle-2">
 		Seconds the camera takes to settle. Lower is snappier, and also shortens focus and reset
@@ -59,6 +83,6 @@
 	</p>
 
 	<label class="flex items-center justify-between gap-2 py-1">
-		Zoom toward cursor <Switch bind:on={settings.current.enableDollyToCursor} />
+		Zoom toward cursor <Switch bind:checked={settings.current.enableDollyToCursor} />
 	</label>
 </div>

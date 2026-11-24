@@ -2,9 +2,10 @@
 	import type { Snippet } from 'svelte'
 	import type { HTMLAttributes } from 'svelte/elements'
 
+	import { mdiTrashCanOutline } from '@mdi/js'
 	import { draggable } from '@neodrag/svelte'
 	import { Portal } from '@threlte/extras/webgpu'
-	import { Icon, ToastVariant, useToast } from '@viamrobotics/prime-core'
+	import { Icon, Tooltip, useToast } from '@viamrobotics/prime-ui'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
 
@@ -12,7 +13,6 @@
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
-	import Tooltip from '../Tooltip.svelte'
 	import { detailsClipboardText } from './detailsClipboardText'
 	import { MIXED, sharedValue } from './sharedValue'
 
@@ -97,18 +97,17 @@ just the inputs) raises it via `focus-within:z-5`. -->
 				</div>
 
 				{#if sceneActions}
-					<Tooltip placement="bottom">
-						{#snippet children(tooltipID)}
+					<Tooltip>
+						<Tooltip.Trigger>
 							<button
 								class="text-subtle-2"
 								aria-label="Copy details to clipboard"
-								aria-describedby={tooltipID}
 								onclick={async () => {
 									try {
 										await navigator.clipboard.writeText(detailsClipboardText(entities))
 									} catch {
 										// Clipboard unavailable: non-secure context or permission denied.
-										toast({ message: "Couldn't copy to clipboard", variant: ToastVariant.Danger })
+										toast.danger("Couldn't copy to clipboard")
 										return
 									}
 									copied = true
@@ -121,30 +120,27 @@ just the inputs) raises it via `focus-within:z-5`. -->
 									<Copy size={14} />
 								{/if}
 							</button>
-						{/snippet}
-
-						{#snippet content()}Copy details to clipboard{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="bottom">Copy details to clipboard</Tooltip.Content>
 					</Tooltip>
 				{/if}
 
 				{#if isRemovable}
-					<Tooltip placement="bottom">
-						{#snippet children(tooltipID)}
+					<Tooltip>
+						<Tooltip.Trigger>
 							<button
 								class="text-subtle-2 hover:text-danger-dark"
 								aria-label="Remove from scene"
-								aria-describedby={tooltipID}
 								onclick={() => {
 									for (const entity of entities) {
 										if (world.has(entity)) entity.destroy()
 									}
 								}}
 							>
-								<Icon name="trash-can-outline" />
+								<Icon icon={mdiTrashCanOutline} />
 							</button>
-						{/snippet}
-
-						{#snippet content()}Remove from scene{/snippet}
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="bottom">Remove from scene</Tooltip.Content>
 					</Tooltip>
 				{/if}
 			</div>

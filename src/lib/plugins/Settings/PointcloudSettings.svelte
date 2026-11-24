@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Input, Switch } from '@viamrobotics/prime-core'
+	import { NumberField } from '@viamrobotics/prime-controls'
+	import { Input, Switch } from '@viamrobotics/prime-ui'
 	import { useMachineStatus } from '@viamrobotics/svelte-sdk'
 	import { Color } from 'three'
 
@@ -9,6 +10,7 @@
 	import { RefreshRates, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	const settings = useSettings()
+	const uid = $props.id()
 	const pointclouds = usePointClouds()
 	const partID = usePartID()
 	const machineStatus = useMachineStatus(() => partID.current)
@@ -36,24 +38,31 @@
 		}}
 	/>
 
-	<label class="flex items-center justify-between gap-2">
-		Default point size (mm)
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-point-size-label"
+			for="{uid}-point-size"
+		>
+			Default point size (mm)
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
+			<NumberField
+				id="{uid}-point-size"
+				aria-labelledby="{uid}-point-size-label"
 				min={0}
-				value={pointSizeMillimeters}
-				on:input={(event) => {
-					const millimeters = (event.target as HTMLInputElement).valueAsNumber
-					if (Number.isFinite(millimeters) && millimeters >= 0) {
-						settings.current.pointSize = millimeters / MILLIMETERS_PER_METER
+				bind:value={
+					() => pointSizeMillimeters,
+					(millimeters) => {
+						if (millimeters !== undefined && Number.isFinite(millimeters) && millimeters >= 0) {
+							settings.current.pointSize = millimeters / MILLIMETERS_PER_METER
+						}
 					}
-				}}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
 	<label class="flex items-center justify-between gap-2">
 		Default point color
@@ -61,42 +70,64 @@
 		<div class="w-20">
 			<Input
 				type="color"
+				class="input-compact w-full"
 				value={colorHex}
-				on:change={(event) => {
-					const value = (event.target as HTMLInputElement).value
-					settings.current.pointColor = value
+				onchange={(event) => {
+					settings.current.pointColor = event.currentTarget.value
 				}}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
 	</label>
 
-	<label class="flex items-center justify-between gap-2">
-		Point budget while moving
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-point-budget-label"
+			for="{uid}-point-budget"
+		>
+			Point budget while moving
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
-				bind:value={settings.current.pointBudget}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+			<NumberField
+				id="{uid}-point-budget"
+				aria-labelledby="{uid}-point-budget-label"
+				bind:value={
+					() => settings.current.pointBudget,
+					(budget) => {
+						if (budget !== undefined) settings.current.pointBudget = budget
+					}
+				}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
 	<p class="text-subtle-2">Full detail returns when the camera settles. 0 disables.</p>
 
-	<label class="flex items-center justify-between gap-2">
-		Max point size (px)
+	<div class="flex items-center justify-between gap-2">
+		<label
+			id="{uid}-max-point-size-label"
+			for="{uid}-max-point-size"
+		>
+			Max point size (px)
+		</label>
 
 		<div class="w-20">
-			<Input
-				type="number"
+			<NumberField
+				id="{uid}-max-point-size"
+				aria-labelledby="{uid}-max-point-size-label"
 				min={0}
-				bind:value={settings.current.maxPointSize}
-				on:keydown={(event) => event.stopImmediatePropagation()}
+				bind:value={
+					() => settings.current.maxPointSize,
+					(size) => {
+						if (size !== undefined) settings.current.maxPointSize = size
+					}
+				}
+				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
-	</label>
+	</div>
 
 	<h3 class="border-gray-3 border-b py-1 text-sm"><strong>Enabled cameras</strong></h3>
 
@@ -104,10 +135,13 @@
 		<div class="flex items-center justify-between py-0.5 text-xs">
 			{camera}
 			<Switch
-				on={disabledCameras[camera] !== true}
-				on:change={(event) => {
-					disabledCameras[camera] = !event.detail
-				}}
+				aria-label={camera}
+				bind:checked={
+					() => disabledCameras[camera] !== true,
+					(isEnabled) => {
+						disabledCameras[camera] = !isEnabled
+					}
+				}
 			/>
 		</div>
 	{:else}

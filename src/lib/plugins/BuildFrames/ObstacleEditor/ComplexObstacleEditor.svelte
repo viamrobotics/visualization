@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Button, IconButton, Input } from '@viamrobotics/prime-core'
+	import { mdiChevronRight, mdiContentCopy, mdiPlus, mdiTrashCanOutline } from '@mdi/js'
+	import { TextField } from '@viamrobotics/prime-controls'
+	import { Icon } from '@viamrobotics/prime-ui'
 	import { tick } from 'svelte'
 
 	import { selectOnly, traits, useWorld } from '#lib/ecs/index.js'
@@ -181,39 +183,44 @@
 			>
 				<div class="flex items-center gap-1">
 					<div class="min-w-0 flex-1">
-						<Input
+						<TextField
 							value={explicitGeometryLabel(entry)}
 							placeholder={label}
 							aria-label={`Shape ${index + 1} label`}
-							state={labelError ? 'error' : 'none'}
+							state={labelError ? 'error' : undefined}
 							aria-describedby={labelError ? labelErrorId : undefined}
-							on:keydown={handleLabelKeydown}
-							on:blur={(event) => handleRelabel(index, event)}
+							onkeydown={handleLabelKeydown}
+							onblur={(event) => handleRelabel(index, event)}
 						/>
 					</div>
-					<IconButton
-						icon="chevron-right"
-						label={`Select ${label}`}
-						variant="ghost"
-						cx="shrink-0"
+					<button
+						type="button"
+						class="icon-button button-ghost shrink-0"
+						aria-label={`Select ${label}`}
 						onclick={() => handleSelect(index)}
-					/>
-					<IconButton
-						icon="content-copy"
-						label={`Duplicate ${label}`}
-						variant="ghost"
-						cx="shrink-0"
+					>
+						<Icon icon={mdiChevronRight} />
+					</button>
+					<button
+						type="button"
+						class="icon-button button-ghost shrink-0"
+						aria-label={`Duplicate ${label}`}
 						onclick={() => handleDuplicate(index)}
-					/>
-					<IconButton
-						icon="trash-can-outline"
-						label={`Delete ${label}`}
+					>
+						<Icon icon={mdiContentCopy} />
+					</button>
+					<button
+						type="button"
+						class="icon-button button-danger button-ghost shrink-0"
+						aria-label={`Delete ${label}`}
 						title={isLastShape ? 'An obstacle needs at least one geometry' : `Delete ${label}`}
-						variant="danger"
-						cx="shrink-0"
-						disabled={isLastShape}
-						onclick={() => handleRemove(index)}
-					/>
+						aria-disabled={isLastShape || undefined}
+						onclick={() => {
+							if (!isLastShape) handleRemove(index)
+						}}
+					>
+						<Icon icon={mdiTrashCanOutline} />
+					</button>
 				</div>
 				{#if labelError}
 					<p
@@ -228,14 +235,14 @@
 		{/each}
 	</ul>
 
-	<Button
+	<button
 		type="button"
-		variant="ghost-outline"
-		icon="plus"
+		class="button button-compact"
 		onclick={handleAdd}
 	>
+		<Icon icon={mdiPlus} />
 		Add shape
-	</Button>
+	</button>
 
 	{#if error && error.rowIndex === undefined}
 		<p

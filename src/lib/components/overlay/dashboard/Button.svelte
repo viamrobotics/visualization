@@ -1,16 +1,81 @@
+<script
+	module
+	lang="ts"
+>
+	import {
+		mdiAxisArrow,
+		mdiCamera,
+		mdiCameraOutline,
+		mdiChevronDown,
+		mdiCog,
+		mdiCropFree,
+		mdiEarth,
+		mdiImageFilterCenterFocus,
+		mdiOpenInNew,
+		mdiRobotOutline,
+		mdiSelectionDrag,
+		mdiSync,
+		mdiTextBoxOutline,
+		mdiTuneVariant,
+	} from '@mdi/js'
+	import { type IconType } from '@viamrobotics/prime-ui'
+	import {
+		CursorMove,
+		GridOrthographic,
+		GridPerspective,
+		Magnet,
+		MagnetOff,
+		Resize,
+	} from '@viamrobotics/prime-ui/icons'
+	import { MousePointer2, Ruler } from 'lucide-svelte'
+
+	const PRIME_ICONS = {
+		article: mdiTextBoxOutline,
+		'axis-arrow': mdiAxisArrow,
+		camera: mdiCamera,
+		'camera-outline': mdiCameraOutline,
+		'chevron-down': mdiChevronDown,
+		cog: mdiCog,
+		'crop-free': mdiCropFree,
+		'cursor-move': CursorMove,
+		earth: mdiEarth,
+		'filter-sliders': mdiTuneVariant,
+		'grid-orthographic': GridOrthographic,
+		'grid-perspective': GridPerspective,
+		'image-filter-center-focus': mdiImageFilterCenterFocus,
+		magnet: Magnet,
+		'magnet-off': MagnetOff,
+		'open-in-new': mdiOpenInNew,
+		resize: Resize,
+		'robot-outline': mdiRobotOutline,
+		'selection-drag': mdiSelectionDrag,
+		sync: mdiSync,
+	} as const satisfies Record<string, IconType>
+
+	// lucide-svelte types its icons as Svelte 4 classes, which prime-ui's `Icon` does not accept.
+	const LUCIDE_ICONS = {
+		'mouse-pointer': MousePointer2,
+		ruler: Ruler,
+	} as const
+
+	type LucideIconName = keyof typeof LUCIDE_ICONS
+
+	type DashboardIconName = keyof typeof PRIME_ICONS | LucideIconName
+
+	const isLucideIcon = (name: DashboardIconName): name is LucideIconName => name in LUCIDE_ICONS
+</script>
+
 <script lang="ts">
 	import type { ClassValue, HTMLButtonAttributes, MouseEventHandler } from 'svelte/elements'
 
-	import { Icon, type IconName } from '@viamrobotics/prime-core'
-	import { Hammer, MousePointer2, Move3d, Ruler, Shapes } from 'lucide-svelte'
+	import { Icon, Tooltip } from '@viamrobotics/prime-ui'
 
 	import type { Keybinding } from '#lib/keybindings/index.js'
 
 	import Kbd from '../Kbd.svelte'
-	import Tooltip from '../Tooltip.svelte'
 
 	interface Props extends HTMLButtonAttributes {
-		icon: IconName | 'ruler' | 'mouse-pointer' | 'shapes' | 'hammer' | 'move-3d'
+		icon: DashboardIconName
 		iconCx?: string
 		/** Pressed state of a toggle. Leave unset for a plain action, so it isn't announced as a toggle. */
 		active?: boolean
@@ -36,11 +101,8 @@
 	}: Props = $props()
 </script>
 
-<Tooltip
-	placement={tooltipLocation ?? 'bottom'}
-	disabled={disableTooltip}
->
-	{#snippet children(tooltipID)}
+<Tooltip disabled={disableTooltip}>
+	<Tooltip.Trigger>
 		<label
 			class={[
 				className,
@@ -50,7 +112,6 @@
 					: 'border-gray-5 text-gray-8 not-has-disabled:hover:bg-light not-has-disabled:active:bg-medium bg-white',
 				'has-disabled:text-disabled has-disabled:cursor-not-allowed',
 			]}
-			aria-describedby={tooltipID}
 		>
 			<button
 				class="p-1.5 disabled:cursor-not-allowed"
@@ -59,31 +120,24 @@
 				{onclick}
 				{...rest}
 			>
-				{#if icon === 'ruler'}
-					<Ruler size="16" />
-				{:else if icon === 'mouse-pointer'}
-					<MousePointer2 size="16" />
-				{:else if icon === 'shapes'}
-					<Shapes size="16" />
-				{:else if icon === 'hammer'}
-					<Hammer size="16" />
-				{:else if icon === 'move-3d'}
-					<Move3d size="16" />
+				{#if isLucideIcon(icon)}
+					{@const LucideIcon = LUCIDE_ICONS[icon]}
+					<LucideIcon size="16" />
 				{:else}
 					<Icon
-						name={icon}
-						cx={iconCx}
+						icon={PRIME_ICONS[icon]}
+						class={iconCx}
 					/>
 				{/if}
 			</button>
 		</label>
-	{/snippet}
+	</Tooltip.Trigger>
 
-	{#snippet content()}
+	<Tooltip.Content placement={tooltipLocation ?? 'bottom'}>
 		{description}
 
 		{#if keybinding}
 			<span class="pl-1"><Kbd binding={keybinding} /></span>
 		{/if}
-	{/snippet}
+	</Tooltip.Content>
 </Tooltip>

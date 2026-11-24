@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Icon } from '@viamrobotics/prime-core'
+	import { mdiClose, mdiMagnify } from '@mdi/js'
+	import { Icon } from '@viamrobotics/prime-ui'
 
 	interface Props {
 		/** Bound so the clear button and the tree read one query. */
@@ -13,9 +14,9 @@
 	class="group bg-light focus-within:bg-medium flex shrink-0 items-center gap-1.5 pr-1 pl-2 transition-colors"
 >
 	<Icon
-		name="magnify"
+		icon={mdiMagnify}
 		size="sm"
-		cx="text-subtle-2 group-focus-within:text-subtle-1 shrink-0 transition-colors"
+		class="text-subtle-2 group-focus-within:text-subtle-1 shrink-0 transition-colors"
 	/>
 
 	<input
@@ -43,7 +44,7 @@
 			}}
 		>
 			<Icon
-				name="close"
+				icon={mdiClose}
 				size="sm"
 			/>
 		</button>
