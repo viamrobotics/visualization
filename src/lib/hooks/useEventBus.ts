@@ -20,13 +20,21 @@ export interface DiagnosticTarget {
  * subscriber shares, and a bus that carries everything hides where data flows.
  */
 export interface Events {
-	/** Something worth telling the user happened, such as a fetch starting or failing. */
-	diagnostic: { message: string; level: DiagnosticLevel; target?: DiagnosticTarget }
 	/**
-	 * Every diagnostic filed against exactly `target` no longer holds, such as when a camera the user
-	 * switched off stops reporting.
+	 * Something worth telling the user happened, such as a fetch starting or failing. `source` is an
+	 * id unique to the publishing producer instance, so it can later withdraw exactly its own lines.
 	 */
-	'diagnostic-cleared': { target: DiagnosticTarget }
+	diagnostic: {
+		message: string
+		level: DiagnosticLevel
+		target?: DiagnosticTarget
+		source: string
+	}
+	/**
+	 * Every diagnostic `source` filed no longer holds, such as when a camera the user switched off
+	 * stops reporting, or the machine a producer reported on is gone.
+	 */
+	'diagnostic-cleared': { source: string }
 }
 
 type Listener<Name extends keyof Events> = (event: Events[Name]) => void

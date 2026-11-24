@@ -30,6 +30,11 @@ vi.mock(
 	'#lib/components/overlay/Portals/DomPortal.svelte',
 	() => import('#lib/__tests__/__fixtures__/MockPortal.svelte')
 )
+// With every portal rendering in place, a target has nothing to receive.
+vi.mock(
+	'#lib/components/overlay/Portals/DomPortalTarget.svelte',
+	() => import('#lib/__tests__/__fixtures__/MockPortal.svelte')
+)
 
 vi.mock('#lib/hooks/useFrames.svelte.js', () => ({
 	useFrames: vi.fn(() => ({ current: [], fetching: false })),

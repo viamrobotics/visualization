@@ -53,12 +53,14 @@
 			bus.publish('diagnostic', {
 				message: `Exported ${result.bodyCount} bodies as URDF and MJCF, with ${result.noteCount} notes in export-notes.txt.`,
 				level: 'info',
+				source: 'scene-export',
 			})
 		} catch (error) {
 			const reason = error instanceof Error ? error.message : String(error)
 			bus.publish('diagnostic', {
 				message: `URDF and MJCF export failed: ${reason}`,
 				level: 'error',
+				source: 'scene-export',
 			})
 		} finally {
 			isExporting = false

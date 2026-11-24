@@ -1,0 +1,29 @@
+---
+title: <Maximize />
+description: Add a button that expands a Viam visualizer to cover the viewport.
+---
+
+`<Maximize />` adds a button to the top right of the visualizer that expands it to cover the browser viewport, above the host page's own content. Clicking the button again restores the visualizer to its normal layout. While maximized, the host page's scroll is locked so only the visualizer receives it.
+
+This is intended for embedded hosts where the visualizer shares the page with other UI. Standalone deployments that already fill the window don't need it.
+
+It covers the viewport with CSS and does not use the browser Fullscreen API, so it needs no permission from an embedding iframe.
+
+## Usage
+
+Mount `<Maximize />` anywhere inside `<Visualizer />`:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Maximize } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-96 w-full">
+	<Visualizer>
+		<Maximize />
+	</Visualizer>
+</div>
+```
+
+Unmounting the plugin while maximized restores the visualizer's layout.

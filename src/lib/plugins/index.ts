@@ -8,7 +8,7 @@ export { default as DrawService } from './DrawService/DrawService.svelte'
 
 export { default as FileDrop } from './FileDrop/FileDrop.svelte'
 
-export { default as Fullscreen } from './Fullscreen/Fullscreen.svelte'
+export { default as Maximize } from './Maximize/Maximize.svelte'
 
 export { default as Isolate } from './Isolate/Isolate.svelte'
 
@@ -39,8 +39,6 @@ export type {
 } from './MotionPlanReplayer/inspect-ik/inspect-ik-client'
 export type { IKSeedGroup } from './MotionPlanReplayer/inspect-ik/parse-ik-solutions'
 export { ikSeedGroupsFromProto } from './MotionPlanReplayer/inspect-ik/ik-seed-groups-from-proto'
-
-export { default as Monitor } from './Monitor/Monitor.svelte'
 
 export { default as MoveFrame } from './MoveFrame/MoveFrame.svelte'
 

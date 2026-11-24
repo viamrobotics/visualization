@@ -3,6 +3,7 @@
 
 	import { CameraClient } from '@viamrobotics/sdk'
 	import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
+	import { MathUtils } from 'three'
 
 	import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
 	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -71,16 +72,19 @@
 	})
 
 	const logTarget = $derived({ resource: name, folder: 'pointclouds' })
+	const source = MathUtils.generateUUID()
 
 	/**
 	 * A disabled camera has stopped reporting, so it withdraws what it already
-	 * logged rather than leaving its last failure on its tree rows.
+	 * logged rather than leaving its last failure on its tree rows. So does one whose
+	 * machine changed, even when the next machine has a camera of the same name.
 	 */
 	$effect(() => {
 		if (!enabled) return
 
-		const target = logTarget
-		return () => bus.publish('diagnostic-cleared', { target })
+		void partID
+		void name
+		return () => bus.publish('diagnostic-cleared', { source })
 	})
 
 	$effect(() => {
@@ -92,12 +96,14 @@
 				message: `Fetching pointcloud for ${name}...`,
 				level: 'info',
 				target: logTarget,
+				source,
 			})
 		} else if (query.error) {
 			bus.publish('diagnostic', {
 				message: `Error fetching pointcloud from ${name}: ${query.error.message}`,
 				level: 'error',
 				target: logTarget,
+				source,
 			})
 		}
 	})
@@ -179,6 +185,7 @@
 					message: error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
 					level: 'error',
 					target: logTarget,
+					source,
 				})
 			})
 

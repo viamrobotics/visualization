@@ -7,6 +7,8 @@ description: Render a Viam machine part in the scene, and provide it to the plug
 
 Mounting it adds
 
+- **monitor mode**, for watching live machine data. It registers ahead of the modes its children add, so it is the leftmost toggle button and the fallback when a persisted mode is unreachable,
+- an appearance section in the details panel for the machine's frames. A frame's color and opacity apply for the session to every frame of its resource,
 - the **Frames**, **Cameras**, and **Vision** tabs to the settings pane, with refresh rates and the cameras and vision services to draw,
 - settings buttons on the frames, point cloud, and vision folders in the [world tree](../world-tree/).
 

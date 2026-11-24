@@ -5,24 +5,20 @@
 
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
 
-	import { appearanceKeyOf } from '#lib/appearanceTarget.js'
-	import AppearanceDetails from '#lib/components/overlay/details/AppearanceDetails.svelte'
-	import CountDetails from '#lib/components/overlay/details/CountDetails.svelte'
-	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
-	import DetailsSections from '#lib/components/overlay/details/DetailsSections.svelte'
-	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
-	import DimensionsDetails from '#lib/components/overlay/details/DimensionsDetails.svelte'
-	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
-	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
-	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
-	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
-	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 
-	import SessionAppearanceDetails, {
-		type SessionAppearanceTarget,
-	} from './SessionAppearanceDetails.svelte'
+	import AppearanceDetails from './AppearanceDetails.svelte'
+	import CountDetails from './CountDetails.svelte'
+	import DetailsPanel from './DetailsPanel.svelte'
+	import DetailsSections from './DetailsSections.svelte'
+	import DetailsTabs from './DetailsTabs.svelte'
+	import DimensionsDetails from './DimensionsDetails.svelte'
+	import FramePovTab from './FramePovTab.svelte'
+	import GeometryOffsetDetails from './GeometryOffsetDetails.svelte'
+	import PoseDetails from './PoseDetails.svelte'
+	import RelationshipDetails from './RelationshipDetails.svelte'
+	import SectionNotice from './SectionNotice.svelte'
 
 	interface Props extends HTMLAttributes<HTMLDivElement> {
 		/** The selection. Never empty. */
@@ -37,11 +33,10 @@
 
 	const reads = useMappedEntitiesTraits(
 		() => entities,
-		[traits.Name, traits.FramesAPI, traits.CustomDetails],
+		[traits.WorldMatrix, traits.CustomDetails],
 		(entity) => ({
 			entity,
-			name: entity.get(traits.Name),
-			isFrame: entity.has(traits.FramesAPI),
+			hasPose: entity.has(traits.WorldMatrix),
 			hasCustomDetails: entity.has(traits.CustomDetails),
 		})
 	)
@@ -49,19 +44,23 @@
 	const only = $derived(entities.length === 1 ? reads.current[0] : undefined)
 	const isAllCustom = $derived(reads.current.every((read) => read.hasCustomDetails))
 	const isAnyCustom = $derived(reads.current.some((read) => read.hasCustomDetails))
-	const hasFrame = $derived(reads.current.some((read) => read.isFrame && read.name !== undefined))
-	// Whatever registers a `test` section owns the tab's content. Monitor only decides whether it shows.
+	const hasPose = $derived(reads.current.some((read) => read.hasPose))
+	// Whatever registers a `test` section owns the tab's content. The panel only decides whether it shows.
 	const hasTestable = $derived(
 		sectionsForTab(sections?.current ?? [], 'test').some((section) =>
 			entities.some((entity) => section.when?.(entity) ?? true)
 		)
 	)
 
-	// A frame's edits follow the same rules as a saved appearance, so they reach the frames inside it.
-	const sessionTargets = $derived(
-		reads.current.flatMap(({ entity, name, isFrame }): SessionAppearanceTarget[] =>
-			isFrame && name !== undefined ? [{ entity, ...appearanceKeyOf(name) }] : []
+	// An entity whose appearance a section edits gets that section in place of the built-in controls.
+	const appearanceOwners = $derived(
+		sectionsForTab(sections?.current ?? [], 'appearance').filter(
+			(section) => section.replacesAppearance
 		)
+	)
+	const ownedAppearanceCount = $derived(
+		entities.filter((entity) => appearanceOwners.some((section) => section.when?.(entity) ?? true))
+			.length
 	)
 
 	const tabs = $derived<DetailsTab[]>(
@@ -70,7 +69,7 @@
 			: [
 					{ id: 'details', label: 'Details', content: detailsTab },
 					{ id: 'appearance', label: 'Appearance', content: appearanceTab },
-					...(hasFrame
+					...(hasPose
 						? [{ id: 'pov', label: 'POV', content: povTab, transparent: only !== undefined }]
 						: []),
 					...(hasTestable ? [{ id: 'test', label: 'Test', content: testTab }] : []),
@@ -81,10 +80,7 @@
 {#snippet detailsTab()}
 	<div class="flex flex-col gap-2.5 pt-3">
 		{#if !isAnyCustom}
-			<PoseDetails
-				{entities}
-				editable={false}
-			/>
+			<PoseDetails {entities} />
 		{:else if !isAllCustom}
 			<SectionNotice
 				label="pose"
@@ -108,17 +104,9 @@
 {/snippet}
 
 {#snippet appearanceTab()}
-	{#if sessionTargets.length === entities.length}
-		<SessionAppearanceDetails targets={sessionTargets} />
-	{:else if sessionTargets.length === 0}
+	<!-- A selection the owning sections only partly cover gets their notice from DetailsSections. -->
+	{#if ownedAppearanceCount === 0}
 		<AppearanceDetails {entities} />
-	{:else}
-		<div class="pt-3">
-			<SectionNotice
-				label="appearance"
-				message="Frames and other objects keep their appearance differently. Select only one kind to edit it."
-			/>
-		</div>
 	{/if}
 
 	<DetailsSections
@@ -128,13 +116,13 @@
 {/snippet}
 
 {#snippet povTab()}
-	{#if only?.name !== undefined}
+	{#if only?.hasPose}
 		<FramePovTab entity={only.entity} />
 	{:else}
 		<div class="pt-3">
 			<SectionNotice
 				label="point of view"
-				message="Select a single frame to look through it."
+				message="Select a single object to look through it."
 			/>
 		</div>
 	{/if}

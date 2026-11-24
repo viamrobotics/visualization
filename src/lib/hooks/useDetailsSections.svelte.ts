@@ -1,8 +1,7 @@
 import type { Entity } from 'koota'
-import type { Snippet } from 'svelte'
 
-import { getContext, onDestroy, setContext } from 'svelte'
-import { SvelteSet } from 'svelte/reactivity'
+import { getContext, setContext } from 'svelte'
+import { SvelteMap, SvelteSet } from 'svelte/reactivity'
 
 export const DETAILS_SECTIONS_CONTEXT_KEY = Symbol('details-sections')
 
@@ -12,12 +11,10 @@ export const DETAILS_SECTIONS_CONTEXT_KEY = Symbol('details-sections')
  */
 export type DetailsTabId = 'details' | 'appearance' | 'test'
 
-export interface DetailsSection {
-	/**
-	 * Rendered once inside the details panel with every selected entity, when `when`
-	 * holds for all of them. A section edits or shows the selection as a whole.
-	 */
-	snippet: Snippet<[{ entities: readonly Entity[] }]>
+/** A section a `<DetailsSection>` has registered. Its content is rendered by that component. */
+export interface RegisteredDetailsSection {
+	/** Unique per registration. Names the `DomPortalTarget` the section's content moves into. */
+	id: string
 	/**
 	 * Names the section in the notice shown when `when` holds for only part of the
 	 * selection, such as `sensor coverage`.
@@ -35,6 +32,11 @@ export interface DetailsSection {
 	 * exercise the resource behind the entity.
 	 */
 	tab?: DetailsTabId
+	/**
+	 * The section edits the appearance of the entities it applies to, so the panel leaves out its
+	 * own color and opacity controls for them. Only meaningful on the `appearance` tab.
+	 */
+	replacesAppearance?: boolean
 }
 
 /** The default tab, applied to a section that names none. */
@@ -42,19 +44,27 @@ const DEFAULT_TAB: DetailsTabId = 'details'
 
 /** The sections belonging to `tab`, in registration order. */
 export const sectionsForTab = (
-	sections: readonly DetailsSection[],
+	sections: readonly RegisteredDetailsSection[],
 	tab: DetailsTabId
-): DetailsSection[] => sections.filter((section) => (section.tab ?? DEFAULT_TAB) === tab)
+): RegisteredDetailsSection[] => sections.filter((section) => (section.tab ?? DEFAULT_TAB) === tab)
+
+/** The `DomPortal` id a section's content moves to, inside the panel showing it. */
+export const detailsSectionPortalId = (sectionId: string): string => `details-section:${sectionId}`
 
 interface Context {
 	/** Registered sections, in registration order — which is render order. */
-	readonly current: DetailsSection[]
+	readonly current: RegisteredDetailsSection[]
 	/** Adds `section` and returns its release function. Identity-based — each registration stands alone. */
-	register: (section: DetailsSection) => () => void
+	register: (section: RegisteredDetailsSection) => () => void
+	/** The selection a panel is showing the section for, or undefined while no panel shows it. */
+	entitiesFor: (sectionId: string) => readonly Entity[] | undefined
+	/** Records that a panel is showing the section for `entities`, until the returned release runs. */
+	show: (sectionId: string, entities: readonly Entity[]) => () => void
 }
 
 export const createDetailsSections = (): Context => {
-	const sections = new SvelteSet<DetailsSection>()
+	const sections = new SvelteSet<RegisteredDetailsSection>()
+	const shown = new SvelteMap<string, readonly Entity[]>()
 
 	return {
 		get current() {
@@ -71,6 +81,13 @@ export const createDetailsSections = (): Context => {
 				sections.delete(section)
 			}
 		},
+		entitiesFor: (sectionId) => shown.get(sectionId),
+		show(sectionId, entities) {
+			shown.set(sectionId, entities)
+			return () => {
+				if (shown.get(sectionId) === entities) shown.delete(sectionId)
+			}
+		},
 	}
 }
 
@@ -82,14 +99,4 @@ export const provideDetailsSections = () => {
 
 export const useDetailsSections = () => {
 	return getContext<Context>(DETAILS_SECTIONS_CONTEXT_KEY)
-}
-
-/**
- * Contributes a section to the details cards for as long as the calling
- * component is mounted. Cards are rendered by the mode plugins; while none is
- * mounted, sections are registered but have nowhere to appear.
- */
-export const useDetailsSection = (section: DetailsSection) => {
-	const release = useDetailsSections().register(section)
-	onDestroy(release)
 }

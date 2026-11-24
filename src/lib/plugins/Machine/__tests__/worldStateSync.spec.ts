@@ -95,6 +95,7 @@ const startSync = async (store: FakeStore, expectedNames: string[], initialGener
 				if ('message' in event) logged.push(event.message)
 			},
 		},
+		source: 'world-state-sync',
 		invalidate: () => {},
 		requestFrame: (callback) => {
 			if (isFramesPaused) {

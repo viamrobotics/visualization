@@ -17,6 +17,7 @@
 	import EditGeometryDetails from '#lib/components/overlay/details/EditGeometryDetails.svelte'
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
+	import EditPoseDetails from './EditPoseDetails.svelte'
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
@@ -230,11 +231,10 @@
 				/>
 			{/if}
 
-			{#if !isAnyCustom}
-				<PoseDetails
-					{entities}
-					editable={isEditable && !hasShapeOwner}
-				/>
+			{#if !isAnyCustom && isEditable && !hasShapeOwner}
+				<EditPoseDetails {entities} />
+			{:else if !isAnyCustom}
+				<PoseDetails {entities} />
 			{:else if !isAllCustom}
 				<SectionNotice
 					label="pose"

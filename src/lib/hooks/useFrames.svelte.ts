@@ -2,6 +2,7 @@ import { MachineConnectionEvent, type robotApi } from '@viamrobotics/sdk'
 import { createRobotQuery, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
 import { type ConfigurableTrait, type Entity } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
+import { MathUtils } from 'three'
 
 import type { Transform } from '#lib/geometry.js'
 
@@ -93,18 +94,28 @@ export const provideFrames = (partID: () => string) => {
 		},
 	})
 
+	const source = MathUtils.generateUUID()
+
+	// What was reported about one machine no longer holds once the part changes.
+	$effect(() => {
+		void partID()
+		return () => bus.publish('diagnostic-cleared', { source })
+	})
+
 	$effect(() => {
 		if (query.isFetching) {
 			bus.publish('diagnostic', {
 				message: 'Fetching frames...',
 				level: 'info',
 				target: { folder: 'frames' },
+				source,
 			})
 		} else if (query.error) {
 			bus.publish('diagnostic', {
 				message: `Frames: ${query.error.message}`,
 				level: 'error',
 				target: { folder: 'frames' },
+				source,
 			})
 		}
 	})

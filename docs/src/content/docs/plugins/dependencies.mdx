@@ -30,17 +30,17 @@ Two more build on packages that ship as **required peers** of `@viamrobotics/vis
 
 No plugin imports another as a hard requirement, but several pairs coordinate at runtime. Each is **soft**: the dependent plugin still works alone, just with reduced behavior.
 
-| Plugin                    | Coordinates with | What happens                                                                                              |
-| ------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| `<ControlWidgets />`      | `<XR />`         | Registry widget panels are hidden while an immersive XR session is active.                                |
-| `<DrawService />`         | `<Logs />`       | Connection status and errors are written to the Logs panel. Without Logs, they're dropped silently.       |
-| mode plugins              | each other       | Buttons portal into the mode toggle in mount order, which is also fallback priority. Mount Monitor first. |
-| any `SettingsPortal` user | `<Settings />`   | The contributed tab is registered either way, but only renders when Settings is mounted.                  |
+| Plugin                    | Coordinates with | What happens                                                                                                             |
+| ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `<ControlWidgets />`      | `<XR />`         | Registry widget panels are hidden while an immersive XR session is active.                                               |
+| `<DrawService />`         | `<Logs />`       | Connection status and errors are written to the Logs panel. Without Logs, they're dropped silently.                      |
+| mode plugins              | each other       | Buttons portal into the mode toggle in mount order, which is also fallback priority. Machine's monitor mode comes first. |
+| any `SettingsPortal` user | `<Settings />`   | The contributed tab is registered either way, but only renders when Settings is mounted.                                 |
 
 ```text
 ControlWidgets ──► XR         panels hide during an immersive session
 DrawService ──► Logs          draw-server diagnostics, if Logs is mounted
-Monitor ──► BuildFrames ──► MoveFrame   mount order is button order and priority
+Machine ──► BuildFrames ──► MoveFrame   mount order is button order and priority
 SettingsPortal ──► Settings   contributed tabs need a popover to live in
 ```
 
@@ -48,7 +48,7 @@ The `<ControlWidgets />` ──► `<XR />` link only observes the session state
 
 ## Plugins
 
-Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Monitor />`](../monitor/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), and [`<FileDrop />`](../file-drop/). Mount all of them — Monitor first, so it is the default mode — for the full standalone app; mount none for a bare scene with camera controls.
+Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Machine />`](../machine/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), and [`<FileDrop />`](../file-drop/). Mount all of them — BuildFrames inside Machine — for the full standalone app; mount none for a bare scene with camera controls.
 
 One of them reaches beyond the visualizer element: `<FileDrop />` listens for drags on `window`, so it swallows drag-and-drop for the whole page. Keyboard shortcuts are dispatched by core but exist only when the feature contributing them is mounted, and `inputBindingsEnabled={false}` disables keyboard input wholesale.
 

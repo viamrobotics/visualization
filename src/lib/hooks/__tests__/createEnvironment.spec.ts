@@ -123,6 +123,28 @@ describe('createEnvironment mode availability', () => {
 		expect(environment.leaveConfirmation()).toBeUndefined()
 	})
 
+	it('reports the details panel as owned only while an owning mode is active', () => {
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('build', { ownsDetails: true })
+		environment.current.mode = 'monitor'
+
+		environment.current.mode = 'build'
+
+		expect(environment.modeOwnsDetails).toBe(true)
+	})
+
+	it('hands the details panel back once the owning mode is left', () => {
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('build', { ownsDetails: true })
+		environment.current.mode = 'build'
+
+		environment.current.mode = 'monitor'
+
+		expect(environment.modeOwnsDetails).toBe(false)
+	})
+
 	it('ignores a release called more than once', () => {
 		const environment = createEnvironment()
 		const release = environment.registerMode('build')

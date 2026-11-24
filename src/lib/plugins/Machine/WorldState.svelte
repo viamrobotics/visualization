@@ -2,6 +2,7 @@
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { WorldStateStoreClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceGeneration } from '@viamrobotics/svelte-sdk'
+	import { MathUtils } from 'three'
 
 	import { useWorld } from '#lib/ecs/index.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
@@ -30,10 +31,14 @@
 		() => name
 	)
 
+	const bus = useEventBus()
+	const source = MathUtils.generateUUID()
+
 	const sync = createWorldStateSync({
 		world: useWorld(),
 		relationships: useRelationships(),
-		bus: useEventBus(),
+		bus,
+		source,
 		invalidate,
 		requestFrame: (callback) => {
 			const id = requestAnimationFrame(callback)
@@ -51,5 +56,13 @@
 
 	$effect(() => {
 		return () => sync.dispose()
+	})
+
+	// What was reported about this store no longer holds once it unmounts or its machine changes,
+	// even when the next machine has a store of the same name.
+	$effect(() => {
+		void partID
+		void name
+		return () => bus.publish('diagnostic-cleared', { source })
 	})
 </script>

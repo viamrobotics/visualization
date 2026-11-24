@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'svelte'
+
 import { render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { createWorld, type Entity } from 'koota'
-import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -23,14 +24,16 @@ import {
 import * as useResourceByName from '#lib/hooks/useResourceByName.svelte.js'
 import { createWeblabs, WEBLABS_CONTEXT_KEY } from '#lib/hooks/useWeblabs.svelte.js'
 
-import MonitorDetails from '../MonitorDetails.svelte'
+import SelectionDetailsHost from './__fixtures__/SelectionDetailsHost.svelte'
+
+type Sections = ComponentProps<typeof SelectionDetailsHost>['sections']
 
 vi.mock('@viamrobotics/prime-ui', async (importOriginal) => ({
 	...(await importOriginal<typeof import('@viamrobotics/prime-ui')>()),
 	useToast: () => ({ info: vi.fn(), success: vi.fn(), warning: vi.fn(), danger: vi.fn() }),
 }))
 
-describe('MonitorDetails', () => {
+describe('SelectionDetails', () => {
 	const world = createWorld()
 
 	let entity: Entity
@@ -60,7 +63,7 @@ describe('MonitorDetails', () => {
 		})
 	})
 
-	const renderPanel = (sections = createDetailsSections(), entities = [entity]) => {
+	const renderPanel = (sections: Sections = [], entities = [entity]) => {
 		const weblabContext = createWeblabs()
 		weblabContext.isActive = vi.fn(() => true)
 
@@ -70,13 +73,13 @@ describe('MonitorDetails', () => {
 			setSession: vi.fn(),
 		}
 
-		render(MonitorDetails, {
-			props: { entities },
+		render(SelectionDetailsHost, {
+			props: { entities, sections },
 			context: new Map<symbol, unknown>([
 				[WEBLABS_CONTEXT_KEY, weblabContext],
 				[ENVIRONMENT_CONTEXT_KEY, createEnvironment()],
 				[WORLD_CONTEXT_KEY, world],
-				[DETAILS_SECTIONS_CONTEXT_KEY, sections],
+				[DETAILS_SECTIONS_CONTEXT_KEY, createDetailsSections()],
 				[RESOURCE_APPEARANCE_CONTEXT_KEY, resourceAppearance],
 			]),
 		})
@@ -87,17 +90,11 @@ describe('MonitorDetails', () => {
 		expect(screen.getByText('Test Object')).toBeInTheDocument()
 	})
 
-	const sectionFor = (text: string) =>
-		createRawSnippet<[{ entities: readonly Entity[] }]>(() => ({
-			render: () => `<p>${text}</p>`,
-		}))
-
 	it('renders contributed details sections gated by when()', () => {
-		const sections = createDetailsSections()
-		sections.register({ snippet: sectionFor('shown section'), label: 'shown' })
-		sections.register({ snippet: sectionFor('hidden section'), label: 'hidden', when: () => false })
-
-		renderPanel(sections)
+		renderPanel([
+			{ text: 'shown section', label: 'shown' },
+			{ text: 'hidden section', label: 'hidden', when: () => false },
+		])
 
 		expect(screen.getByText('shown section')).toBeInTheDocument()
 		expect(screen.queryByText('hidden section')).not.toBeInTheDocument()
@@ -105,14 +102,11 @@ describe('MonitorDetails', () => {
 
 	it('names a section in a notice, in place of its content, when when() holds for only part of the selection', () => {
 		const other = world.spawn(traits.Name('Other Object'))
-		const sections = createDetailsSections()
-		sections.register({
-			snippet: sectionFor('battery rows'),
-			label: 'battery',
-			when: (candidate) => candidate === entity,
-		})
 
-		renderPanel(sections, [entity, other])
+		renderPanel(
+			[{ text: 'battery rows', label: 'battery', when: (candidate) => candidate === entity }],
+			[entity, other]
+		)
 
 		expect(screen.queryByText('battery rows')).not.toBeInTheDocument()
 		expect(screen.getByRole('note', { name: 'battery' })).toHaveTextContent(
@@ -121,31 +115,20 @@ describe('MonitorDetails', () => {
 	})
 
 	it('offers no Test tab while no test section applies to the selection', () => {
-		const sections = createDetailsSections()
-		sections.register({
-			snippet: sectionFor('arm controls'),
-			label: 'test',
-			tab: 'test',
-			when: () => false,
-		})
-
-		renderPanel(sections)
+		renderPanel([{ text: 'arm controls', label: 'test', tab: 'test', when: () => false }])
 
 		expect(screen.queryByRole('tab', { name: 'Test' })).not.toBeInTheDocument()
 	})
 
 	it('renders the registered test section in the Test tab', async () => {
-		const sections = createDetailsSections()
-		sections.register({ snippet: sectionFor('arm controls'), label: 'test', tab: 'test' })
-
-		renderPanel(sections)
+		renderPanel([{ text: 'arm controls', label: 'test', tab: 'test' }])
 		await userEvent.click(screen.getByRole('tab', { name: 'Test' }))
 
 		expect(screen.getByText('arm controls')).toBeInTheDocument()
 	})
 
 	it('titles a selection of several objects by its count', () => {
-		renderPanel(undefined, [entity, world.spawn(traits.Name('Other Object'))])
+		renderPanel([], [entity, world.spawn(traits.Name('Other Object'))])
 
 		expect(screen.getByText('2 selected')).toBeInTheDocument()
 	})
@@ -194,24 +177,29 @@ describe('MonitorDetails', () => {
 	})
 
 	describe('appearance tab', () => {
-		const openAppearance = async () => {
-			renderPanel()
+		const openAppearance = async (sections: Sections = []) => {
+			renderPanel(sections)
 			await userEvent.click(screen.getByRole('tab', { name: 'Appearance' }))
 		}
 
-		it('holds a frame edit for the session, so it reaches the frames inside', async () => {
-			entity.add(traits.FramesAPI)
-
+		it('edits an object no section takes over on the entity itself', async () => {
 			await openAppearance()
 
-			expect(screen.getByText(/Not saved, and a reload drops these changes/)).toBeInTheDocument()
+			expect(screen.getByRole('slider', { name: 'opacity' })).toBeInTheDocument()
 		})
 
-		it('edits anything other than a frame on the entity itself', async () => {
-			await openAppearance()
+		it('leaves its own controls out for an object a section takes over', async () => {
+			await openAppearance([
+				{
+					text: 'session appearance',
+					label: 'appearance',
+					tab: 'appearance',
+					replacesAppearance: true,
+				},
+			])
 
-			expect(screen.queryByText(/Not saved/)).not.toBeInTheDocument()
-			expect(screen.getByRole('slider', { name: 'opacity' })).toBeInTheDocument()
+			expect(screen.getByText('session appearance')).toBeInTheDocument()
+			expect(screen.queryByRole('slider', { name: 'opacity' })).not.toBeInTheDocument()
 		})
 	})
 })

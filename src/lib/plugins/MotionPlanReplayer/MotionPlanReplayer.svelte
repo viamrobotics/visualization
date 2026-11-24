@@ -6,9 +6,6 @@
 	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
-	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
-	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
-	import MonitorDetails from '#lib/plugins/Monitor/MonitorDetails.svelte'
 
 	import { type ResolveIKSolutions } from './inspect-ik/inspect-ik-client'
 	import { provideIKInspection } from './inspect-ik/useIKInspection.svelte'
@@ -36,8 +33,6 @@
 	provideIKInspection(untrack(() => resolveIKSolutions))
 
 	const environment = useEnvironment()
-	const selected = useSelectionOrder()
-	const fullscreen = useFullscreen()
 
 	useEnvironmentMode('replay')
 </script>
@@ -55,11 +50,4 @@
 		{children}
 		{resolvePlanSnapshots}
 	/>
-
-	{#if selected.current.length > 0}
-		<MonitorDetails
-			entities={selected.current}
-			style="transform: translate(0, {fullscreen.baseOffset}px)"
-		/>
-	{/if}
 {/if}

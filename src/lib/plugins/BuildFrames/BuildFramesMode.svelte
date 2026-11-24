@@ -6,7 +6,6 @@
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectionOrder } from '#lib/hooks/useSelectionOrder.svelte.js'
-	import { useFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 
 	import BuildActionsBar from './BuildActionsBar.svelte'
 	import BuildDetails from './BuildDetails.svelte'
@@ -27,7 +26,6 @@
 	const selectedFrameless = $derived(
 		selection.current.filter((entity) => entity.has(traits.FramelessComponent))
 	)
-	const fullscreen = useFullscreen()
 
 	// Registering also resolves a persisted `build` for hosts that don't mount
 	// this plugin, instead of pausing live queries with no UI out.
@@ -43,6 +41,7 @@
 						},
 					}
 				: undefined,
+		ownsDetails: true,
 	})
 
 	provideObstaclePreviewToggle(useObstacleLivePreview())
@@ -67,12 +66,8 @@
 		<BuildDetails
 			entities={selectedFrames}
 			framelessCount={selectedFrameless.length}
-			style="transform: translate(0, {fullscreen.baseOffset}px)"
 		/>
 	{:else if selectedFrameless.length > 0}
-		<FramelessComponentDetails
-			entities={selectedFrameless}
-			style="transform: translate(0, {fullscreen.baseOffset}px)"
-		/>
+		<FramelessComponentDetails entities={selectedFrameless} />
 	{/if}
 {/if}

@@ -6,6 +6,7 @@ import {
 } from '@viamrobotics/sdk'
 import { createResourceClient, useConnectionStatus } from '@viamrobotics/svelte-sdk'
 import { untrack } from 'svelte'
+import { MathUtils } from 'three'
 
 import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 import { useEventBus } from '#lib/hooks/useEventBus.js'
@@ -41,6 +42,13 @@ export const useObstacleLivePreview = (): ObstaclePreviewToggle => {
 	const partConfig = usePartConfig()
 	const bus = useEventBus()
 	const connectionStatus = useConnectionStatus(() => partID.current)
+	const source = MathUtils.generateUUID()
+
+	// A failed preview no longer holds once the editor closes or the machine changes.
+	$effect(() => {
+		void partID.current
+		return () => bus.publish('diagnostic-cleared', { source })
+	})
 
 	let isEnabled = $state(false)
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
@@ -94,6 +102,7 @@ export const useObstacleLivePreview = (): ObstaclePreviewToggle => {
 					message: `Failed to preview obstacle "${name}": ${reason}`,
 					level: 'error',
 					target: { folder: 'frames' },
+					source,
 				})
 			})
 	}

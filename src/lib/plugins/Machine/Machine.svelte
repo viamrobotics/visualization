@@ -22,15 +22,21 @@ inside it.
 	import type { FragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import type { AppEmbeddedPartConfigProps } from '#lib/hooks/usePartConfig.svelte.js'
 
+	import type { Entity } from 'koota'
+
+	import { appearanceKeyOf } from '#lib/appearanceTarget.js'
+	import DetailsSection from '#lib/components/overlay/details/DetailsSection.svelte'
 	import DomPortal from '#lib/components/overlay/Portals/DomPortal.svelte'
+	import ModeTogglePortal from '#lib/components/overlay/Portals/ModeTogglePortal.svelte'
 	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
-	import { folderSettingsPortalId } from '#lib/ecs/index.js'
+	import ModeButton from '#lib/components/overlay/workspace/ModeButton.svelte'
+	import { folderSettingsPortalId, traits } from '#lib/ecs/index.js'
 	import { provideResourceHealth } from '#lib/hooks/resources/useResourceHealth.svelte.js'
 	import { provide3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { provideArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { provideArmKinematics } from '#lib/hooks/useArmKinematics.svelte.js'
 	import { provideConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
-	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 	import { provideFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { useFramelessComponentEntities } from '#lib/hooks/useFramelessComponentEntities.svelte.js'
 	import { provideFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
@@ -47,6 +53,7 @@ inside it.
 	import ArmModels from './ArmModels.svelte'
 	import PointCloudObjects from './PointCloudObjects.svelte'
 	import PointClouds from './PointClouds.svelte'
+	import SessionAppearanceDetails from './SessionAppearanceDetails.svelte'
 	import CameraSettings from './settings/CameraSettings.svelte'
 	import FramesSettings from './settings/FramesSettings.svelte'
 	import VisionSettings from './settings/VisionSettings.svelte'
@@ -74,6 +81,9 @@ inside it.
 
 	const environment = useEnvironment()
 	const toast = useToast()
+
+	// Registered here, ahead of any mode its children add, so monitor is the first mode and the fallback.
+	useEnvironmentMode('monitor')
 
 	createPartIDContext(() => partID)
 
@@ -113,7 +123,34 @@ inside it.
 	useFramelessComponentEntities(() => partID)
 	useCameraTraits()
 	useKinematicsTraits()
+
+	/** A frame's appearance is kept per resource, so it reaches every frame of that resource. */
+	const isNamedFrame = (entity: Entity) => entity.has(traits.FramesAPI) && entity.has(traits.Name)
 </script>
+
+<ModeTogglePortal>
+	<ModeButton
+		class="rounded-r-none"
+		mode="monitor"
+		description="Monitor live machine data"
+	/>
+</ModeTogglePortal>
+
+<DetailsSection
+	label="appearance"
+	tab="appearance"
+	when={isNamedFrame}
+	replacesAppearance
+>
+	{#snippet children({ entities })}
+		<SessionAppearanceDetails
+			targets={entities.map((entity) => ({
+				entity,
+				...appearanceKeyOf(entity.get(traits.Name) ?? ''),
+			}))}
+		/>
+	{/snippet}
+</DetailsSection>
 
 <PointClouds />
 <PointCloudObjects />

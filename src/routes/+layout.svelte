@@ -19,7 +19,6 @@
 		Logs,
 		Machine,
 		MeasureTool,
-		Monitor,
 		MotionPlanReplayer,
 		MoveFrame,
 		SceneExport,
@@ -125,7 +124,6 @@
 					<Machine partID={partID ?? ''}>
 						<SensorCoverage />
 
-						<Monitor />
 						<BuildFrames />
 						<MoveFrame />
 						<MotionPlanReplayer {resolveIKSolutions} />
@@ -135,7 +133,6 @@
 						</XR>
 
 						<ControlWidgets />
-						<Logs />
 					</Machine>
 
 					<Machines {launch} />
@@ -149,6 +146,7 @@
 		<Isolate />
 		<MeasureTool />
 		<WorldTree />
+		<Logs />
 		<SceneExport />
 		<Settings />
 		<RenderStats />

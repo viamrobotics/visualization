@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from 'vitest'
 import DomPortalHarness from './__fixtures__/DomPortalHarness.svelte'
 
 vi.mock('#lib/components/overlay/Portals/DomPortal.svelte', (importOriginal) => importOriginal())
+vi.mock('#lib/components/overlay/Portals/DomPortalTarget.svelte', (importOriginal) =>
+	importOriginal()
+)
 
 const target = () => screen.getByRole('region', { name: 'Target' })
 

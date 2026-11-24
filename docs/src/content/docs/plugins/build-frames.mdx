@@ -60,4 +60,4 @@ Build mode exists only while this plugin is mounted. It declares itself with `us
 ## Runtime requirements
 
 - Mounted inside [`<Machine />`](../machine/), with edit permissions on its part for the frame-editing affordances.
-- Mount order is button order and fallback priority: mount [`<Monitor />`](../monitor/), then `<BuildFrames />`, then `<MoveFrame />` for the conventional monitor | build | move layout.
+- Mount order is button order and fallback priority. Inside [`<Machine />`](../machine/), which adds monitor mode first, mount `<BuildFrames />` then `<MoveFrame />` for the conventional monitor | build | move layout.

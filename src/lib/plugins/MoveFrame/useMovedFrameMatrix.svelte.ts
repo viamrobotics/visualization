@@ -1,7 +1,7 @@
 import type { commonApi } from '@viamrobotics/sdk'
-import type { Matrix4 } from 'three'
 
 import { createRobotQuery, useRobotClient } from '@viamrobotics/svelte-sdk'
+import { MathUtils, type Matrix4 } from 'three'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 import { useEventBus } from '#lib/hooks/useEventBus.js'
@@ -57,6 +57,15 @@ export const useMovedFrameMatrix = (
 		})
 	)
 
+	const source = MathUtils.generateUUID()
+
+	// The error is about one frame on one machine, and no longer holds once either changes.
+	$effect(() => {
+		void partID()
+		void frameName()
+		return () => bus.publish('diagnostic-cleared', { source })
+	})
+
 	// The gizmo just renders nothing when this fails, which reads as the frame
 	// having no transform rather than as an error.
 	$effect(() => {
@@ -66,6 +75,7 @@ export const useMovedFrameMatrix = (
 			message: `Error fetching pose for ${frameName()}: ${query.error.message}`,
 			level: 'error',
 			target: { resource: frameName(), folder: 'frames' },
+			source,
 		})
 	})
 

@@ -4,12 +4,14 @@ import type { DetailsTabId } from '#lib/hooks/useDetailsSections.svelte.js'
 
 import {
 	createDetailsSections,
-	type DetailsSection,
+	type RegisteredDetailsSection,
 	sectionsForTab,
 } from '#lib/hooks/useDetailsSections.svelte.js'
 
-const section = (tab?: DetailsTabId): DetailsSection => ({
-	snippet: (() => undefined) as unknown as DetailsSection['snippet'],
+let nextId = 0
+
+const section = (tab?: DetailsTabId): RegisteredDetailsSection => ({
+	id: `section-${nextId++}`,
 	label: 'section',
 	tab,
 })

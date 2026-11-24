@@ -3,7 +3,7 @@
 
 	import { VisionClient } from '@viamrobotics/sdk'
 	import { createResourceClient, createResourceQuery } from '@viamrobotics/svelte-sdk'
-	import { Matrix4 } from 'three'
+	import { MathUtils, Matrix4 } from 'three'
 
 	import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
 	import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -84,18 +84,30 @@
 		return () => refetchers.delete(registration)
 	})
 
+	const source = MathUtils.generateUUID()
+
+	// What was reported about this service no longer holds once it unmounts or its machine changes,
+	// even when the next machine has a service of the same name.
+	$effect(() => {
+		void partID
+		void name
+		return () => bus.publish('diagnostic-cleared', { source })
+	})
+
 	$effect(() => {
 		if (query.isFetching) {
 			bus.publish('diagnostic', {
 				message: `Fetching pointcloud for ${name}...`,
 				level: 'info',
 				target: { resource: name, folder: 'pointcloud-objects' },
+				source,
 			})
 		} else if (query.error) {
 			bus.publish('diagnostic', {
 				message: `Error fetching pointcloud from ${name}: ${query.error.message}`,
 				level: 'error',
 				target: { resource: name, folder: 'pointcloud-objects' },
+				source,
 			})
 		}
 	})
@@ -208,6 +220,7 @@
 							message: error?.reason ?? error?.message ?? 'Failed to parse pointcloud',
 							level: 'error',
 							target: { resource: name, folder: 'pointcloud-objects' },
+							source,
 						})
 					})
 			}

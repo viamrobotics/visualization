@@ -19,12 +19,14 @@
 	import { provideEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { provideSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { provideTransformGizmos } from '#lib/hooks/useTransformGizmos.svelte.js'
+	import { provideVisualizerRoot } from '#lib/hooks/useVisualizerRoot.svelte.js'
 	import { provideWeblabs } from '#lib/hooks/useWeblabs.svelte.js'
 	import { provideKeybindings } from '#lib/keybindings/index.js'
-	import { provideFullscreen } from '#lib/plugins/Fullscreen/useFullscreen.svelte.js'
 	import { domPortal, provideDomPortals } from '#lib/portal.svelte.js'
 
 	import HoveredEntities from './hover/HoveredEntities.svelte'
+	import DefaultSelectionDetails from './overlay/details/DefaultSelectionDetails.svelte'
+	import DetailsSection from './overlay/details/DetailsSection.svelte'
 	import DomPortalTarget from './overlay/Portals/DomPortalTarget.svelte'
 	import { provideSettingsTabs } from './overlay/Portals/useSettingsTabs.svelte'
 	import Scene from './Scene.svelte'
@@ -60,7 +62,6 @@
 
 	provideSettings()
 	const environment = provideEnvironment()
-	const fullscreen = provideFullscreen()
 
 	// After the world and the environment, since the consumers write to them.
 	provideDeepLink()
@@ -73,27 +74,17 @@
 	provideToast()
 
 	let root = $state.raw<HTMLElement>()
+	provideVisualizerRoot(() => root)
 
 	$effect(() => {
 		environment.current.inputBindingsEnabled = inputBindingsEnabled
 	})
 
-	const detailsSections = provideDetailsSections()
-
-	// The host's `details` snippet is just another section. Registered in an
-	// effect so a swapped prop re-registers; sections can't hold an undefined
-	// snippet, and no card can render before this first runs.
-	$effect(() => {
-		if (details === undefined) return
-		return detailsSections.register({ snippet: details, label: 'details' })
-	})
+	provideDetailsSections()
 </script>
 
 <div
-	class={[
-		'h-full w-full overflow-clip bg-white',
-		fullscreen.active ? 'z-max fixed inset-0' : 'relative',
-	]}
+	class="relative h-full w-full overflow-clip bg-white"
 	bind:this={root}
 >
 	<Canvas
@@ -121,6 +112,17 @@
 				<Controls />
 
 				<DomPortalTarget id="dom" />
+
+				<DefaultSelectionDetails />
+
+				<!-- The host's `details` snippet is just another section. -->
+				{#if details}
+					<DetailsSection label="details">
+						{#snippet children({ entities })}
+							{@render details({ entities })}
+						{/snippet}
+					</DetailsSection>
+				{/if}
 			</div>
 		</SceneProviders>
 	</Canvas>

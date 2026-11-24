@@ -66,6 +66,8 @@ interface WorldStateSyncOptions {
 	world: World
 	relationships: ReturnType<typeof useRelationships>
 	bus: Pick<EventBus, 'publish'>
+	/** The diagnostic source this sync files its lines under, so its owner can withdraw them. */
+	source: string
 	invalidate: () => void
 	/** Runs `callback` before the next render, and returns a function that cancels it. */
 	requestFrame: (callback: () => void) => () => void
@@ -122,6 +124,7 @@ export const createWorldStateSync = ({
 	world,
 	relationships,
 	bus,
+	source,
 	invalidate,
 	requestFrame,
 	timing,
@@ -488,6 +491,7 @@ export const createWorldStateSync = ({
 			message: `World state store: ${newlyFailing.length} of ${requested} transforms failed`,
 			level: 'error',
 			target: { folder: 'world-state-store' },
+			source,
 		})
 		for (const uuid of newlyFailing) loggedFailingUUIDs.add(uuid)
 	}
@@ -553,6 +557,7 @@ export const createWorldStateSync = ({
 					message: 'World state store: could not load the current transforms',
 					level: 'error',
 					target: { folder: 'world-state-store' },
+					source,
 				})
 				isSnapshotFailureLogged = true
 			}
@@ -741,6 +746,7 @@ export const createWorldStateSync = ({
 						'World state store: this store does not stream changes, so the scene will not update live',
 					level: 'error',
 					target: { folder: 'world-state-store' },
+					source,
 				})
 				return
 			}
@@ -749,6 +755,7 @@ export const createWorldStateSync = ({
 				message: 'World state store: transform stream failed',
 				level: 'error',
 				target: { folder: 'world-state-store' },
+				source,
 			})
 		}
 

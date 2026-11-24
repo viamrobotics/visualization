@@ -6,7 +6,6 @@
 	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
 	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
 	import { useEventBus } from '#lib/hooks/useEventBus.js'
-	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 	import { useResourceRowRenames } from '#lib/hooks/useResourceRowRenames.svelte.js'
 
 	import { createLogIssueMirror } from './logIssueMirror'
@@ -15,40 +14,22 @@
 
 	const world = useWorld()
 	const logs = provideLogs()
-	const partID = usePartID()
 	const bus = useEventBus()
 
 	// `.pre` so the subscription is in place before any plain `$effect` in the first flush
 	// publishes, including the scene's own fetch notices.
 	$effect.pre(() => {
-		const stopDiagnostics = bus.subscribe('diagnostic', ({ message, level, target }) => {
-			logs.add(message, level, target)
+		const stopDiagnostics = bus.subscribe('diagnostic', ({ message, level, target, source }) => {
+			logs.add(message, level, target, source)
 		})
-		const stopClears = bus.subscribe('diagnostic-cleared', ({ target }) => {
-			logs.retractTarget(target)
+		const stopClears = bus.subscribe('diagnostic-cleared', ({ source }) => {
+			logs.retractSource(source)
 		})
 
 		return () => {
 			stopDiagnostics()
 			stopClears()
 		}
-	})
-
-	// The sink lives as long as the app, so nothing else evicts the previous
-	// machine's lines. Seeded at setup rather than left unset so the first flush
-	// keeps what plugins mounting alongside us have already logged.
-	let loggedPartID = partID.current
-
-	$effect(() => {
-		const next = partID.current
-		const previous = loggedPartID
-		loggedPartID = next
-
-		// Leaving no machine at all is not a machine change. Lines filed before an
-		// id resolved, by the draw service or a failed connection, are still current.
-		if (previous === '' || previous === next) return
-
-		logs.clear()
 	})
 
 	const countByUuid = $derived(new Map(logs.current.map((log) => [log.uuid, log.count])))
