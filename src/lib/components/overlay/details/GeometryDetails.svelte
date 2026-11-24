@@ -2,9 +2,11 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { NumberField, Point } from '@viamrobotics/prime-controls'
+	import { Point } from '@viamrobotics/prime-controls'
 
 	import { traits, useTrait } from '#lib/ecs/index.js'
+
+	import HeldNumberField from '../HeldNumberField.svelte'
 
 	interface Props {
 		entity: Entity
@@ -39,7 +41,7 @@
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(sphere) (mm)</span>
-		<NumberField
+		<HeldNumberField
 			label="r"
 			min={0}
 			bind:value={
@@ -57,7 +59,7 @@
 	<div>
 		<strong class="font-semibold">dimensions</strong>
 		<span class="text-subtle-2">(capsule) (mm)</span>
-		<NumberField
+		<HeldNumberField
 			label="r"
 			min={0}
 			bind:value={
@@ -69,7 +71,7 @@
 				}
 			}
 		/>
-		<NumberField
+		<HeldNumberField
 			label="l"
 			min={0}
 			bind:value={

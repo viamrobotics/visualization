@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { NumberField, Point } from '@viamrobotics/prime-controls'
+	import { Point } from '@viamrobotics/prime-controls'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
+	import HeldNumberField from '#lib/components/overlay/HeldNumberField.svelte'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '#lib/obstacleAttributes.js'
@@ -17,7 +18,7 @@
 
 	const partConfig = usePartConfig()
 
-	// The fields clamp to these, so a typed 0 lands on a value the hint accepts instead of being dropped.
+	// The steppers stop here. A typed value below it is not positive enough to commit, so it is dropped.
 	const MIN_WALL_THICKNESS_MM = 1
 
 	const FACE_LABELS: Record<BoundsFace, string> = {
@@ -77,7 +78,7 @@
 			/>
 		</div>
 
-		<NumberField
+		<HeldNumberField
 			label="wall thickness (mm)"
 			min={MIN_WALL_THICKNESS_MM}
 			bind:value={

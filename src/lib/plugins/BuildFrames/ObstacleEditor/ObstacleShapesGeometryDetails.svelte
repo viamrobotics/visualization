@@ -70,7 +70,7 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 			// A type switch replaces every shape's fields with that type's defaults.
 			if (type !== 'none') writeAll(defaultFrameGeometry(type) as ObstacleShape)
 		}}
-		ondimensionchange={(patch) => writeAll({ type: geometryType, ...patch } as Partial<ObstacleShape>)}
+		ondimensionchange={(patch) => writeAll(patch as Partial<ObstacleShape>)}
 	/>
 {/if}
 

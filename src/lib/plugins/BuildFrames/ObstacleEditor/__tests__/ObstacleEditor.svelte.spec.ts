@@ -27,7 +27,7 @@ describe('ObstacleEditor', () => {
 		mountEditor(createBoundsObstacleComponent('bounds-1'))
 
 		expect(screen.getByLabelText('obstacle bounds')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable interior size')).toBeInTheDocument()
+		expect(screen.getByRole('group', { name: 'interior size (mm)' })).toBeInTheDocument()
 		expect(screen.queryByLabelText('obstacle shape')).not.toBeInTheDocument()
 	})
 
@@ -35,7 +35,7 @@ describe('ObstacleEditor', () => {
 		mountEditor(createObstacleComponent('obstacle-1'))
 
 		expect(screen.getByLabelText('obstacle shape')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable box dimensions')).toBeInTheDocument()
+		expect(screen.getByRole('group', { name: 'box dimensions (mm)' })).toBeInTheDocument()
 	})
 
 	it('routes to the complex editor for a complex obstacle', () => {

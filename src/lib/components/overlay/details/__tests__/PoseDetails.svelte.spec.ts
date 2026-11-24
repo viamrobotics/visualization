@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte'
+import { render, screen, within } from '@testing-library/svelte'
 import { createWorld } from 'koota'
 import { describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
@@ -31,8 +31,11 @@ describe('PoseDetails', () => {
 			props: { entities: [entity], editable: true },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByLabelText('mutable local position')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable local orientation')).toBeInTheDocument()
+		const position = within(screen.getByRole('group', { name: 'local position (mm)' }))
+		expect(position.getByRole('spinbutton', { name: 'X' })).toHaveValue(1)
+		expect(position.getByRole('spinbutton', { name: 'Y' })).toHaveValue(2)
+		expect(position.getByRole('spinbutton', { name: 'Z' })).toHaveValue(3)
+		expect(screen.getByRole('group', { name: 'local orientation (OV, deg)' })).toBeInTheDocument()
 	})
 
 	it('folds a drawn geometry center into the local and world poses', () => {

@@ -9,9 +9,7 @@ field it changed, so every selected entity keeps its own value for the others.
 	lang="ts"
 	generics="TKey extends string"
 >
-	import { NumberField } from '@viamrobotics/prime-controls'
-	import { SvelteSet } from 'svelte/reactivity'
-
+	import HeldNumberField from '../HeldNumberField.svelte'
 	import { MIXED, MIXED_TEXT, type Shared } from './sharedValue'
 
 	interface Field {
@@ -34,24 +32,6 @@ field it changed, so every selected entity keeps its own value for the others.
 	const { 'aria-label': ariaLabel, fields, values, onchange, min, step = 1 }: Props = $props()
 
 	const valueOf = (key: TKey): Shared<number> => values[key]
-
-	// A cleared field writes nothing, so it would snap back to its value mid-retype. It is held
-	// empty here instead, until a number is typed or the field loses focus. Same as `Point`.
-	const clearedKeys = new SvelteSet<TKey>()
-
-	const shownValue = (key: TKey): number | undefined => {
-		const value = valueOf(key)
-		return clearedKeys.has(key) || value === MIXED ? undefined : value
-	}
-
-	const write = (key: TKey, next: number | undefined) => {
-		if (next === undefined) {
-			clearedKeys.add(key)
-			return
-		}
-		clearedKeys.delete(key)
-		onchange({ [key]: next } as Partial<Record<TKey, number>>)
-	}
 </script>
 
 <div
@@ -60,15 +40,22 @@ field it changed, so every selected entity keeps its own value for the others.
 	class="grid auto-cols-fr grid-flow-col gap-1"
 >
 	{#each fields as field (field.key)}
-		<NumberField
+		{@const value = valueOf(field.key)}
+		<HeldNumberField
 			label={field.label}
 			labelPlacement="inset"
 			{min}
 			{step}
-			placeholder={valueOf(field.key) === MIXED ? MIXED_TEXT : undefined}
+			placeholder={value === MIXED ? MIXED_TEXT : undefined}
 			class="min-w-0"
-			onblur={() => clearedKeys.delete(field.key)}
-			bind:value={() => shownValue(field.key), (next) => write(field.key, next)}
+			bind:value={
+				() => (value === MIXED ? undefined : value),
+				(next) => {
+					if (next !== undefined) {
+						onchange({ [field.key]: next } as Partial<Record<TKey, number>>)
+					}
+				}
+			}
 		/>
 	{/each}
 </div>

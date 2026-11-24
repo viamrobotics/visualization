@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { createWorld } from 'koota'
 import { Color } from 'three'
@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
+import { enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -67,14 +68,10 @@ describe('ConfigAppearanceDetails', () => {
 
 	it('saves a typed opacity', async () => {
 		const partConfig = mountDetails({ type: 'complex' })
-		const input = screen.getByLabelText('mutable opacity').querySelector<HTMLInputElement>('input')!
 
-		await userEvent.tripleClick(input)
-		await userEvent.keyboard('0.35{Tab}')
+		await enterNumber(screen.getByRole('spinbutton', { name: 'opacity' }), '0.35')
 
-		await vi.waitFor(() =>
-			expect(lastVisualizer(partConfig)).toEqual({ type: 'complex', opacity: 0.35 })
-		)
+		expect(lastVisualizer(partConfig)).toEqual({ type: 'complex', opacity: 0.35 })
 	})
 
 	it('resets every saved appearance key and keeps the obstacle hint', async () => {
@@ -85,22 +82,18 @@ describe('ConfigAppearanceDetails', () => {
 		expect(lastVisualizer(partConfig)).toEqual({ type: 'complex' })
 	})
 
-	it('shows a saved #808080 as its sRGB channels, not three.js linear ones', () => {
+	it('shows a saved #808080 as #808080, not converted to three.js linear channels', () => {
 		mountDetails({ color: '#808080' })
 
-		const input = screen.getByLabelText('mutable color').querySelector<HTMLInputElement>('input')!
-
-		expect(input.value).toBe('{r: 0.50, g: 0.50, b: 0.50}')
+		expect(screen.getByLabelText('color')).toHaveValue('#808080')
 	})
 
-	it('saves a typed hex as the same hex', async () => {
+	it('saves a picked hex as the same hex', async () => {
 		const partConfig = mountDetails({})
-		const input = screen.getByLabelText('mutable color').querySelector<HTMLInputElement>('input')!
 
-		await userEvent.tripleClick(input)
-		await userEvent.keyboard('#ff8000{Tab}')
+		await fireEvent.input(screen.getByLabelText('color'), { target: { value: '#ff8000' } })
 
-		await vi.waitFor(() => expect(lastVisualizer(partConfig)).toEqual({ color: '#ff8000' }))
+		expect(lastVisualizer(partConfig)).toEqual({ color: '#ff8000' })
 	})
 
 	it('offers no reset when nothing is saved', () => {
@@ -130,18 +123,14 @@ describe('ConfigAppearanceDetails for a frame inside a resource', () => {
 
 	it('saves a typed opacity under its own id', async () => {
 		const partConfig = mountDetails({ type: 'complex', opacity: 0.5 }, 'post')
-		const input = screen.getByLabelText('mutable opacity').querySelector<HTMLInputElement>('input')!
 
-		await userEvent.tripleClick(input)
-		await userEvent.keyboard('0.35{Tab}')
+		await enterNumber(screen.getByRole('spinbutton', { name: 'opacity' }), '0.35')
 
-		await vi.waitFor(() =>
-			expect(lastVisualizer(partConfig)).toEqual({
-				type: 'complex',
-				opacity: 0.5,
-				frames: { post: { opacity: 0.35 } },
-			})
-		)
+		expect(lastVisualizer(partConfig)).toEqual({
+			type: 'complex',
+			opacity: 0.5,
+			frames: { post: { opacity: 0.35 } },
+		})
 	})
 
 	it('saves turning the axes helper back on against a resource that turns it off', async () => {

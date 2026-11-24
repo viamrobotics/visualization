@@ -6,6 +6,7 @@ import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createEntityFixture } from '#lib/__tests__/__fixtures__/entity.js'
+import { axisField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { resource } from '#lib/__tests__/__fixtures__/resource.js'
 import { traits } from '#lib/ecs/index.js'
@@ -121,15 +122,11 @@ describe('BuildDetails', () => {
 	it('renders update fields for frame nodes', () => {
 		renderPanel()
 
-		const positionGroup = screen.getByLabelText('mutable local position')
-		expect(positionGroup).toBeInTheDocument()
-		expect(positionGroup.querySelectorAll('input')).toHaveLength(3)
+		const position = screen.getByRole('group', { name: 'local position (mm)' })
+		expect(within(position).getAllByRole('spinbutton')).toHaveLength(3)
 
-		const orientationGroup = screen.getByLabelText('mutable local orientation')
-		expect(orientationGroup).toBeInTheDocument()
-		// 4 OV inputs (x, y, z, theta) plus 3 Euler inputs (x, y, z) — both
-		// TabPages are mounted simultaneously by tweakpane's TabGroup.
-		expect(orientationGroup.querySelectorAll('input')).toHaveLength(7)
+		const orientation = screen.getByRole('group', { name: 'local orientation (OV, deg)' })
+		expect(within(orientation).getAllByRole('spinbutton')).toHaveLength(4)
 	})
 
 	const useComponentModel = (model: string) => {
@@ -259,7 +256,7 @@ describe('BuildDetails', () => {
 
 		renderPanel()
 
-		expect(screen.getByLabelText('mutable geometry')).toBeInTheDocument()
+		expect(screen.getByRole('tablist', { name: 'geometry type' })).toBeInTheDocument()
 		expect(screen.queryByRole('button', { name: 'obstacle' })).not.toBeInTheDocument()
 		expect(screen.queryByLabelText('obstacle shape')).not.toBeInTheDocument()
 	})
@@ -270,10 +267,10 @@ describe('BuildDetails', () => {
 		renderPanel()
 
 		const obstacleShape = screen.getByLabelText('obstacle shape')
-		const geometryEditors = screen.getAllByLabelText('mutable geometry')
+		const geometryEditors = screen.getAllByRole('tablist', { name: 'geometry type' })
 		expect(geometryEditors).toHaveLength(1)
 		expect(obstacleShape.contains(geometryEditors[0]!)).toBe(true)
-		expect(screen.getByLabelText('mutable local position')).toBeInTheDocument()
+		expect(screen.getByRole('group', { name: 'local position (mm)' })).toBeInTheDocument()
 	})
 
 	it('shows the geometry list editor for an obstacle without a hint', () => {
@@ -304,7 +301,7 @@ describe('BuildDetails', () => {
 			expect(within(group).getByRole('button', { name: `Select ${label}` })).toBeInTheDocument()
 		}
 		expect(screen.queryByLabelText('obstacle shape')).not.toBeInTheDocument()
-		expect(screen.getAllByLabelText('mutable local position')).toHaveLength(1)
+		expect(screen.getAllByRole('group', { name: 'local position (mm)' })).toHaveLength(1)
 	})
 
 	describe('for a selected Complex obstacle shape', () => {
@@ -334,9 +331,9 @@ describe('BuildDetails', () => {
 			renderPanel()
 
 			expect(screen.getByLabelText('label')).toHaveValue('b')
-			expect(screen.getAllByLabelText('mutable local position')).toHaveLength(1)
-			expect(screen.getByLabelText('mutable sphere dimensions')).toBeInTheDocument()
-			expect(screen.queryByLabelText('mutable parent frame')).not.toBeInTheDocument()
+			expect(screen.getAllByRole('group', { name: 'local position (mm)' })).toHaveLength(1)
+			expect(screen.getByRole('group', { name: 'sphere dimensions (mm)' })).toBeInTheDocument()
+			expect(screen.queryByRole('combobox', { name: 'parent frame' })).not.toBeInTheDocument()
 		})
 
 		it('offers Duplicate shape and Delete shape as its actions', () => {
@@ -385,7 +382,7 @@ describe('BuildDetails', () => {
 
 			renderPanel({ entities: [shapeA, entity] })
 
-			expect(screen.getByLabelText('mutable local position')).toBeInTheDocument()
+			expect(screen.getByRole('group', { name: 'local position (mm)' })).toBeInTheDocument()
 			expect(
 				screen.getByText('The selected shapes have different geometry types.')
 			).toBeInTheDocument()
@@ -412,7 +409,7 @@ describe('BuildDetails', () => {
 			await openAppearance()
 
 			expect(screen.queryByText("Saved to this resource's config.")).not.toBeInTheDocument()
-			expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
+			expect(screen.getByRole('slider', { name: 'opacity' })).toBeInTheDocument()
 		})
 
 		it('edits only the scene without permission to edit the config', async () => {
@@ -438,17 +435,13 @@ describe('BuildDetails', () => {
 		const stopKeyup = on(container, 'keyup', parentListener)
 
 		const panel = screen.getByRole('region', { name: 'Details panel' })
-		const positionGroup = screen.getByLabelText('mutable local position')
-		const input = positionGroup.querySelector('input')
-
-		expect(input).not.toBeNull()
+		const input = axisField('local position (mm)', 'X')
 		expect(panel.contains(input)).toBe(true)
 
-		input!.focus()
-		expect(document.activeElement).toBe(input)
+		input.focus()
 
-		await fireEvent.keyDown(input!, { key: 'ArrowDown', bubbles: true })
-		await fireEvent.keyUp(input!, { key: 'ArrowDown', bubbles: true })
+		await fireEvent.keyDown(input, { key: 'ArrowDown', bubbles: true })
+		await fireEvent.keyUp(input, { key: 'ArrowDown', bubbles: true })
 
 		expect(parentListener).not.toHaveBeenCalled()
 

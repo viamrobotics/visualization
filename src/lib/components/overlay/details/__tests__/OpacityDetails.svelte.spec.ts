@@ -16,7 +16,6 @@ describe('OpacityDetails', () => {
 			props: { entities: [entity] },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByText('opacity')).toBeInTheDocument()
-		expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
+		expect(screen.getByRole('slider', { name: 'opacity' })).toBeInTheDocument()
 	})
 })
