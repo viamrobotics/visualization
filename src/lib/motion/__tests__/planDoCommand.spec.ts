@@ -4,7 +4,8 @@ import { Constraints, WorldState } from '@viamrobotics/sdk'
 import { describe, expect, it } from 'vitest'
 
 import { Pose } from '#lib/math/index.js'
-import { parseMoveOptions } from '#lib/plugins/MoveFrame/parseMoveOptions.js'
+
+import type { TrajectoryStep } from '../trajectoryStep'
 
 import {
 	executeCommand,
@@ -12,7 +13,6 @@ import {
 	parsePlanResult,
 	planCommand,
 	PlanCommandError,
-	type TrajectoryStep,
 } from '../planDoCommand'
 
 // Distinct orientation components, so a transposed `oX`/`oY` cannot pass unnoticed.

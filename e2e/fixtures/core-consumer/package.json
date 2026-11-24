@@ -1,8 +1,8 @@
 {
-	"name": "scoped-scene-consumer",
+	"name": "core-consumer",
 	"private": true,
 	"type": "module",
-	"description": "Packaging check: a host that installs only the peers the ./scoped-scene entry point needs. Run through run.sh, which supplies visualization.tgz.",
+	"description": "Packaging check: a host that installs only the peers the ./core entry point needs. Run through run.sh, which supplies visualization.tgz.",
 	"scripts": {
 		"build": "vite build"
 	},

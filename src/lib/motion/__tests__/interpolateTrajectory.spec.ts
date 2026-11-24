@@ -4,7 +4,7 @@ import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor } from '../frameDescriptors'
 import type { JointMotion, JointMotions } from '../interpolateTrajectory'
-import type { TrajectoryStep } from '../jointPose'
+import type { TrajectoryStep } from '../trajectoryStep'
 
 import {
 	DEFAULT_DEGREES_PER_FRAME,

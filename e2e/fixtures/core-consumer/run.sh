@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Packaging check for the ./scoped-scene entry point.
+# Packaging check for the ./core entry point.
 #
 # Packs the library with `pnpm pack`, which runs prepack (svelte-package and publint), installs the
 # tarball into a copy of this fixture with only the peers listed in its package.json, and runs
-# `vite build` on a page that mounts ScopedScene.
+# `vite build` on a page that mounts SceneView.
 #
 # The copy lives in a temp dir outside the repo. Inside the repo, module resolution walks up to the
 # root node_modules, which holds every optional peer, so a banned import would resolve and pass.
@@ -23,7 +23,7 @@ BANNED_PACKAGES=(
 	'svelte-tweakpane-ui'
 )
 
-work_dir="$(mktemp -d "${TMPDIR:-/tmp}/scoped-scene-consumer.XXXXXX")"
+work_dir="$(mktemp -d "${TMPDIR:-/tmp}/core-consumer.XXXXXX")"
 trap 'rm -rf "$work_dir"' EXIT
 
 echo "Packing @viamrobotics/visualization into $work_dir"

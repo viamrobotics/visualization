@@ -22,7 +22,7 @@ const https = process.argv.includes('--https')
  * the rest of the suite.
  */
 const REAL_CANVAS_SPECS = [
-	'src/lib/components/ScopedScene/__tests__/**/*.{test,spec}.{js,ts}',
+	'src/lib/components/SceneView/__tests__/**/*.{test,spec}.{js,ts}',
 	'src/lib/three/__tests__/clampPointSize.spec.ts',
 ]
 

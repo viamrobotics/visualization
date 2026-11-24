@@ -1,7 +1,7 @@
 import { UuidTool } from 'uuid-tool'
 
 import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
-import type { TrajectoryStep } from '#lib/motion/jointPose.js'
+import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 
 import { PoseInFrame, Transform } from '#lib/buf/common/v1/common_pb.js'
 import { Snapshot } from '#lib/buf/draw/v1/snapshot_pb.js'

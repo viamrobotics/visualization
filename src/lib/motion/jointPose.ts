@@ -8,9 +8,7 @@ import { Quaternion, Vector3 } from 'three'
 import { Pose } from '#lib/math/index.js'
 
 import type { JointFrameDescriptor } from './frameDescriptors'
-
-/** One step: joint values per component, positional by joint index. Radians, or mm if prismatic. */
-export type TrajectoryStep = Record<string, number[]>
+import type { TrajectoryStep } from './trajectoryStep'
 
 const quat = new Quaternion()
 const vec3 = new Vector3()

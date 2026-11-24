@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ScopedScene } from '../../../../scoped-scene'
+	import { SceneView } from '../../../../core'
 	import SceneProbe from './SceneProbe.svelte'
 
 	interface Props {
@@ -11,7 +11,7 @@
 </script>
 
 <svelte:boundary onerror={(error) => onerror(error)}>
-	<ScopedScene>
+	<SceneView>
 		<SceneProbe onready={() => onready()} />
-	</ScopedScene>
+	</SceneView>
 </svelte:boundary>

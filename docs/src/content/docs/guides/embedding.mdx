@@ -21,7 +21,7 @@ pnpm add @viamrobotics/visualization
 
 The package declares a list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project. Install whatever it asks for.
 
-Some peers are marked optional so that a host of the [scoped scene](../scoped-scene/) can skip them. `<Visualizer />` itself imports these, so a host that mounts it installs all of them:
+Some peers are marked optional so that a host of the [core scene](../core/) can skip them. `<Visualizer />` itself imports these, so a host that mounts it installs all of them:
 
 - **`<Visualizer />` and its overlays:** `@viamrobotics/prime-core` and `@viamrobotics/tweakpane-config`, imported by the `<Visualizer />` root. `svelte-tweakpane-ui` for the details cards and the render stats widget. `@zag-js/svelte`, `@zag-js/dialog`, `@zag-js/floating-panel`, `@zag-js/popover`, `@zag-js/tabs`, `@zag-js/toggle-group`, and `@zag-js/tooltip` for the overlay components. Most plugins also import prime-core.
 
@@ -37,7 +37,7 @@ The other optional peers are needed only by a plugin or a panel, so you install 
 - **Tweakpane panels:** `svelte-tweakpane-ui` for the panels in MoveFrame, BuildFrames, and MeasureTool.
 - **Unused today:** `@ag-grid-community/client-side-row-model`, `@ag-grid-community/core`, and `@ag-grid-community/styles` are marked optional, but nothing in `src/lib` imports them.
 
-If you only need one arm preview, use the [scoped scene](../scoped-scene/). Of the optional peers it needs only `@connectrpc/connect`, which `@viamrobotics/sdk` brings.
+If you only need the scene, with none of the overlays, use the [core scene](../core/). Of the optional peers it needs only `@connectrpc/connect`, which `@viamrobotics/sdk` brings.
 
 <Aside
 	type="tip"

@@ -2,7 +2,7 @@ import type { Snippet } from 'svelte'
 
 import type { CameraPose } from '#lib/hooks/useControls.svelte.js'
 
-export interface ScopedSceneProps {
+export interface SceneViewProps {
 	/**
 	 * The machine part whose frames, geometries, and point clouds the scene renders. Empty or
 	 * omitted, the scene renders only its grid, lights, and `children`, and makes no robot query.

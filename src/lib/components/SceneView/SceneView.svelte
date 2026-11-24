@@ -19,7 +19,7 @@ and mounting with no provider is planned.
 	import { provideSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { provideKeybindings } from '#lib/keybindings/index.js'
 
-	import type { ScopedSceneProps } from './ScopedSceneProps'
+	import type { SceneViewProps } from './SceneViewProps'
 
 	const DEFAULT_POSE_REFRESH_RATE_MS = 1000
 
@@ -31,7 +31,7 @@ and mounting with no provider is planned.
 		snapping = false,
 		poseRefreshRate = DEFAULT_POSE_REFRESH_RATE_MS,
 		onError,
-	}: ScopedSceneProps = $props()
+	}: SceneViewProps = $props()
 
 	provideWorld()
 	provideKeybindings()
@@ -69,7 +69,7 @@ and mounting with no provider is planned.
 	)
 </script>
 
-<div class="scoped-scene">
+<div class="core">
 	<SceneCanvas>
 		{@render children?.()}
 	</SceneCanvas>
@@ -77,7 +77,7 @@ and mounting with no provider is planned.
 
 <style>
 	/* Plain CSS, not Tailwind utilities, so the scene fills its box in a host that loads no Tailwind build. */
-	.scoped-scene {
+	.core {
 		position: relative;
 		width: 100%;
 		height: 100%;

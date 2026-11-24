@@ -12,9 +12,9 @@ import type { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 import { traits } from '#lib/ecs/index.js'
 
-import BareScopedSceneHost from './__fixtures__/BareScopedSceneHost.svelte'
+import BareSceneViewHost from './__fixtures__/BareSceneViewHost.svelte'
 import { robotQueryParts } from './__fixtures__/robotQueryParts'
-import ScopedSceneHost from './__fixtures__/ScopedSceneHost.svelte'
+import SceneViewHost from './__fixtures__/SceneViewHost.svelte'
 
 vi.mock('@threlte/core/webgpu', (importOriginal) => importOriginal())
 vi.mock('@threlte/extras/webgpu', (importOriginal) => importOriginal())
@@ -44,11 +44,11 @@ interface Probe {
 	isSceneBus: boolean
 }
 
-type HostProps = Omit<Parameters<typeof ScopedSceneHost>[1], 'onready'>
+type HostProps = Omit<Parameters<typeof SceneViewHost>[1], 'onready'>
 
 const renderHost = async (props: HostProps = {}) => {
 	const probes = new Map<number, Probe>()
-	const result = render(ScopedSceneHost, {
+	const result = render(SceneViewHost, {
 		...props,
 		onready: (index, probe) => {
 			probes.set(index, probe)
@@ -75,7 +75,7 @@ const firstProbe = (probes: Map<number, Probe>): Probe => {
 const CONTAINER_WIDTH_PX = 672
 const CONTAINER_HEIGHT_PX = 504
 
-describe('ScopedScene', () => {
+describe('SceneView', () => {
 	beforeEach(() => {
 		robotQueryParts.length = 0
 	})
@@ -198,7 +198,7 @@ describe('ScopedScene', () => {
 		const errors: unknown[] = []
 		let isChildMounted = false
 
-		render(BareScopedSceneHost, {
+		render(BareSceneViewHost, {
 			onready: () => {
 				isChildMounted = true
 			},

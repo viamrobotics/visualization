@@ -4,7 +4,7 @@ import { expect } from 'vitest'
 import { Pose } from '#lib/math/index.js'
 
 import type { FrameDescriptor, FrameSystemJson } from '../../frameDescriptors'
-import type { TrajectoryStep } from '../../jointPose'
+import type { TrajectoryStep } from '../../trajectoryStep'
 
 import goldenFile from '../../../../../tools/rdk-golden/motion/testdata/frame_descriptors_golden.json'
 import { descriptorLocalPose } from '../../jointPose'

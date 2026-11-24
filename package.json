@@ -41,7 +41,7 @@
 		"test:client": "wireit",
 		"test:draw": "wireit",
 		"test:rdk-golden": "wireit",
-		"test:scoped-consumer": "./e2e/fixtures/scoped-scene-consumer/run.sh",
+		"test:core-consumer": "./e2e/fixtures/core-consumer/run.sh",
 		"e2e": "pnpm go-build && playwright test --project=drawing --project=matrix",
 		"e2e:ui": "pnpm go-build && playwright test --project=drawing --project=matrix --ui",
 		"e2e:matrix": "pnpm go-build && playwright test --project=matrix",
@@ -835,9 +835,13 @@
 			"types": "./dist/plugins/index.d.ts",
 			"svelte": "./dist/plugins/index.js"
 		},
-		"./scoped-scene": {
-			"types": "./dist/scoped-scene.d.ts",
-			"svelte": "./dist/scoped-scene.js"
+		"./core": {
+			"types": "./dist/core.d.ts",
+			"svelte": "./dist/core.js"
+		},
+		"./motion": {
+			"types": "./dist/motion-commands.d.ts",
+			"default": "./dist/motion-commands.js"
 		},
 		"./control-widgets": {
 			"types": "./dist/plugins/ControlWidgets/index.d.ts",

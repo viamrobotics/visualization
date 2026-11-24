@@ -2,7 +2,7 @@ import { type ConfigurableTrait, type Entity, type World } from 'koota'
 import { Color } from 'three'
 
 import type { FrameDescriptor, JointFrameDescriptor } from '#lib/motion/frameDescriptors.js'
-import type { TrajectoryStep } from '#lib/motion/jointPose.js'
+import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
 
 import { hierarchy, traits } from '#lib/ecs/index.js'
 import { descriptorLocalPose } from '#lib/motion/jointPose.js'

@@ -7,7 +7,7 @@
 	import type { EventBus } from '#lib/hooks/useEventBus.js'
 	import type { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
-	import { ScopedScene } from '../../../../scoped-scene'
+	import { SceneView } from '../../../../core'
 	import SceneProbe from './SceneProbe.svelte'
 
 	interface Props {
@@ -41,17 +41,17 @@
 <ViamProvider dialConfigs={{}}>
 	{#each { length: sceneCount }, index (index)}
 		<div
-			data-testid="scoped-scene-{index}"
+			data-testid="scene-view-{index}"
 			style="width: 672px; height: 504px"
 		>
-			<ScopedScene
+			<SceneView
 				partID={withoutPartID ? undefined : `part-${index}`}
 				{inputBindingsEnabled}
 				{snapping}
 				{poseRefreshRate}
 			>
 				<SceneProbe onready={(probe) => onready(index, probe)} />
-			</ScopedScene>
+			</SceneView>
 		</div>
 	{/each}
 </ViamProvider>

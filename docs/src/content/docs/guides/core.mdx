@@ -1,11 +1,13 @@
 ---
-title: Embedding a scoped scene
+title: Embedding the core scene
 description: Render one machine part's frames, geometries, and point clouds inside your own Svelte app.
 ---
 
 import { Aside } from '@astrojs/starlight/components'
 
-`ScopedScene` is a small scene for hosts that own their own UI. It renders one machine part's frames, geometries, and point clouds, as the visualizer shows them. It ships as its own entry, `@viamrobotics/visualization/scoped-scene`, and is not a set of props on `<Visualizer />`. Reach for it when you want the scene inside a larger page, with none of the visualizer's overlays. For the full visualizer, see [Embedding `<Visualizer />`](../embedding/).
+The package has two entries for two uses. The default entry exports `<Visualizer />`, the standalone product: the scene with its dashboard, workspace, and controls. `@viamrobotics/visualization/core` exports `SceneView`, the core renderer with only what a scene needs: the canvas, the camera and its controls, and one machine part's frames, geometries, and point clouds, drawn as the visualizer draws them.
+
+Reach for `SceneView` when you want the scene inside a larger page and you own the UI around it. For the full visualizer, see [Embedding `<Visualizer />`](../embedding/).
 
 ## Install and required peers
 
@@ -25,7 +27,7 @@ Install these packages in your project:
 | `@viamrobotics/svelte-sdk` | `ViamProvider` and the machine hooks |
 | `idb-keyval`               | Persists scene settings              |
 
-You do not need Tailwind, prime-core, Tweakpane, or test-widgets. The `./scoped-scene` entry never imports them, and the repo checks that on every packaging run with a fixture that installs only the packages above. The fixture lives in `e2e/fixtures/scoped-scene-consumer/`.
+You do not need Tailwind, prime-core, Tweakpane, or test-widgets. The `./core` entry never imports them, and the repo checks that on every packaging run with a fixture that installs only the packages above. The fixture lives in `e2e/fixtures/core-consumer/`.
 
 The package also declares `camera-controls`, `runed`, and `lucide-svelte` as required peers. The first two arrive through the packages above. The scoped entry does not import `lucide-svelte`, so the fixture builds without it, though pnpm may warn that it is missing. `@connectrpc/connect` is an optional peer that the scene imports, and it arrives as a dependency of `@viamrobotics/sdk`.
 
@@ -65,28 +67,28 @@ export const ssr = false
 
 The renderer is WebGPU and falls back to WebGL2 when the browser offers no WebGPU adapter. A built host page in Chromium launched with `--disable-features=WebGPU` renders the scene under the WebGL2 backend.
 
-## Mount `ScopedScene`
+## Mount `SceneView`
 
-`ScopedScene` fills its parent, so give the parent an explicit size.
+`SceneView` fills its parent, so give the parent an explicit size.
 
 <Aside
 	type="caution"
 	title="ViamProvider is required"
 >
-	`ScopedScene` needs a `ViamProvider` ancestor. This requirement is temporary. Until it is lifted,
-	a host with no machine wraps the scene in a `ViamProvider` with empty `dialConfigs`. With no
+	`SceneView` needs a `ViamProvider` ancestor. This requirement is temporary. Until it is lifted, a
+	host with no machine wraps the scene in a `ViamProvider` with empty `dialConfigs`. With no
 	provider the scene throws `No QueryClient was found in Svelte context`.
 </Aside>
 
 ```svelte
 <script lang="ts">
 	import { ViamProvider } from '@viamrobotics/svelte-sdk'
-	import { ScopedScene } from '@viamrobotics/visualization/scoped-scene'
+	import { SceneView } from '@viamrobotics/visualization/core'
 </script>
 
 <ViamProvider dialConfigs={{}}>
 	<div style="width: 100%; height: 480px">
-		<ScopedScene partID="my-part-id" />
+		<SceneView partID="my-part-id" />
 	</div>
 </ViamProvider>
 ```
@@ -107,7 +109,7 @@ A host with a machine passes its `dialConfigs` to the provider instead of an emp
 
 ## What the host owns
 
-`ScopedScene` renders. Everything around it stays yours:
+`SceneView` renders. Everything around it stays yours:
 
 - **Moves.** The scene never moves a component. Planning and execution are your code.
 - **The pop-out container.** The scene fills its parent, so a modal, a drawer, or a resizable pane is your code.

@@ -1,5 +1,5 @@
 import type { FrameDescriptor } from './frameDescriptors'
-import type { TrajectoryStep } from './jointPose'
+import type { TrajectoryStep } from './trajectoryStep'
 
 const RAD_TO_DEG = 180 / Math.PI
 
