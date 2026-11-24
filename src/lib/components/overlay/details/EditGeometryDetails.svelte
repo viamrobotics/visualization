@@ -9,7 +9,8 @@
 
 	import GeometryFields from './GeometryFields.svelte'
 	import SectionNotice from './SectionNotice.svelte'
-	import { changedAxes, MIXED, sharedNumber, sharedValue, toInputNumber } from './sharedValue'
+	import { type GeometryDimension, sharedGeometryDimensions } from './sharedGeometryDimensions'
+	import { MIXED, sharedValue } from './sharedValue'
 
 	interface Props {
 		/** The selected frames. Never empty. */
@@ -41,44 +42,11 @@
 
 	const geometryType = $derived(sharedValue(geometries.current.map((geometry) => geometry.type)))
 
-	/** One dimension across frames that share a geometry type, as the number its input shows. */
-	const shownDimension = (key: 'x' | 'y' | 'z' | 'r' | 'l'): number =>
-		toInputNumber(
-			sharedNumber(
-				geometries.current.map(
-					(geometry) => (geometry as Partial<Record<typeof key, number>>)[key] ?? Number.NaN
-				)
-			)
+	const dimensions = $derived(
+		sharedGeometryDimensions(
+			geometries.current as readonly Partial<Record<GeometryDimension, number>>[]
 		)
-
-	// Mixed dimensions are handed over as NaN, which the fields show as a dash.
-	const geometry = $derived.by((): EditableFrameGeometry | undefined => {
-		if (geometryType === 'box') {
-			return { type: 'box', x: shownDimension('x'), y: shownDimension('y'), z: shownDimension('z') }
-		}
-		if (geometryType === 'sphere') return { type: 'sphere', r: shownDimension('r') }
-		if (geometryType === 'capsule') {
-			return { type: 'capsule', r: shownDimension('r'), l: shownDimension('l') }
-		}
-		return undefined
-	})
-
-	const handleChange = (next: EditableFrameGeometry) => {
-		if (next.type !== (geometry?.type ?? 'none')) {
-			for (const entity of entities) frameEditor.setGeometryType(entity, next.type)
-			return
-		}
-		if (!geometry) return
-
-		const patch = changedAxes(dimensionsOf(geometry), dimensionsOf(next))
-		if (Object.keys(patch).length === 0) return
-
-		// Each frame keeps its own value for every dimension left alone.
-		for (const entity of entities) frameEditor.setGeometry(entity, { type: next.type, ...patch })
-	}
-
-	const dimensionsOf = (shape: EditableFrameGeometry): Record<string, number> =>
-		Object.fromEntries(Object.entries(shape).filter(([key]) => key !== 'type'))
+	)
 </script>
 
 {#if geometryType === MIXED}
@@ -89,7 +57,14 @@
 {:else}
 	<GeometryFields
 		includeNone
-		{geometry}
-		onchange={handleChange}
+		type={geometryType}
+		{dimensions}
+		ontypechange={(type) => {
+			for (const entity of entities) frameEditor.setGeometryType(entity, type)
+		}}
+		ondimensionchange={(patch) => {
+			// Each frame keeps its own value for every dimension left alone.
+			for (const entity of entities) frameEditor.setGeometry(entity, { type: geometryType, ...patch })
+		}}
 	/>
 {/if}

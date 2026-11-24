@@ -642,7 +642,6 @@
 		"@viamrobotics/svelte-sdk": "1.5.3",
 		"@viamrobotics/tailwind-config": "1.11.0",
 		"@viamrobotics/test-widgets": "0.15.0",
-		"@viamrobotics/tweakpane-config": "0.1.1",
 		"@vitest/browser-playwright": "4.1.9",
 		"@vitest/coverage-v8": "4.1.9",
 		"@zag-js/collapsible": "1.49.0",
@@ -675,7 +674,6 @@
 		"runed": "0.38.0",
 		"svelte": "5.58.1",
 		"svelte-check": "4.7.8",
-		"svelte-tweakpane-ui": "1.5.20",
 		"svelte-virtuallists": "1.4.2",
 		"tailwind-merge": "^3.6.0",
 		"tailwindcss": "4.3.1",
@@ -719,7 +717,6 @@
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
 		"svelte": ">=5",
-		"svelte-tweakpane-ui": ">=1.5",
 		"svelte-virtuallists": ">=1",
 		"three": ">=0.185"
 	},
@@ -819,11 +816,13 @@
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
+		"@viamrobotics/tweakpane-config": "0.1.1",
 		"d3-force": "^3.0.0",
 		"fflate": "0.8.3",
 		"filtrex": "^3.1.0",
 		"koota": "0.6.6",
 		"lodash-es": "4.18.1",
+		"svelte-tweakpane-ui": "1.5.20",
 		"three-mesh-bvh": "^0.9.14",
 		"uuid-tool": "^2.0.3",
 		"zod": "^4.4.3"

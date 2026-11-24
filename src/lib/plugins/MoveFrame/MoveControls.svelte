@@ -3,23 +3,11 @@
 	import type { HTMLAttributes } from 'svelte/elements'
 	import type { Matrix4 } from 'three'
 
+	import { Point, type PointValue, Select, Tabs } from '@viamrobotics/prime-controls'
 	import { useToast } from '@viamrobotics/prime-ui'
 	import { MotionClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 	import { PersistedState } from 'runed'
-	import {
-		List,
-		type ListChangeEvent,
-		Point,
-		type PointChangeEvent,
-		type PointValue3dObject,
-		type PointValue4dObject,
-		RotationEuler,
-		type RotationEulerChangeEvent,
-		type RotationEulerValueObject,
-		TabGroup,
-		TabPage,
-	} from 'svelte-tweakpane-ui'
 
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import type { Pose } from '#lib/math/index.js'
@@ -164,7 +152,7 @@
 	)
 
 	/** The orientation as Euler angles (deg), for the alternate rotation tab. */
-	const eulerValue = $derived.by<RotationEulerValueObject>(() => {
+	const eulerValue = $derived.by<PointValue>(() => {
 		if (!targetPose) return { x: 0, y: 0, z: 0 }
 		const { roll, pitch, yaw } = targetPose.toEulerDegrees()
 		return { x: roll, y: pitch, z: yaw }
@@ -189,23 +177,20 @@
 	 */
 	const stagePose = (pose: Pose) => (targetWorldMatrix = fromDestinationPose(pose))
 
-	const handlePositionChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal' || !targetPose) return
-		const next = event.detail.value as PointValue3dObject
+	const stagePosition = (next: PointValue) => {
+		if (!targetPose) return
 		stagePose(targetPose.clone().merge({ x: next.x, y: next.y, z: next.z }))
 	}
 
-	const handleOrientationOVChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal' || !targetPose) return
-		const next = event.detail.value as PointValue4dObject
+	const stageOrientationOV = (next: PointValue) => {
+		if (!targetPose) return
 		stagePose(targetPose.clone().merge({ oX: next.x, oY: next.y, oZ: next.z, theta: next.w }))
 	}
 
-	const handleOrientationEulerChange = (event: RotationEulerChangeEvent) => {
-		if (event.detail.origin !== 'internal' || !targetPose) return
-		const next = event.detail.value as RotationEulerValueObject
+	const stageOrientationEuler = (next: PointValue) => {
+		if (!targetPose) return
 		const pose = targetPose.clone()
-		setOrientationFromEuler(targetPose, { roll: next.x, pitch: next.y, yaw: next.z }, pose)
+		setOrientationFromEuler(targetPose, { roll: next.x, pitch: next.y, yaw: next.z ?? 0 }, pose)
 		stagePose(pose)
 	}
 
@@ -251,11 +236,6 @@
 	const resetTarget = () => {
 		targetWorldMatrix = undefined
 		preview.clear()
-	}
-
-	const handleServiceChange = (event: ListChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		selectedService = event.detail.value as string
 	}
 
 	/**
@@ -374,42 +354,45 @@
 				<strong class="font-semibold">world position</strong>
 				<span class="text-subtle-2">(mm)</span>
 
-				<div aria-label="move target position">
-					<Point
-						value={{ x: targetPose.x, y: targetPose.y, z: targetPose.z }}
-						disabled={executing}
-						on:change={handlePositionChange}
-					/>
-				</div>
+				<Point
+					aria-label="move target position (mm)"
+					disabled={executing}
+					bind:value={() => ({ x: targetPose.x, y: targetPose.y, z: targetPose.z }), stagePosition}
+				/>
 			</div>
 
 			<div>
 				<strong class="font-semibold">world orientation</strong>
 
-				<div aria-label="move target orientation">
-					<TabGroup>
-						<TabPage title="OV (deg)">
-							<Point
-								value={{
+				<Tabs>
+					<Tabs.List aria-label="move target orientation format">
+						<Tabs.Trigger value="ov">OV (deg)</Tabs.Trigger>
+						<Tabs.Trigger value="euler">Euler (deg)</Tabs.Trigger>
+					</Tabs.List>
+					<Tabs.Content value="ov">
+						<Point
+							aria-label="move target orientation (OV, deg)"
+							labels={{ w: 'Th' }}
+							disabled={executing}
+							bind:value={
+								() => ({
 									x: targetPose.oX,
 									y: targetPose.oY,
 									z: targetPose.oZ,
 									w: targetPose.theta,
-								}}
-								disabled={executing}
-								on:change={handleOrientationOVChange}
-							/>
-						</TabPage>
-						<TabPage title="Euler">
-							<RotationEuler
-								value={eulerValue}
-								unit="deg"
-								disabled={executing}
-								on:change={handleOrientationEulerChange}
-							/>
-						</TabPage>
-					</TabGroup>
-				</div>
+								}),
+								stageOrientationOV
+							}
+						/>
+					</Tabs.Content>
+					<Tabs.Content value="euler">
+						<Point
+							aria-label="move target orientation (Euler, deg)"
+							disabled={executing}
+							bind:value={() => eulerValue, stageOrientationEuler}
+						/>
+					</Tabs.Content>
+				</Tabs>
 			</div>
 		{:else}
 			<p class="text-subtle-2">Resolving the frame's pose…</p>
@@ -509,10 +492,10 @@
 			{#if service}
 				<div>
 					<strong class="font-semibold">motion service</strong>
-					<List
-						options={motionServices}
-						value={service}
-						on:change={handleServiceChange}
+					<Select
+						aria-label="motion service"
+						items={motionServices.map((name) => ({ value: name, label: name }))}
+						bind:value={() => service, (next) => (selectedService = next)}
 					/>
 				</div>
 			{:else}

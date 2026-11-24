@@ -1,140 +1,112 @@
+<!--
+@component
+
+A geometry's type and size. Works for one geometry or a selection that shares a type: a dimension
+that differs across the selection shows as a dash, and an edit reports only the field it changed.
+-->
 <script lang="ts">
-	import { untrack } from 'svelte'
-	import {
-		Point,
-		type PointChangeEvent,
-		type PointValue3dObject,
-		Slider,
-		type SliderChangeEvent,
-		TabGroup,
-		TabPage,
-	} from 'svelte-tweakpane-ui'
+	import { Tabs } from '@viamrobotics/prime-controls'
 
-	import { defaultFrameGeometry, type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+	import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
-	import { formatInputNumber } from './sharedValue'
+	import type { GeometryDimension } from './sharedGeometryDimensions'
+
+	import SharedNumberFields from './SharedNumberFields.svelte'
+	import { MIXED, type Shared } from './sharedValue'
+
+	type GeometryType = EditableFrameGeometry['type']
 
 	interface Props {
-		/**
-		 * The geometry to show. Undefined reads as `none`. A `NaN` dimension shows as a dash,
-		 * for a value that differs across a selection, and comes back as `NaN` until edited.
-		 */
-		geometry: EditableFrameGeometry | undefined
-		/** Called with the whole next geometry: a type switch passes that type's default. */
-		onchange: (geometry: EditableFrameGeometry) => void
+		type: GeometryType
+		/** The type's dimensions. A missing one shows as mixed. */
+		dimensions: Partial<Record<GeometryDimension, Shared<number>>>
 		/** Whether `None` is offered. An obstacle geometry always has a shape, a frame may have none. */
 		includeNone: boolean
+		/** Called when the user picks another type. The caller swaps in that type's defaults. */
+		ontypechange: (type: GeometryType) => void
+		/** Called with the one dimension the user changed. */
+		ondimensionchange: (patch: Partial<Record<GeometryDimension, number>>) => void
 	}
 
-	const { geometry, onchange, includeNone }: Props = $props()
+	const { type, dimensions, includeNone, ontypechange, ondimensionchange }: Props = $props()
 
-	const geometryTypes: readonly EditableFrameGeometry['type'][] = $derived(
-		includeNone
-			? (['none', 'box', 'sphere', 'capsule'] as const)
-			: (['box', 'sphere', 'capsule'] as const)
+	const TYPE_LABELS: Record<GeometryType, string> = {
+		none: 'None',
+		box: 'Box',
+		sphere: 'Sphere',
+		capsule: 'Capsule',
+	}
+
+	const types = $derived<GeometryType[]>(
+		includeNone ? ['none', 'box', 'sphere', 'capsule'] : ['box', 'sphere', 'capsule']
 	)
 
-	const geometryType = $derived(geometry?.type ?? 'none')
+	// The picked tab shows at once, before the caller's write comes back as `type`.
+	let selectedType = $derived(type)
 
-	let geometryTabIndex = $derived(geometryTypes.indexOf(geometryType))
+	const BOX_FIELDS = [
+		{ key: 'x', label: 'X' },
+		{ key: 'y', label: 'Y' },
+		{ key: 'z', label: 'Z' },
+	] as const
+	const SPHERE_FIELDS = [{ key: 'r', label: 'R' }] as const
+	const CAPSULE_FIELDS = [
+		{ key: 'r', label: 'R' },
+		{ key: 'l', label: 'L' },
+	] as const
 
-	$effect(() => {
-		const nextType = geometryTypes[geometryTabIndex]
-
-		// A prop-driven recompute leaves nextType equal to geometryType. Emitting then
-		// would reset the geometry to default dimensions. Only a user tab pick sets the
-		// index ahead of the prop.
-		if (nextType === undefined || nextType === untrack(() => geometryType)) return
-
-		untrack(() => onchange(defaultFrameGeometry(nextType)))
-	})
-
-	const handleBoxChange = (event: PointChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as PointValue3dObject
-		onchange({ type: 'box', x: next.x, y: next.y, z: next.z })
-	}
-
-	const handleSphereRChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		onchange({ type: 'sphere', r: event.detail.value })
-	}
-
-	const handleCapsuleRChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal' || geometry?.type !== 'capsule') return
-		onchange({ ...geometry, r: event.detail.value })
-	}
-
-	const handleCapsuleLChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal' || geometry?.type !== 'capsule') return
-		onchange({ ...geometry, l: event.detail.value })
-	}
+	const shown = (key: GeometryDimension): Shared<number> => dimensions[key] ?? MIXED
 </script>
 
 <div>
 	<strong class="font-semibold">geometry</strong>
 	<span class="text-subtle-2">(mm)</span>
-	<div aria-label="mutable geometry">
-		<TabGroup bind:selectedIndex={geometryTabIndex}>
-			{#if includeNone}
-				<TabPage title="None" />
-			{/if}
-			<TabPage title="Box">
-				{#if geometry?.type === 'box'}
-					<div aria-label="mutable box dimensions">
-						<Point
-							value={{ x: geometry.x, y: geometry.y, z: geometry.z }}
-							min={0}
-							format={formatInputNumber}
-							on:change={handleBoxChange}
-						/>
-					</div>
-				{/if}
-			</TabPage>
-			<TabPage title="Sphere">
-				{#if geometry?.type === 'sphere'}
-					<div aria-label="mutable sphere dimensions">
-						<Slider
-							label="r"
-							value={geometry.r}
-							min={0}
-							format={formatInputNumber}
-							on:change={handleSphereRChange}
-						/>
-					</div>
-				{/if}
-			</TabPage>
-			<TabPage title="Capsule">
-				{#if geometry?.type === 'capsule'}
-					<div aria-label="mutable capsule dimensions">
-						<Slider
-							label="r"
-							value={geometry.r}
-							min={0}
-							format={formatInputNumber}
-							on:change={handleCapsuleRChange}
-						/>
-						<Slider
-							label="l"
-							value={geometry.l}
-							min={0}
-							format={formatInputNumber}
-							on:change={handleCapsuleLChange}
-						/>
-					</div>
-				{/if}
-			</TabPage>
-		</TabGroup>
-	</div>
+
+	<Tabs
+		bind:value={
+			() => selectedType,
+			(next) => {
+				selectedType = next as GeometryType
+				ontypechange(selectedType)
+			}
+		}
+	>
+		<Tabs.List aria-label="geometry type">
+			{#each types as option (option)}
+				<Tabs.Trigger value={option}>{TYPE_LABELS[option]}</Tabs.Trigger>
+			{/each}
+		</Tabs.List>
+
+		{#if type === 'box'}
+			<Tabs.Content value="box">
+				<SharedNumberFields
+					aria-label="box dimensions (mm)"
+					fields={BOX_FIELDS}
+					values={{ x: shown('x'), y: shown('y'), z: shown('z') }}
+					min={0}
+					onchange={(patch) => ondimensionchange(patch)}
+				/>
+			</Tabs.Content>
+		{:else if type === 'sphere'}
+			<Tabs.Content value="sphere">
+				<SharedNumberFields
+					aria-label="sphere dimensions (mm)"
+					fields={SPHERE_FIELDS}
+					values={{ r: shown('r') }}
+					min={0}
+					onchange={(patch) => ondimensionchange(patch)}
+				/>
+			</Tabs.Content>
+		{:else if type === 'capsule'}
+			<Tabs.Content value="capsule">
+				<SharedNumberFields
+					aria-label="capsule dimensions (mm)"
+					fields={CAPSULE_FIELDS}
+					values={{ r: shown('r'), l: shown('l') }}
+					min={0}
+					onchange={(patch) => ondimensionchange(patch)}
+				/>
+			</Tabs.Content>
+		{/if}
+	</Tabs>
 </div>
-
-<style>
-	:global(.tp-tabv_i) {
-		display: none;
-	}
-
-	:global(.tp-lblv),
-	:global(.tp-tbpv_c) {
-		padding-left: 0 !important;
-	}
-</style>

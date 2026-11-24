@@ -11,7 +11,7 @@ drives its arm there through the saver's "go to" switch position.
 	import { Dialog, useToast } from '@viamrobotics/prime-ui'
 	import { SwitchClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
-	import { List, type ListChangeEvent } from 'svelte-tweakpane-ui'
+	import { Select } from '@viamrobotics/prime-controls'
 
 	import DetailsPanel from '#lib/components/overlay/details/DetailsPanel.svelte'
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
@@ -75,19 +75,15 @@ drives its arm there through the saver's "go to" switch position.
 	)
 
 	/**
-	 * Label to value. Keeps a configured service the machine no longer has, so the selector shows what
-	 * the saver will actually call rather than silently picking another.
+	 * Keeps a configured service the machine no longer has, so the selector shows what the saver
+	 * will actually call rather than silently picking another.
 	 */
-	const motionOptions = $derived.by(() => {
-		const names =
-			motion === '' || motionServices.includes(motion)
-				? motionServices
-				: [motion, ...motionServices]
-		const emptyLabel = motionServices.length === 0 ? DIRECT_MOVE_LABEL : CHOOSE_SERVICE_LABEL
-		const options: Record<string, string> = motion === '' ? { [emptyLabel]: '' } : {}
-		for (const service of names) options[service] = service
-		return options
-	})
+	const motionItems = $derived(
+		(motion === '' || motionServices.includes(motion)
+			? motionServices
+			: [motion, ...motionServices]
+		).map((service) => ({ value: service, label: service }))
+	)
 
 	const canEditConfig = $derived(partConfig.hasConfigSource && partConfig.hasEditPermissions)
 
@@ -116,11 +112,8 @@ drives its arm there through the saver's "go to" switch position.
 	})
 
 	/** Writes the saver's `motion` and saves, which rebuilds the saver with the new service. */
-	const handleServiceChange = (event: ListChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-
-		const next = event.detail.value as string
-		if (next === '' || next === motion) return
+	const setMotionService = (next: string | undefined) => {
+		if (!next || next === motion) return
 
 		const component = partConfig.current.components.find(
 			(candidate) => candidate.name === saverName
@@ -186,19 +179,17 @@ drives its arm there through the saver's "go to" switch position.
 				<dd>{target ?? 'nothing yet'}</dd>
 			</dl>
 
-			<div
-				role="group"
-				aria-labelledby={motionLabelId}
-			>
+			<div>
 				<strong
 					id={motionLabelId}
 					class="font-semibold">motion service</strong
 				>
-				<List
-					options={motionOptions}
-					value={motion}
+				<Select
+					aria-labelledby={motionLabelId}
+					items={motionItems}
+					placeholder={motionServices.length === 0 ? DIRECT_MOVE_LABEL : CHOOSE_SERVICE_LABEL}
 					disabled={!canEditConfig || isMoving}
-					on:change={handleServiceChange}
+					bind:value={() => (motion === '' ? undefined : motion), setMotionService}
 				/>
 			</div>
 

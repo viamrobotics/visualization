@@ -2,18 +2,13 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import {
-		Color,
-		type ColorChangeEvent,
-		type ColorValueRgbObject,
-		Point,
-		type PointValue3dObject,
-		Slider,
-		type SliderChangeEvent,
-	} from 'svelte-tweakpane-ui'
+	import { Point, type PointValue, Slider } from '@viamrobotics/prime-controls'
 
+	import { rgbToHex } from '#lib/color.js'
 	import { traits, useTrait } from '#lib/ecs/index.js'
 
+	import { colorChannelsToHex, hexToColorChannels } from '../colorChannelsHex'
+	import SharedColor from '../SharedColor.svelte'
 	import {
 		appendLinePosition as appendLinePositionPure,
 		removeLinePosition as removeLinePositionPure,
@@ -33,28 +28,28 @@
 	const dotSize = useTrait(() => entity, traits.DotSize)
 	const dotColors = useTrait(() => entity, traits.DotColors)
 
-	const linePositionList = $derived.by<PointValue3dObject[]>(() => {
+	const linePositionList = $derived.by<Required<Omit<PointValue, 'w'>>[]>(() => {
 		const positions = linePositions.current
 		if (!positions) return []
-		const out: PointValue3dObject[] = []
+		const out: Required<Omit<PointValue, 'w'>>[] = []
 		for (let i = 0; i + 2 < positions.length; i += 3) {
 			out.push({ x: positions[i]!, y: positions[i + 1]!, z: positions[i + 2]! })
 		}
 		return out
 	})
 
-	const dotColorValue = $derived.by<ColorValueRgbObject | undefined>(() => {
+	const dotColorHex = $derived.by<string | undefined>(() => {
 		const colors = dotColors.current
 		if (!colors || colors.length < 3) return undefined
-		return { r: colors[0]! / 255, g: colors[1]! / 255, b: colors[2]! / 255 }
+		return rgbToHex(colors)
 	})
 
-	const writeLinePosition = (index: number, value: PointValue3dObject) => {
+	const writeLinePosition = (index: number, value: PointValue) => {
 		const current = linePositions.current
 		if (!current) return
 		entity.set(
 			traits.LinePositions,
-			writeLinePositionPure(current, index, value.x, value.y, value.z)
+			writeLinePositionPure(current, index, value.x, value.y, value.z ?? 0)
 		)
 		invalidate()
 	}
@@ -76,31 +71,26 @@
 		invalidate()
 	}
 
-	const handleLineWidthChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		entity.set(traits.LineWidth, event.detail.value)
+	const writeLineWidth = (next: number) => {
+		entity.set(traits.LineWidth, next)
 		invalidate()
 	}
 
-	const handleLineColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as ColorValueRgbObject
-		entity.set(traits.Color, { r: next.r, g: next.g, b: next.b })
+	const writeLineColor = (hex: string) => {
+		entity.set(traits.Color, hexToColorChannels(hex))
 		invalidate()
 	}
 
-	const handleDotSizeChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		entity.set(traits.DotSize, event.detail.value)
+	const writeDotSize = (next: number) => {
+		entity.set(traits.DotSize, next)
 		invalidate()
 	}
 
-	const handleDotColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as ColorValueRgbObject
+	const writeDotColor = (hex: string) => {
+		const { r, g, b } = hexToColorChannels(hex)
 		entity.set(
 			traits.DotColors,
-			new Uint8Array([Math.round(next.r * 255), Math.round(next.g * 255), Math.round(next.b * 255)])
+			new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
 		)
 		invalidate()
 	}
@@ -112,22 +102,16 @@
 			<strong class="font-semibold">line positions</strong>
 			<span class="text-subtle-2">(m, {linePositionList.length})</span>
 		</summary>
-		<div
-			aria-label="mutable line positions"
-			class="mt-1"
-		>
+		<div class="mt-1">
 			<div class="flex max-h-48 flex-col gap-1 overflow-y-auto">
 				{#each linePositionList as position, index (index)}
 					<div class="flex items-end gap-1">
-						<div class="flex-1">
-							<Point
-								value={position}
-								on:change={(event) => {
-									if (event.detail.origin !== 'internal') return
-									writeLinePosition(index, event.detail.value as PointValue3dObject)
-								}}
-							/>
-						</div>
+						<Point
+							aria-label={`position ${index + 1} (m)`}
+							class="flex-1"
+							step={0.01}
+							bind:value={() => position, (next) => writeLinePosition(index, next)}
+						/>
 						<button
 							class="text-subtle-2 px-1 py-0.5 text-[10px] hover:text-red-500"
 							type="button"
@@ -153,44 +137,41 @@
 	<div>
 		<strong class="font-semibold">line width</strong>
 		<Slider
-			value={lineWidth.current ?? 5}
+			aria-label="line width"
 			min={0.1}
 			max={50}
 			step={0.1}
-			on:change={handleLineWidthChange}
+			bind:value={() => lineWidth.current ?? 5, writeLineWidth}
 		/>
 	</div>
 
 	{#if lineColor.current}
-		<div>
-			<strong class="font-semibold">line color</strong>
-			<Color
-				value={lineColor.current}
-				type="float"
-				on:change={handleLineColorChange}
-			/>
-		</div>
+		{@const lineHex = colorChannelsToHex(lineColor.current)}
+		<SharedColor
+			label="line color"
+			value={lineHex}
+			mixedSeed={lineHex}
+			onchange={writeLineColor}
+		/>
 	{/if}
 
 	<div>
 		<strong class="font-semibold">dot size</strong>
 		<Slider
-			value={dotSize.current ?? 10}
+			aria-label="dot size"
 			min={0}
 			max={50}
 			step={0.1}
-			on:change={handleDotSizeChange}
+			bind:value={() => dotSize.current ?? 10, writeDotSize}
 		/>
 	</div>
 
-	{#if dotColorValue}
-		<div>
-			<strong class="font-semibold">dot color</strong>
-			<Color
-				value={dotColorValue}
-				type="float"
-				on:change={handleDotColorChange}
-			/>
-		</div>
+	{#if dotColorHex}
+		<SharedColor
+			label="dot color"
+			value={dotColorHex}
+			mixedSeed={dotColorHex}
+			onchange={writeDotColor}
+		/>
 	{/if}
 {/if}

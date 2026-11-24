@@ -1,11 +1,5 @@
 <script lang="ts">
-	import {
-		Point,
-		type PointChangeEvent,
-		type PointValue3dObject,
-		Stepper,
-		type StepperChangeEvent,
-	} from 'svelte-tweakpane-ui'
+	import { NumberField, Point } from '@viamrobotics/prime-controls'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
@@ -58,17 +52,6 @@
 		})
 	}
 
-	const handleInteriorChange = (event: PointChangeEvent) => {
-		if (!hint || event.detail.origin !== 'internal') return
-		const { x, y, z } = event.detail.value as PointValue3dObject
-		commit({ ...hint, x_mm: x, y_mm: y, z_mm: z })
-	}
-
-	const handleThicknessChange = (event: StepperChangeEvent) => {
-		if (!hint || event.detail.origin !== 'internal') return
-		commit({ ...hint, wall_thickness_mm: event.detail.value })
-	}
-
 	const handleFaceChange = (face: BoundsFace, included: boolean) => {
 		if (!hint) return
 		const excluded = new Set(hint.exclude)
@@ -79,31 +62,31 @@
 </script>
 
 {#if hint}
+	{@const current = hint}
 	<div class="flex flex-col gap-2">
 		<div>
 			<strong class="font-semibold">interior</strong>
 			<span class="text-subtle-2">(mm)</span>
-			<div aria-label="mutable interior size">
-				<Point
-					value={{ x: hint.x_mm, y: hint.y_mm, z: hint.z_mm }}
-					min={MIN_INTERIOR_MM}
-					on:change={handleInteriorChange}
-				/>
-			</div>
+			<Point
+				aria-label="interior size (mm)"
+				min={MIN_INTERIOR_MM}
+				bind:value={
+					() => ({ x: current.x_mm, y: current.y_mm, z: current.z_mm }),
+					({ x, y, z }) => commit({ ...current, x_mm: x, y_mm: y, z_mm: z ?? current.z_mm })
+				}
+			/>
 		</div>
 
-		<div>
-			<strong class="font-semibold">wall thickness</strong>
-			<span class="text-subtle-2">(mm)</span>
-			<div aria-label="mutable wall thickness">
-				<Stepper
-					label="t"
-					value={hint.wall_thickness_mm}
-					min={MIN_WALL_THICKNESS_MM}
-					on:change={handleThicknessChange}
-				/>
-			</div>
-		</div>
+		<NumberField
+			label="wall thickness (mm)"
+			min={MIN_WALL_THICKNESS_MM}
+			bind:value={
+				() => current.wall_thickness_mm,
+				(next) => {
+					if (next !== undefined) commit({ ...current, wall_thickness_mm: next })
+				}
+			}
+		/>
 
 		<fieldset class="flex flex-col gap-1 border-0 p-0">
 			<legend class="mb-1 p-0 font-semibold">walls</legend>

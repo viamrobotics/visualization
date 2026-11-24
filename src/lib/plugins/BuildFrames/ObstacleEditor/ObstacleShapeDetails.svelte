@@ -4,17 +4,19 @@
 	import { TextField } from '@viamrobotics/prime-controls'
 	import { Matrix4 } from 'three'
 
-	import type { Frame } from '#lib/frame.js'
-
 	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
-	import PoseFields from '#lib/components/overlay/details/PoseFields.svelte'
+	import {
+		type GeometryDimension,
+		sharedGeometryDimensions,
+	} from '#lib/components/overlay/details/sharedGeometryDimensions.js'
+	import SharedPoseFields from '#lib/components/overlay/details/SharedPoseFields.svelte'
 	import WorldPoseDetails from '#lib/components/overlay/details/WorldPoseDetails.svelte'
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
-	import { type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+	import { defaultFrameGeometry } from '#lib/defaultFrameGeometry.js'
 	import { relations, selectOnly, traits, useTarget, useTrait, useWorld } from '#lib/ecs/index.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { internalFrameName } from '#lib/kinematicsFrames.js'
-	import { Pose } from '#lib/math/index.js'
+	import { Pose, type PosePatch } from '#lib/math/index.js'
 	import {
 		explicitGeometryLabel,
 		obstacleGeometriesOf,
@@ -30,6 +32,8 @@
 	import { type ObstacleGeometryPatch, patchObstacleGeometry } from '#lib/obstacleGeometryList.js'
 	import { validateObstacleGeometries } from '#lib/obstacleGeometryValidation.js'
 	import { complexObstacleVisualizer, SHAPES_IN_PLACE } from '#lib/obstacleVisualizer.js'
+
+	import { obstacleShapeOffsetPatch } from './obstacleShapeOffsetPatch'
 
 	interface Props {
 		/** The shape's own frame entity. */
@@ -115,14 +119,14 @@
 		if (event.key === 'Enter') (event.target as HTMLInputElement).blur()
 	}
 
-	const handlePoseChange = (pose: Pick<Frame, 'translation' | 'orientation'>) => {
-		commit({ translation: pose.translation, orientation: pose.orientation }, 'shape')
+	const offset = $derived(
+		new Pose().setFromFrame({ translation: shape?.translation, orientation: shape?.orientation })
+	)
+
+	const handlePoseChange = ([patch]: PosePatch[]) => {
+		commit(obstacleShapeOffsetPatch(offset, patch ?? {}), 'shape')
 	}
 
-	const handleShapeChange = (geometry: EditableFrameGeometry) => {
-		if (geometry.type === 'none') return
-		commit(geometry as ObstacleShape, 'shape')
-	}
 
 	const fieldId = $props.id()
 	const labelFieldId = `${fieldId}-shape-label`
@@ -172,16 +176,20 @@
 </div>
 
 {#if shape}
-	<PoseFields
-		translation={shape.translation}
-		orientation={shape.orientation}
+	<SharedPoseFields
+		poses={[offset]}
+		editable
 		onchange={handlePoseChange}
 	/>
 
 	<GeometryFields
-		geometry={shape}
+		type={shape.type}
+		dimensions={sharedGeometryDimensions([shape as Partial<Record<GeometryDimension, number>>])}
 		includeNone={false}
-		onchange={handleShapeChange}
+		ontypechange={(type) => {
+			if (type !== 'none') commit(defaultFrameGeometry(type) as ObstacleShape, 'shape')
+		}}
+		ondimensionchange={(patch) => commit(patch, 'shape')}
 	/>
 {/if}
 

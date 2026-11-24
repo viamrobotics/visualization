@@ -1,6 +1,10 @@
 <script lang="ts">
 	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
-	import { type EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+	import {
+		type GeometryDimension,
+		sharedGeometryDimensions,
+	} from '#lib/components/overlay/details/sharedGeometryDimensions.js'
+	import { defaultFrameGeometry } from '#lib/defaultFrameGeometry.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import {
 		obstacleGeometriesOf,
@@ -19,12 +23,10 @@
 
 	const entry = $derived(obstacleGeometriesOf(component)[0])
 
-	const handleChange = (geometry: EditableFrameGeometry) => {
-		if (geometry.type === 'none') return
-
+	const write = (geometry: ObstacleShape) => {
 		const { label, translation, orientation } = entry ?? {}
 		const next: ObstacleGeometryConfig = {
-			...(geometry as ObstacleShape),
+			...geometry,
 			...(label !== undefined && { label }),
 			...(translation && { translation }),
 			...(orientation && { orientation }),
@@ -36,8 +38,14 @@
 	}
 </script>
 
-<GeometryFields
-	geometry={entry}
-	includeNone={false}
-	onchange={handleChange}
-/>
+{#if entry}
+	<GeometryFields
+		type={entry.type}
+		dimensions={sharedGeometryDimensions([entry as Partial<Record<GeometryDimension, number>>])}
+		includeNone={false}
+		ontypechange={(type) => {
+			if (type !== 'none') write(defaultFrameGeometry(type) as ObstacleShape)
+		}}
+		ondimensionchange={(patch) => write({ ...entry, ...patch } as ObstacleShape)}
+	/>
+{/if}
