@@ -85,5 +85,5 @@
 			{/if}
 		</button>
 	</Tooltip.Trigger>
-	<Tooltip.Content placement="bottom">{LABEL}</Tooltip.Content>
+	<Tooltip.Content side="bottom">{LABEL}</Tooltip.Content>
 </Tooltip>

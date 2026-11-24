@@ -17,7 +17,7 @@ describe('LineDetails', () => {
 			props: { entity },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByLabelText('mutable line positions')).toBeInTheDocument()
+		expect(screen.getAllByRole('group', { name: /^position \d+ \(m\)$/ })).toHaveLength(3)
 	})
 
 	it('renders nothing when entity has no LinePositions trait', () => {
@@ -26,6 +26,6 @@ describe('LineDetails', () => {
 			props: { entity },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.queryByLabelText('mutable line positions')).not.toBeInTheDocument()
+		expect(screen.queryByText('line positions')).not.toBeInTheDocument()
 	})
 })

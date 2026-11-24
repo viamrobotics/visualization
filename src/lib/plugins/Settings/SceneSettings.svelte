@@ -12,21 +12,10 @@
 
 	type GridSizeKey = 'gridCellSize' | 'gridSectionSize' | 'gridFadeDistance'
 
-	// A text binding would save the raw string, so clearing a field to retype it collapsed the grid.
-	const setGridSize = (key: GridSizeKey, event: Event): void => {
-		const input = event.target as HTMLInputElement
-		const value = Number.parseFloat(input.value)
-
-		if (Number.isFinite(value) && value > 0) {
-			settings.current[key] = value
-		} else {
-			input.value = String(settings.current[key])
-		}
+	// A grid size of 0 collapses the grid, so only a positive size is written.
+	const setGridSize = (key: GridSizeKey, value: number | undefined): void => {
+		if (value !== undefined && value > 0) settings.current[key] = value
 	}
-
-	// NumberField steps on ArrowUp and ArrowDown by writing its value, which fires no change event.
-	const isStepKey = (event: KeyboardEvent): boolean =>
-		event.key === 'ArrowUp' || event.key === 'ArrowDown'
 
 	const gridSizeFields: { key: GridSizeKey; label: string }[] = [
 		{ key: 'gridCellSize', label: 'Cell size (m)' },
@@ -121,11 +110,7 @@
 					aria-labelledby="{uid}-{key}-label"
 					min={GRID_SIZE_STEP}
 					step={GRID_SIZE_STEP}
-					value={settings.current[key]}
-					onchange={(event) => setGridSize(key, event)}
-					onkeyup={(event) => {
-						if (isStepKey(event)) setGridSize(key, event)
-					}}
+					bind:value={() => settings.current[key], (value) => setGridSize(key, value)}
 					onkeydown={(event) => event.stopImmediatePropagation()}
 				/>
 			</div>

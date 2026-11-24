@@ -10,20 +10,15 @@
 	const MIN_SMOOTH_TIME = 0
 	const SMOOTH_TIME_STEP = 0.01
 
-	const setSmoothTime = (
-		key: 'cameraDraggingSmoothTime' | 'cameraSmoothTime',
-		event: Event
-	): void => {
-		const value = Number.parseFloat((event.target as HTMLInputElement).value)
+	const smoothTime = (key: 'cameraDraggingSmoothTime' | 'cameraSmoothTime') => ({
+		get: () => settings.current[key],
+		set: (value: number | undefined) => {
+			if (value !== undefined) settings.current[key] = Math.max(value, MIN_SMOOTH_TIME)
+		},
+	})
 
-		if (Number.isFinite(value)) {
-			settings.current[key] = Math.max(value, MIN_SMOOTH_TIME)
-		}
-	}
-
-	// NumberField steps on ArrowUp and ArrowDown by writing its value, which fires no change event.
-	const isStepKey = (event: KeyboardEvent): boolean =>
-		event.key === 'ArrowUp' || event.key === 'ArrowDown'
+	const smoothing = smoothTime('cameraSmoothTime')
+	const draggingSmoothing = smoothTime('cameraDraggingSmoothTime')
 </script>
 
 <div class="text-gray-9 flex flex-col gap-1 text-xs">
@@ -43,11 +38,7 @@
 				aria-labelledby="{uid}-smooth-label"
 				min={MIN_SMOOTH_TIME}
 				step={SMOOTH_TIME_STEP}
-				value={settings.current.cameraSmoothTime}
-				onchange={(event) => setSmoothTime('cameraSmoothTime', event)}
-				onkeyup={(event) => {
-					if (isStepKey(event)) setSmoothTime('cameraSmoothTime', event)
-				}}
+				bind:value={smoothing.get, smoothing.set}
 				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>
@@ -67,11 +58,7 @@
 				aria-labelledby="{uid}-dragging-smooth-label"
 				min={MIN_SMOOTH_TIME}
 				step={SMOOTH_TIME_STEP}
-				value={settings.current.cameraDraggingSmoothTime}
-				onchange={(event) => setSmoothTime('cameraDraggingSmoothTime', event)}
-				onkeyup={(event) => {
-					if (isStepKey(event)) setSmoothTime('cameraDraggingSmoothTime', event)
-				}}
+				bind:value={draggingSmoothing.get, draggingSmoothing.set}
 				onkeydown={(event) => event.stopImmediatePropagation()}
 			/>
 		</div>

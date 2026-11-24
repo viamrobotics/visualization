@@ -47,7 +47,7 @@
 			{/if}
 		</button>
 	</Tooltip.Trigger>
-	<Tooltip.Content placement="left">
+	<Tooltip.Content side="left">
 		{fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
 	</Tooltip.Content>
 </Tooltip>

@@ -38,8 +38,6 @@
 	const stepsInputID = $props.id()
 	const stepsLabelID = `${stepsInputID}-label`
 
-	const ARROW_STEP: Record<string, number> = { ArrowUp: 1, ArrowDown: -1 }
-
 	let expanded = $state(false)
 
 	const cost = $derived(candidate.solution.cost)
@@ -123,25 +121,19 @@
 					class="text-subtle-1"
 					for={stepsInputID}>Interpolate</label
 				>
-				<!--
-					Typing commits on change, since each commit rebuilds the path and a partly typed
-					number would clamp under the user. Arrow keys commit each step, as a native input did.
-				-->
 				<NumberField
 					id={stepsInputID}
 					aria-labelledby={stepsLabelID}
-					value={pathSteps}
 					min={MIN_PATH_STEPS}
 					max={MAX_PATH_STEPS}
 					step={1}
 					class="w-16"
-					onchange={(event) => setPathSteps(Number(event.currentTarget.value))}
-					onkeydown={(event) => {
-						const direction = ARROW_STEP[event.key]
-						if (direction === undefined) return
-						event.preventDefault()
-						setPathSteps(pathSteps + direction)
-					}}
+					bind:value={
+						() => pathSteps,
+						(next) => {
+							if (next !== undefined) setPathSteps(next)
+						}
+					}
 				/>
 				<span class="text-subtle-1">steps from start to end</span>
 			</div>

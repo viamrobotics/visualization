@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/svelte'
-import userEvent from '@testing-library/user-event'
+import { render } from '@testing-library/svelte'
 import { createWorld } from 'koota'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { orientationEuler } from '#lib/components/overlay/details/sharedPose.js'
 import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
@@ -31,14 +31,6 @@ const mountDetails = (geometries: ObstacleGeometryConfig[]) => {
 	return partConfig
 }
 
-const fieldInputs = async (label: string, count: number) => {
-	const inputs = () => [
-		...screen.getByLabelText(label).querySelectorAll<HTMLInputElement>('.tp-pndtxtv input'),
-	]
-	await vi.waitFor(() => expect(inputs()).toHaveLength(count))
-	return inputs()
-}
-
 const writtenGeometries = (partConfig: ReturnType<typeof createPartConfigFixture>) =>
 	vi.mocked(partConfig.updateComponents).mock.lastCall?.[0].get('obstacle-1')?.attributes
 		?.geometries as ObstacleGeometryConfig[] | undefined
@@ -49,17 +41,12 @@ describe('ObstacleShapesOffsetDetails', () => {
 			{ label: 'a', type: 'box', x: 1, y: 1, z: 1, translation: { x: 1, y: 2, z: 3 } },
 			{ label: 'b', type: 'box', x: 1, y: 1, z: 1, translation: { x: 4, y: 5, z: 6 } },
 		])
-		const [x] = await fieldInputs('mutable local position', 3)
+		await enterNumber(axisField('local position (mm)', 'X'), '100')
 
-		await userEvent.tripleClick(x!)
-		await userEvent.keyboard('100{Tab}')
-
-		await vi.waitFor(() =>
-			expect(writtenGeometries(partConfig)?.map(({ translation }) => translation)).toEqual([
-				{ x: 100, y: 2, z: 3 },
-				{ x: 100, y: 5, z: 6 },
-			])
-		)
+		expect(writtenGeometries(partConfig)?.map(({ translation }) => translation)).toEqual([
+			{ x: 100, y: 2, z: 3 },
+			{ x: 100, y: 5, z: 6 },
+		])
 	})
 
 	it('rebuilds each orientation from its own angles on an Euler edit', async () => {
@@ -81,15 +68,9 @@ describe('ObstacleShapesOffsetDetails', () => {
 				orientation: { type: 'ov_degrees', value: { x: 0, y: 0, z: 1, th: 45 } },
 			},
 		])
-		await fieldInputs('mutable local orientation', 7)
-		await userEvent.click(screen.getByRole('button', { name: 'Euler' }))
-		const orientationInputs = await fieldInputs('mutable local orientation', 7)
-		const eulerX = orientationInputs[4]
+		await enterNumber(axisField('local orientation (Euler, deg)', 'X'), '10')
 
-		await userEvent.tripleClick(eulerX!)
-		await userEvent.keyboard('10{Tab}')
-
-		await vi.waitFor(() => expect(writtenGeometries(partConfig)).toHaveLength(2))
+		expect(writtenGeometries(partConfig)).toHaveLength(2)
 		const angles = writtenGeometries(partConfig)?.map((geometry) =>
 			orientationEuler(new Pose().setFromFrame(geometry))
 		)

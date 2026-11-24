@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { createFrame } from '#lib/frame.js'
 import * as usePartConfig from '#lib/hooks/usePartConfig.svelte.js'
@@ -36,17 +37,12 @@ const box: ObstacleGeometryConfig = { type: 'box', x: 100, y: 100, z: 100 }
 describe('SimpleObstacleEditor', () => {
 	it('writes new box dimensions to geometries[0] and keeps the other attributes', async () => {
 		const partConfig = mountEditor(box)
-		await vi.waitFor(() => expect(document.querySelector('.tp-pndtxtv input')).not.toBeNull())
-		const xInput = document.querySelector<HTMLInputElement>('.tp-pndtxtv input')
 
-		await userEvent.tripleClick(xInput!)
-		await userEvent.keyboard('55{Tab}')
+		await enterNumber(axisField('box dimensions (mm)', 'X'), '55')
 
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: [{ type: 'box', x: 55, y: 100, z: 100 }], extra: 'kept' },
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: [{ type: 'box', x: 55, y: 100, z: 100 }], extra: 'kept' },
+		})
 		expect(partConfig.updateFrame).not.toHaveBeenCalled()
 	})
 
@@ -55,29 +51,25 @@ describe('SimpleObstacleEditor', () => {
 		const orientation = { type: 'ov_degrees' as const, value: { x: 0, y: 0, z: 1, th: 90 } }
 		const partConfig = mountEditor({ ...box, label: 'body', translation, orientation })
 
-		await userEvent.click(screen.getByText('Sphere'))
+		await userEvent.click(screen.getByRole('tab', { name: 'Sphere' }))
 
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: {
-					geometries: [{ type: 'sphere', r: 100, label: 'body', translation, orientation }],
-					extra: 'kept',
-				},
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: {
+				geometries: [{ type: 'sphere', r: 100, label: 'body', translation, orientation }],
+				extra: 'kept',
+			},
+		})
 		expect(partConfig.updateFrame).not.toHaveBeenCalled()
 	})
 
 	it('omits the label and offset keys when the entry had none', async () => {
 		const partConfig = mountEditor(box)
 
-		await userEvent.click(screen.getByText('Sphere'))
+		await userEvent.click(screen.getByRole('tab', { name: 'Sphere' }))
 
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: [{ type: 'sphere', r: 100 }], extra: 'kept' },
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: [{ type: 'sphere', r: 100 }], extra: 'kept' },
+		})
 	})
 
 	it('does not offer a None shape', () => {

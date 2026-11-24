@@ -9,7 +9,6 @@
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import ControlsSettings from './ControlsSettings.svelte'
-	import DebugSettings from './DebugSettings.svelte'
 	import FramesSettings from './FramesSettings.svelte'
 	import KeybindingsSettings from './KeybindingsSettings.svelte'
 	import PointcloudSettings from './PointcloudSettings.svelte'
@@ -25,7 +24,6 @@
 		{ label: 'Vision', component: VisionSettings },
 		{ label: 'Controls', component: ControlsSettings },
 		{ label: 'Keybindings', component: KeybindingsSettings },
-		{ label: 'Debug', component: DebugSettings },
 		{ label: 'Weblabs', component: WeblabSettings },
 	]
 

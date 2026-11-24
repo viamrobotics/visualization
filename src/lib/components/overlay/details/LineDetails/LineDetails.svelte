@@ -2,18 +2,15 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import {
-		Color,
-		type ColorChangeEvent,
-		type ColorValueRgbObject,
-		Point,
-		type PointValue3dObject,
-		Slider,
-		type SliderChangeEvent,
-	} from 'svelte-tweakpane-ui'
+	import { Slider } from '@viamrobotics/prime-controls'
+	import { MathUtils } from 'three'
 
+	import { rgbToHex } from '#lib/color.js'
 	import { traits, useTrait } from '#lib/ecs/index.js'
 
+	import { colorChannelsToHex, hexToColorChannels } from '../colorChannelsHex'
+	import SharedColor from '../SharedColor.svelte'
+	import SharedNumberFields from '../SharedNumberFields.svelte'
 	import {
 		appendLinePosition as appendLinePositionPure,
 		removeLinePosition as removeLinePositionPure,
@@ -33,23 +30,35 @@
 	const dotSize = useTrait(() => entity, traits.DotSize)
 	const dotColors = useTrait(() => entity, traits.DotColors)
 
-	const linePositionList = $derived.by<PointValue3dObject[]>(() => {
+	interface LinePosition {
+		x: number
+		y: number
+		z: number
+	}
+
+	const POSITION_FIELDS = [
+		{ key: 'x', label: 'X' },
+		{ key: 'y', label: 'Y' },
+		{ key: 'z', label: 'Z' },
+	] as const
+
+	const linePositionList = $derived.by<LinePosition[]>(() => {
 		const positions = linePositions.current
 		if (!positions) return []
-		const out: PointValue3dObject[] = []
+		const out: LinePosition[] = []
 		for (let i = 0; i + 2 < positions.length; i += 3) {
 			out.push({ x: positions[i]!, y: positions[i + 1]!, z: positions[i + 2]! })
 		}
 		return out
 	})
 
-	const dotColorValue = $derived.by<ColorValueRgbObject | undefined>(() => {
+	const dotColorHex = $derived.by<string | undefined>(() => {
 		const colors = dotColors.current
 		if (!colors || colors.length < 3) return undefined
-		return { r: colors[0]! / 255, g: colors[1]! / 255, b: colors[2]! / 255 }
+		return rgbToHex(colors)
 	})
 
-	const writeLinePosition = (index: number, value: PointValue3dObject) => {
+	const writeLinePosition = (index: number, value: LinePosition) => {
 		const current = linePositions.current
 		if (!current) return
 		entity.set(
@@ -76,31 +85,30 @@
 		invalidate()
 	}
 
-	const handleLineWidthChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		entity.set(traits.LineWidth, event.detail.value)
+	const LINE_WIDTH = { min: 0.1, max: 50, default: 5 }
+	const DOT_SIZE = { min: 0, max: 50, default: 10 }
+
+	// The sizes are clamped, because a slider's readout takes typed values outside its range.
+	const writeLineWidth = (next: number) => {
+		entity.set(traits.LineWidth, MathUtils.clamp(next, LINE_WIDTH.min, LINE_WIDTH.max))
 		invalidate()
 	}
 
-	const handleLineColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as ColorValueRgbObject
-		entity.set(traits.Color, { r: next.r, g: next.g, b: next.b })
+	const writeLineColor = (hex: string) => {
+		entity.set(traits.Color, hexToColorChannels(hex))
 		invalidate()
 	}
 
-	const handleDotSizeChange = (event: SliderChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		entity.set(traits.DotSize, event.detail.value)
+	const writeDotSize = (next: number) => {
+		entity.set(traits.DotSize, MathUtils.clamp(next, DOT_SIZE.min, DOT_SIZE.max))
 		invalidate()
 	}
 
-	const handleDotColorChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const next = event.detail.value as ColorValueRgbObject
+	const writeDotColor = (hex: string) => {
+		const { r, g, b } = hexToColorChannels(hex)
 		entity.set(
 			traits.DotColors,
-			new Uint8Array([Math.round(next.r * 255), Math.round(next.g * 255), Math.round(next.b * 255)])
+			new Uint8Array([Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)])
 		)
 		invalidate()
 	}
@@ -112,20 +120,17 @@
 			<strong class="font-semibold">line positions</strong>
 			<span class="text-subtle-2">(m, {linePositionList.length})</span>
 		</summary>
-		<div
-			aria-label="mutable line positions"
-			class="mt-1"
-		>
+		<div class="mt-1">
 			<div class="flex max-h-48 flex-col gap-1 overflow-y-auto">
 				{#each linePositionList as position, index (index)}
 					<div class="flex items-end gap-1">
-						<div class="flex-1">
-							<Point
-								value={position}
-								on:change={(event) => {
-									if (event.detail.origin !== 'internal') return
-									writeLinePosition(index, event.detail.value as PointValue3dObject)
-								}}
+						<div class="min-w-0 flex-1">
+							<SharedNumberFields
+								aria-label={`position ${index + 1} (m)`}
+								fields={POSITION_FIELDS}
+								values={position}
+								step={0.01}
+								onchange={(patch) => writeLinePosition(index, { ...position, ...patch })}
 							/>
 						</div>
 						<button
@@ -153,44 +158,41 @@
 	<div>
 		<strong class="font-semibold">line width</strong>
 		<Slider
-			value={lineWidth.current ?? 5}
-			min={0.1}
-			max={50}
+			aria-label="line width"
+			min={LINE_WIDTH.min}
+			max={LINE_WIDTH.max}
 			step={0.1}
-			on:change={handleLineWidthChange}
+			bind:value={() => lineWidth.current ?? LINE_WIDTH.default, writeLineWidth}
 		/>
 	</div>
 
 	{#if lineColor.current}
-		<div>
-			<strong class="font-semibold">line color</strong>
-			<Color
-				value={lineColor.current}
-				type="float"
-				on:change={handleLineColorChange}
-			/>
-		</div>
+		{@const lineHex = colorChannelsToHex(lineColor.current)}
+		<SharedColor
+			label="line color"
+			value={lineHex}
+			mixedSeed={lineHex}
+			onchange={writeLineColor}
+		/>
 	{/if}
 
 	<div>
 		<strong class="font-semibold">dot size</strong>
 		<Slider
-			value={dotSize.current ?? 10}
-			min={0}
-			max={50}
+			aria-label="dot size"
+			min={DOT_SIZE.min}
+			max={DOT_SIZE.max}
 			step={0.1}
-			on:change={handleDotSizeChange}
+			bind:value={() => dotSize.current ?? DOT_SIZE.default, writeDotSize}
 		/>
 	</div>
 
-	{#if dotColorValue}
-		<div>
-			<strong class="font-semibold">dot color</strong>
-			<Color
-				value={dotColorValue}
-				type="float"
-				on:change={handleDotColorChange}
-			/>
-		</div>
+	{#if dotColorHex}
+		<SharedColor
+			label="dot color"
+			value={dotColorHex}
+			mixedSeed={dotColorHex}
+			onchange={writeDotColor}
+		/>
 	{/if}
 {/if}

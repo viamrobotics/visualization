@@ -17,7 +17,7 @@ describe('GeometryDetails', () => {
 			props: { entity },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByLabelText('mutable box dimensions')).toBeInTheDocument()
+		expect(screen.getByRole('group', { name: 'box dimensions (mm)' })).toBeInTheDocument()
 	})
 
 	it('renders sphere dimensions when entity has Sphere trait', () => {
@@ -26,7 +26,7 @@ describe('GeometryDetails', () => {
 			props: { entity },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByLabelText('mutable sphere dimensions')).toBeInTheDocument()
+		expect(screen.getByRole('spinbutton', { name: 'r' })).toHaveValue(50)
 	})
 
 	it('renders capsule dimensions when entity has Capsule trait', () => {
@@ -35,7 +35,8 @@ describe('GeometryDetails', () => {
 			props: { entity },
 			context: new Map([[WORLD_CONTEXT_KEY, world]]),
 		})
-		expect(screen.getByLabelText('mutable capsule dimensions')).toBeInTheDocument()
+		expect(screen.getByRole('spinbutton', { name: 'r' })).toHaveValue(25)
+		expect(screen.getByRole('spinbutton', { name: 'l' })).toHaveValue(100)
 	})
 
 	it('renders nothing when entity has no geometry trait', () => {

@@ -27,25 +27,6 @@ select {
 	background-image: none !important;
 }
 
-/*
- * Match svelte-tweakpane-ui <List>'s background to the <Point> number-field
- * background by swapping its button-bg variable for input-bg. Targeted at the
- * list select alone so the rotation widget and other button-themed blades
- * keep their original look.
- */
-.tp-lstv_s {
-	background-color: var(--in-bg);
-}
-.tp-lstv_s:hover {
-	background-color: var(--in-bg-h);
-}
-.tp-lstv_s:focus {
-	background-color: var(--in-bg-f);
-}
-.tp-lstv_s:active {
-	background-color: var(--in-bg-a);
-}
-
 .visualization-table {
 	@apply w-full table-auto;
 }

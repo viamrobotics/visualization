@@ -35,6 +35,7 @@
 	<div class="flex items-center gap-1">
 		<Select
 			aria-labelledby={labelId}
+			class="min-w-0 flex-1"
 			{items}
 			bind:value={
 				() => String(rate),

@@ -18,8 +18,8 @@
 </script>
 
 <script lang="ts">
-	import { Slider, type SliderChangeEvent } from 'svelte-tweakpane-ui'
-	import { SRGBColorSpace, Color as ThreeColor } from 'three'
+	import { Slider } from '@viamrobotics/prime-controls'
+	import { MathUtils, Color as ThreeColor } from 'three'
 
 	import type { ResourceAppearancePatch } from '#lib/resourceAppearance.js'
 
@@ -33,13 +33,7 @@
 
 	import SharedColor from './SharedColor.svelte'
 	import SharedSwitch from './SharedSwitch.svelte'
-	import {
-		formatSharedNumber,
-		isNearlyEqual,
-		sharedNumber,
-		sharedValue,
-		toInputNumber,
-	} from './sharedValue'
+	import { MIXED, sharedNumber, sharedValue } from './sharedValue'
 
 	interface Props {
 		/** One per selected frame. Never empty. */
@@ -68,7 +62,7 @@
 	const fallbackInvisibleOf = (target: AppearanceFieldsTarget) =>
 		target.fallback.invisible ?? INVISIBLE_DEFAULT
 
-	// The picker works in sRGB. A three.js `Color` holds linear values, so both directions convert.
+	// The picker works in sRGB hex. A three.js `Color` holds linear values, and `getHexString` converts.
 	const pickerColors = $derived(
 		targets.map((target, index) => {
 			const hex = target.values.color ?? target.fallback.color
@@ -79,16 +73,10 @@
 			} else if (entityColor) {
 				color = parseRGB(entityColor)
 			}
-			const { r, g, b } = color.getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace)
-			return { r, g, b }
+			return `#${color.getHexString()}`
 		})
 	)
-	const color = $derived(
-		sharedValue(
-			pickerColors,
-			(a, b) => isNearlyEqual(a.r, b.r) && isNearlyEqual(a.g, b.g) && isNearlyEqual(a.b, b.b)
-		)
-	)
+	const color = $derived(sharedValue(pickerColors))
 
 	const opacity = $derived(
 		sharedNumber(
@@ -110,11 +98,9 @@
 		)
 	)
 
-	const handleOpacityChange = (event: SliderChangeEvent) => {
-		const next = event.detail.value
-		// A mixed slider reports the NaN it was handed until the user moves it.
-		if (event.detail.origin !== 'internal' || Number.isNaN(next)) return
-		const patch = { opacity: Number(next.toFixed(OPACITY_DECIMALS)) }
+	// Clamped, because the slider's readout takes typed values outside its range.
+	const writeOpacity = (next: number) => {
+		const patch = { opacity: Number(MathUtils.clamp(next, 0, 1).toFixed(OPACITY_DECIMALS)) }
 		onchange(targets.map(() => patch))
 	}
 
@@ -142,8 +128,8 @@
 		label="color"
 		value={color}
 		mixedSeed={pickerColors[0]}
-		onchange={({ r, g, b }) => {
-			const patch = { color: `#${new ThreeColor().setRGB(r, g, b, SRGBColorSpace).getHexString()}` }
+		onchange={(hex) => {
+			const patch = { color: hex }
 			onchange(targets.map(() => patch))
 		}}
 	/>
@@ -151,16 +137,14 @@
 
 <div>
 	<strong class="font-semibold">opacity</strong>
-	<div aria-label="mutable opacity">
-		<Slider
-			value={toInputNumber(opacity)}
-			min={0}
-			max={1}
-			step={OPACITY_STEP}
-			format={(value) => formatSharedNumber(value, OPACITY_DECIMALS)}
-			on:change={handleOpacityChange}
-		/>
-	</div>
+	<!-- A mixed opacity has no single value, so the readout stays empty until the user picks one. -->
+	<Slider
+		aria-label="opacity"
+		min={0}
+		max={1}
+		step={OPACITY_STEP}
+		bind:value={() => (opacity === MIXED ? Number.NaN : opacity), writeOpacity}
+	/>
 </div>
 
 {#if showsVisibility}

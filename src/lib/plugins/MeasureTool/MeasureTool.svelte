@@ -2,7 +2,6 @@
 	import { T } from '@threlte/core/webgpu'
 	import { HTML, MeshLineGeometry, MeshLineMaterial } from '@threlte/extras/webgpu'
 	import { untrack } from 'svelte'
-	import { Element } from 'svelte-tweakpane-ui'
 	import { type Intersection, Vector3 } from 'three'
 
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
@@ -100,28 +99,26 @@
 				active={enabled}
 				description="Measurement settings"
 			>
-				<Element>
-					<div class="font-public-sans text-subtle-1 flex items-center gap-2 text-xs">
-						<span id="measure-axes-label">Axes</span>
-						<div
-							class="button-group"
-							role="group"
-							aria-labelledby="measure-axes-label"
-						>
-							{#each AXIS_SETTINGS as axis (axis.key)}
-								{@const isOn = settings.current[axis.key]}
-								<button
-									type="button"
-									class={['button button-compact', isOn && 'button-dark']}
-									aria-pressed={isOn}
-									onclick={() => (settings.current[axis.key] = !isOn)}
-								>
-									{axis.label}
-								</button>
-							{/each}
-						</div>
+				<div class="text-subtle-1 flex items-center gap-2">
+					<span id="measure-axes-label">Axes</span>
+					<div
+						class="button-group"
+						role="group"
+						aria-labelledby="measure-axes-label"
+					>
+						{#each AXIS_SETTINGS as axis (axis.key)}
+							{@const isOn = settings.current[axis.key]}
+							<button
+								type="button"
+								class={['button button-compact', isOn && 'button-dark']}
+								aria-pressed={isOn}
+								onclick={() => (settings.current[axis.key] = !isOn)}
+							>
+								{axis.label}
+							</button>
+						{/each}
 					</div>
-				</Element>
+				</div>
 			</DropdownPane>
 		</div>
 	</fieldset>

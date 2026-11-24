@@ -20,7 +20,7 @@
 		</span>
 	</Tooltip.Trigger>
 
-	<Tooltip.Content placement="right">
+	<Tooltip.Content side="right">
 		<div class="font-public-sans flex flex-col gap-1.5">
 			<p class="font-roboto-mono text-gray-4">Missing parent</p>
 

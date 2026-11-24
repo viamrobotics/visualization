@@ -155,7 +155,7 @@
 								/>
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">Inspect IK plans</Tooltip.Content>
+						<Tooltip.Content side="bottom">Inspect IK plans</Tooltip.Content>
 					</Tooltip>
 
 					<button

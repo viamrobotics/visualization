@@ -2,10 +2,11 @@ import type { ResourceName } from '@viamrobotics/sdk'
 import type { Entity } from 'koota'
 
 import '@testing-library/jest-dom/vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte'
+import { fireEvent, render, screen, within } from '@testing-library/svelte'
 import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import { Pose } from '#lib/math/index.js'
 
@@ -103,8 +104,7 @@ describe('MoveControls', () => {
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		expect(screen.getByText('motion service')).toBeInTheDocument()
-		expect(screen.getByRole('combobox')).toHaveValue('builtin')
+		expect(screen.getByRole('combobox', { name: 'motion service' })).toHaveTextContent('builtin')
 	})
 
 	it('falls back to the first motion service when there is no built-in', () => {
@@ -114,8 +114,7 @@ describe('MoveControls', () => {
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		expect(screen.getByText('motion service')).toBeInTheDocument()
-		expect(screen.getByRole('combobox')).toHaveValue('planner')
+		expect(screen.getByRole('combobox', { name: 'motion service' })).toHaveTextContent('planner')
 	})
 
 	it('opens on the Move tab, with Move and without the preview', () => {
@@ -155,14 +154,9 @@ describe('MoveControls', () => {
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		const position = await screen.findByLabelText('move target position')
-		const x = position.querySelector('input')
-		if (!x) throw new Error('expected a position field')
-		await fireEvent.change(x, { target: { value: '500' } })
+		await enterNumber(axisField('move target position (mm)', 'X'), '500')
 
-		await waitFor(() => {
-			expect(screen.getByRole('button', { name: /reset/i })).not.toHaveAttribute('aria-disabled')
-		})
+		expect(screen.getByRole('button', { name: /reset/i })).not.toHaveAttribute('aria-disabled')
 		expect(screen.getByRole('button', { name: 'Move' })).toHaveAttribute('aria-disabled', 'true')
 	})
 
@@ -171,7 +165,9 @@ describe('MoveControls', () => {
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		expect(screen.queryByLabelText('move target position')).not.toBeInTheDocument()
+		expect(
+			screen.queryByRole('group', { name: 'move target position (mm)' })
+		).not.toBeInTheDocument()
 		expect(screen.getByText(/resolving the frame's pose/i)).toBeInTheDocument()
 	})
 
@@ -181,13 +177,12 @@ describe('MoveControls', () => {
 
 		render(MoveControls, { props: { entity, frameName: 'arm' } })
 
-		const position = await screen.findByLabelText('move target position')
-		expect(screen.getByLabelText('move target orientation')).toBeInTheDocument()
-		expect(screen.getByText('world position')).toBeInTheDocument()
-		expect(screen.getByText('world orientation')).toBeInTheDocument()
-
-		const fields = position.querySelectorAll('input')
-		expect([...fields].map((field) => Number(field.value))).toEqual([100, -250, 40])
+		expect(axisField('move target position (mm)', 'X')).toHaveValue(100)
+		expect(axisField('move target position (mm)', 'Y')).toHaveValue(-250)
+		expect(axisField('move target position (mm)', 'Z')).toHaveValue(40)
+		expect(
+			screen.getByRole('group', { name: 'move target orientation (Euler, deg)' })
+		).toBeInTheDocument()
 	})
 
 	it('stages a target when a pose field is edited', async () => {
@@ -199,16 +194,13 @@ describe('MoveControls', () => {
 		// Nothing is staged until a field moves, so both actions start disabled.
 		expect(screen.getByRole('button', { name: /reset/i })).toHaveAttribute('aria-disabled', 'true')
 
-		const position = await screen.findByLabelText('move target position')
-		const x = position.querySelector('input')
-		if (!x) throw new Error('expected a position field')
-		await fireEvent.change(x, { target: { value: '500' } })
+		await enterNumber(axisField('move target position (mm)', 'X'), '500')
 
-		await waitFor(() => {
-			expect(screen.getByRole('button', { name: /reset/i })).not.toHaveAttribute('aria-disabled')
-		})
+		expect(screen.getByRole('button', { name: /reset/i })).not.toHaveAttribute('aria-disabled')
 		expect(screen.getByRole('button', { name: 'Move' })).not.toHaveAttribute('aria-disabled')
-		// 400 mm of travel along x, no rotation.
-		expect(within(screen.getByRole('tabpanel')).getByText(/400\.0 mm · 0\.0°/)).toBeInTheDocument()
+		expect(
+			within(screen.getByRole('tabpanel', { name: 'Move' })).getByText(/400\.0 mm · 0\.0°/),
+			'400 mm of travel along x, no rotation'
+		).toBeInTheDocument()
 	})
 })

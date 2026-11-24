@@ -1,0 +1,35 @@
+---
+title: <RenderStats />
+description: A draggable panel of render timings, draw counts, and resource counts for finding what slows a scene.
+---
+
+`<RenderStats />` adds a **Debug** tab to the settings popover with a **Render stats** switch. Turning it on opens a draggable panel that reports:
+
+- **Timing**: frames per second, frame time, CPU time, and GPU time where the browser can measure it.
+- **Rendering activity**: which animation frames rendered, so on-demand rendering's idle frames show.
+- **Main thread**: long animation frames in the last second, the longest one, and the script that blocked it, where the browser reports them.
+- **Draw**: draw calls, render passes, triangles, lines, and points per frame.
+- **Resources**: entities, geometries, textures, shader programs, and the JavaScript heap where the browser reports it.
+
+The panel is hidden during an immersive XR session. The switch is remembered across reloads.
+
+## Usage
+
+Mount `<RenderStats />` inside `<Visualizer />`. It ships from its own entry point, so importing any other plugin never loads the panel's charting library:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Settings } from '@viamrobotics/visualization/plugins'
+	import { RenderStats } from '@viamrobotics/visualization/render-stats'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<Settings />
+		<RenderStats />
+	</Visualizer>
+</div>
+```
+
+The switch lives in the settings popover, so mount [`<Settings />`](../settings/) as well.

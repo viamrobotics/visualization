@@ -1,51 +1,50 @@
 <script lang="ts">
-	import { Color, type ColorChangeEvent, type ColorValueRgbObject } from 'svelte-tweakpane-ui'
+	import { Input } from '@viamrobotics/prime-ui'
 
 	import { MIXED, MIXED_TEXT, type Shared } from './sharedValue'
 
 	interface Props {
 		label: string
-		/** In the picker's `float` sRGB channels. */
-		value: Shared<ColorValueRgbObject>
-		/** Where the picker starts when a mixed value is opened. */
-		mixedSeed: ColorValueRgbObject
-		/** Called with the picked color, for every entity. */
-		onchange: (next: ColorValueRgbObject) => void
+		/** A `#rrggbb` color. */
+		value: Shared<string>
+		/** Where the picker opens when the value is mixed. */
+		mixedSeed: string
+		/** Called with the picked `#rrggbb` color, for every entity. */
+		onchange: (next: string) => void
 	}
 
 	const { label, value, mixedSeed, onchange }: Props = $props()
 
-	// Tweakpane's picker has no mixed state, so a mixed value shows a dash until it is opened.
-	// Overridden on open, and re-derived to closed whenever the shared value changes.
-	let isPicking = $derived.by(() => {
-		void value
-		return false
-	})
-
-	const handleChange = (event: ColorChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		onchange(event.detail.value as ColorValueRgbObject)
-	}
+	const id = $props.id()
 </script>
 
 <div>
-	<strong class="font-semibold">{label}</strong>
-	<div aria-label={`mutable ${label}`}>
-		{#if value === MIXED && !isPicking}
-			<button
-				type="button"
-				class="border-medium bg-light text-subtle-1 hover:bg-medium focus-visible:outline-gray-6 mt-0.5 flex h-6 w-full items-center rounded-sm border px-2 text-left focus-visible:outline"
-				aria-label={`${label}, mixed. Pick one for every selected object`}
-				onclick={() => (isPicking = true)}
+	<label
+		for={id}
+		class="font-semibold"
+	>
+		{label}
+	</label>
+	<div class="mt-0.5 flex items-center gap-2">
+		<Input
+			{id}
+			type="color"
+			class="h-6 w-12 p-0.5"
+			aria-label={value === MIXED ? `${label}, mixed` : undefined}
+			bind:value={
+				() => (value === MIXED ? mixedSeed : value),
+				(next) => {
+					if (next) onchange(next)
+				}
+			}
+		/>
+		{#if value === MIXED}
+			<span
+				class="text-subtle-1"
+				aria-hidden="true">{MIXED_TEXT}</span
 			>
-				{MIXED_TEXT}
-			</button>
 		{:else}
-			<Color
-				value={value === MIXED ? mixedSeed : value}
-				type="float"
-				on:change={handleChange}
-			/>
+			<span class="text-subtle-2 font-roboto-mono">{value}</span>
 		{/if}
 	</div>
 </div>

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber, numberField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 import { createFrame } from '#lib/frame.js'
@@ -47,23 +48,20 @@ const mountEditor = (initial: BoundsHint = hint, { isHintStored = true } = {}) =
 	return partConfig
 }
 
+const thicknessField = () => numberField('wall thickness (mm)')
+
 describe('BoundsObstacleEditor', () => {
 	beforeEach(() => vi.clearAllMocks())
 
 	it('writes the next hint and its geometries together on an interior edit', async () => {
 		const partConfig = mountEditor()
-		await vi.waitFor(() => expect(document.querySelector('.tp-pndtxtv input')).not.toBeNull())
-
-		await userEvent.tripleClick(document.querySelector<HTMLInputElement>('.tp-pndtxtv input')!)
-		await userEvent.keyboard('1500{Tab}')
+		await enterNumber(axisField('interior size (mm)', 'X'), '1500')
 
 		const next: BoundsHint = { ...hint, x_mm: 1500 }
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
-				visualizer: next,
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
+			visualizer: next,
+		})
 		expect(partConfig.updateFrame).not.toHaveBeenCalled()
 	})
 
@@ -95,21 +93,12 @@ describe('BoundsObstacleEditor', () => {
 		)
 	})
 
-	it('clamps a thickness of 0 to 1 mm and writes it', async () => {
+	it('ignores a thickness of 0, which no bounds hint accepts', async () => {
 		const partConfig = mountEditor()
-		const selector = '[aria-label="mutable wall thickness"] input'
-		await vi.waitFor(() => expect(document.querySelector(selector)).not.toBeNull())
 
-		await userEvent.tripleClick(document.querySelector<HTMLInputElement>(selector)!)
-		await userEvent.keyboard('0{Tab}')
+		await enterNumber(thicknessField(), '0')
 
-		const next: BoundsHint = { ...hint, wall_thickness_mm: 1 }
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
-				visualizer: next,
-			})
-		)
+		expect(partConfig.updateComponent).not.toHaveBeenCalled()
 	})
 
 	it('keeps the last included wall from being unchecked', async () => {
@@ -128,56 +117,38 @@ describe('BoundsObstacleEditor', () => {
 
 	it('writes a positive thickness', async () => {
 		const partConfig = mountEditor()
-		await vi.waitFor(() =>
-			expect(document.querySelector('[aria-label="mutable wall thickness"] input')).not.toBeNull()
-		)
 
-		await userEvent.tripleClick(
-			document.querySelector<HTMLInputElement>('[aria-label="mutable wall thickness"] input')!
-		)
-		await userEvent.keyboard('35{Tab}')
+		await enterNumber(thicknessField(), '35')
 
 		const next: BoundsHint = { ...hint, wall_thickness_mm: 35 }
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
-				visualizer: next,
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
+			visualizer: next,
+		})
 	})
 
 	it('reads the form from the walls of an obstacle stored without a hint, and writes one', async () => {
 		const partConfig = mountEditor(hint, { isHintStored: false })
-		const selector = '[aria-label="mutable wall thickness"] input'
-		await vi.waitFor(() => expect(document.querySelector(selector)).not.toBeNull())
 
-		await userEvent.tripleClick(document.querySelector<HTMLInputElement>(selector)!)
-		await userEvent.keyboard('35{Tab}')
+		await enterNumber(thicknessField(), '35')
 
 		const next: BoundsHint = { ...hint, wall_thickness_mm: 35 }
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
-				visualizer: next,
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
+			visualizer: next,
+		})
 	})
 
 	it('writes a thickness above 100 from a thinner wall', async () => {
 		const thin: BoundsHint = { ...hint, wall_thickness_mm: 10 }
 		const partConfig = mountEditor(thin)
-		const selector = '[aria-label="mutable wall thickness"] input'
-		await vi.waitFor(() => expect(document.querySelector(selector)).not.toBeNull())
 
-		await userEvent.tripleClick(document.querySelector<HTMLInputElement>(selector)!)
-		await userEvent.keyboard('250{Tab}')
+		await enterNumber(thicknessField(), '250')
 
 		const next: BoundsHint = { ...thin, wall_thickness_mm: 250 }
-		await vi.waitFor(() =>
-			expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
-				attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
-				visualizer: next,
-			})
-		)
+		expect(partConfig.updateComponent).toHaveBeenLastCalledWith('obstacle-1', {
+			attributes: { geometries: generateBoundsGeometries(next), extra: 'kept' },
+			visualizer: next,
+		})
 	})
 })

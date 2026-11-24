@@ -12,15 +12,20 @@ import {
 	withRobot,
 } from './fixtures/with-robot'
 
-// Each frame-edit section is a tweakpane widget wrapped in a div with one
-// aria-label, and the inputs inside are positional by axis. Tweakpane commits
-// only on Enter or blur, so press Enter after each fill.
-const fillFrameInputs = async (page: Page, groupLabel: string, values: string[]) => {
-	const inputs = page.getByLabel(groupLabel).locator('input')
-	for (const [index, value] of values.entries()) {
-		const input = inputs.nth(index)
-		await input.fill(value)
-		await input.press('Enter')
+/** A named row of number fields, such as `local position (mm)`, with one field per axis label. */
+const axisFields = (page: Page, group: string) => page.getByRole('group', { name: group })
+
+const fillAxes = async (page: Page, group: string, values: Record<string, string>) => {
+	for (const [axis, value] of Object.entries(values)) {
+		await axisFields(page, group).getByRole('spinbutton', { name: axis, exact: true }).fill(value)
+	}
+}
+
+const expectAxes = async (page: Page, group: string, values: Record<string, string>) => {
+	for (const [axis, value] of Object.entries(values)) {
+		await expect(
+			axisFields(page, group).getByRole('spinbutton', { name: axis, exact: true })
+		).toHaveValue(value)
 	}
 }
 
@@ -39,14 +44,6 @@ const expectHasEdits = (page: Page) =>
 	expect(page.getByLabel('Save')).not.toHaveAttribute('aria-disabled', 'true')
 const expectNoEdits = (page: Page) =>
 	expect(page.getByLabel('Save')).toHaveAttribute('aria-disabled', 'true')
-
-// Tweakpane formats what it displays, so compare against values read back from the
-// same inputs rather than against typed literals.
-const readInputValues = (page: Page, groupLabel: string) =>
-	page
-		.getByLabel(groupLabel)
-		.locator('input')
-		.evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value))
 
 const fragmentIdsToDelete: string[] = []
 
@@ -122,23 +119,13 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 
 	await expect(page.getByRole('region', { name: 'Details panel' })).toBeVisible()
 
-	await expect(page.getByText('Box', { exact: true })).toBeVisible()
-	await page.getByText('Box', { exact: true }).click()
+	await page.getByRole('tab', { name: 'Box' }).click()
 
-	// The "mutable ..." aria-label divs are invisible Svelte wrappers whose content
-	// is portaled into Tweakpane's own pane DOM. Assert attachment rather than
-	// visibility.
-	await expect(page.getByLabel('mutable local position')).toBeAttached()
-	await fillFrameInputs(page, 'mutable local position', ['100', '200', '300'])
-
-	// "mutable box dimensions" attaches when the entity gets a Box trait, but the
-	// inputs live in the outer Tweakpane pane DOM under "mutable geometry", not
-	// under this wrapper.
-	await expect(page.getByLabel('mutable box dimensions')).toBeAttached()
-	await fillFrameInputs(page, 'mutable geometry', ['400', '500', '600'])
+	const position = { X: '100', Y: '200', Z: '300' }
+	await fillAxes(page, 'local position (mm)', position)
+	await fillAxes(page, 'box dimensions (mm)', { X: '400', Y: '500', Z: '600' })
 
 	await expectHasEdits(page)
-	const editedPosition = await readInputValues(page, 'mutable local position')
 
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
@@ -164,23 +151,21 @@ withRobot('basic edit frame', async ({ robotPage }) => {
 
 	// Reload reset the workspace toggle to Monitor, so re-enter Build first.
 	await enterBuildMode(page)
-	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
+	await expectAxes(page, 'local position (mm)', position)
 
-	const parentSelect = page.getByLabel('mutable parent frame').locator('select')
-	await expect(parentSelect).toBeAttached()
-	await parentSelect.selectOption('parent')
-	await expect(parentSelect).toHaveValue('parent')
+	const parentSelect = page.getByRole('combobox', { name: 'parent frame' })
+	await parentSelect.click()
+	await page.getByRole('option', { name: 'parent', exact: true }).click()
+	await expect(parentSelect).toHaveText('parent')
 
 	await expectHasEdits(page)
 	await page.getByText('Discard', { exact: true }).click()
 	await expectNoEdits(page)
-	await expect(parentSelect).toHaveValue('world')
+	await expect(parentSelect).toHaveText('world')
 
-	await expect(page.getByText('None', { exact: true }).first()).toBeVisible()
-	await page.getByText('None', { exact: true }).first().click()
+	await page.getByRole('tab', { name: 'None' }).click()
 
-	await expect(page.getByLabel('mutable local position')).toBeAttached()
-	await fillFrameInputs(page, 'mutable local position', ['0', '0', '0'])
+	await fillAxes(page, 'local position (mm)', { X: '0', Y: '0', Z: '0' })
 
 	await expectHasEdits(page)
 	await page.getByLabel('Save').click()
@@ -371,18 +356,14 @@ withRobot('fragment edit frame', async ({ browser }) => {
 
 	await openFragmentFrame()
 
-	await expect(page.getByText('Sphere', { exact: true })).toBeVisible()
-	await page.getByText('Sphere', { exact: true }).click()
+	await page.getByRole('tab', { name: 'Sphere' }).click()
 
-	await expect(page.getByLabel('mutable local position')).toBeAttached()
-	await fillFrameInputs(page, 'mutable local position', ['100', '200', '300'])
-
-	await expect(page.getByLabel('mutable sphere dimensions')).toBeAttached()
-	await fillFrameInputs(page, 'mutable geometry', ['400'])
+	const position = { X: '100', Y: '200', Z: '300' }
+	const sphere = { R: '400' }
+	await fillAxes(page, 'local position (mm)', position)
+	await fillAxes(page, 'sphere dimensions (mm)', sphere)
 
 	await expectHasEdits(page)
-	const editedPosition = await readInputValues(page, 'mutable local position')
-	const editedGeometry = await readInputValues(page, 'mutable geometry')
 
 	await page.getByLabel('Save').click()
 	await expectNoEdits(page)
@@ -394,8 +375,8 @@ withRobot('fragment edit frame', async ({ browser }) => {
 		timeout: 15_000,
 	})
 	await openFragmentFrame()
-	await expect.poll(() => readInputValues(page, 'mutable local position')).toEqual(editedPosition)
-	await expect.poll(() => readInputValues(page, 'mutable geometry')).toEqual(editedGeometry)
+	await expectAxes(page, 'local position (mm)', position)
+	await expectAxes(page, 'sphere dimensions (mm)', sphere)
 })
 
 withRobot.afterAll(async () => {

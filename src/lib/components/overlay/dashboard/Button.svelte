@@ -133,7 +133,7 @@
 		</label>
 	</Tooltip.Trigger>
 
-	<Tooltip.Content placement={tooltipLocation ?? 'bottom'}>
+	<Tooltip.Content side={tooltipLocation ?? 'bottom'}>
 		{description}
 
 		{#if keybinding}

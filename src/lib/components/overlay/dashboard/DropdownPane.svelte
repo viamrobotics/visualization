@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
 
-	import { Pane } from 'svelte-tweakpane-ui'
-
 	import Popover from '#lib/components/overlay/Popover.svelte'
 
 	import Button from './Button.svelte'
@@ -34,10 +32,8 @@
 			{title}
 		</h3>
 
-		<div class="px-1">
-			<Pane position="inline">
-				{@render children()}
-			</Pane>
+		<div class="font-public-sans text-default flex flex-col gap-1.5 p-2 text-xs">
+			{@render children()}
 		</div>
 	</div>
 </Popover>

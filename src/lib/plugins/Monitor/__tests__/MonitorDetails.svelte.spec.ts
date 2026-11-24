@@ -211,7 +211,7 @@ describe('MonitorDetails', () => {
 			await openAppearance()
 
 			expect(screen.queryByText(/Not saved/)).not.toBeInTheDocument()
-			expect(screen.getByLabelText('mutable opacity')).toBeInTheDocument()
+			expect(screen.getByRole('slider', { name: 'opacity' })).toBeInTheDocument()
 		})
 	})
 })

@@ -5,9 +5,10 @@
 
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 
+	import { colorChannelsToHex, hexToColorChannels } from './colorChannelsHex'
 	import SectionNotice from './SectionNotice.svelte'
 	import SharedColor from './SharedColor.svelte'
-	import { isNearlyEqual, sharedValue } from './sharedValue'
+	import { sharedValue } from './sharedValue'
 
 	interface Props {
 		/** The selection. Never empty. */
@@ -24,13 +25,10 @@
 		(entity) => entity.get(traits.Color)
 	)
 
-	const definedColors = $derived(colors.current.filter((color) => color !== undefined))
-	const color = $derived(
-		sharedValue(
-			definedColors,
-			(a, b) => isNearlyEqual(a.r, b.r) && isNearlyEqual(a.g, b.g) && isNearlyEqual(a.b, b.b)
-		)
+	const definedColors = $derived(
+		colors.current.filter((color) => color !== undefined).map((color) => colorChannelsToHex(color))
 	)
+	const color = $derived(sharedValue(definedColors))
 </script>
 
 {#if definedColors.length === entities.length && definedColors[0]}
@@ -38,8 +36,9 @@
 		label="color"
 		value={color}
 		mixedSeed={definedColors[0]}
-		onchange={(next) => {
-			for (const entity of entities) entity.set(traits.Color, { r: next.r, g: next.g, b: next.b })
+		onchange={(hex) => {
+			const next = hexToColorChannels(hex)
+			for (const entity of entities) entity.set(traits.Color, next)
 			invalidate()
 		}}
 	/>

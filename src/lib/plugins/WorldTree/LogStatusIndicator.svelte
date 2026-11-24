@@ -43,7 +43,7 @@
 		</span>
 	</Tooltip.Trigger>
 
-	<Tooltip.Content placement="right">
+	<Tooltip.Content side="right">
 		<!--
 			Read here rather than in a component-level `$derived`: the content only
 			renders while the tooltip is open, so a row costs nothing until it is hovered.

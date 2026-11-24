@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { PartComponent } from '#lib/hooks/usePartConfig.svelte.js'
 
+import { enterNumber, numberField } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -56,11 +57,7 @@ const mountPanel = ({ saved = { type: 'bounds' }, session, frameId }: MountOptio
 	return { partConfig, setSession: vi.mocked(resourceAppearance.setSession) }
 }
 
-const typeOpacity = async (value: string) => {
-	const input = screen.getByLabelText('mutable opacity').querySelector<HTMLInputElement>('input')!
-	await userEvent.tripleClick(input)
-	await userEvent.keyboard(`${value}{Tab}`)
-}
+const typeOpacity = (value: string) => enterNumber(numberField('opacity'), value)
 
 describe('SessionAppearanceDetails', () => {
 	it('holds an edit for the session and leaves the config alone', async () => {
@@ -68,9 +65,7 @@ describe('SessionAppearanceDetails', () => {
 
 		await typeOpacity('0.35')
 
-		await vi.waitFor(() =>
-			expect(setSession).toHaveBeenLastCalledWith('bounds-1', { opacity: 0.35 })
-		)
+		expect(setSession).toHaveBeenLastCalledWith('bounds-1', { opacity: 0.35 })
 		expect(partConfig.updateComponent).not.toHaveBeenCalled()
 	})
 
@@ -79,11 +74,9 @@ describe('SessionAppearanceDetails', () => {
 
 		await typeOpacity('0.35')
 
-		await vi.waitFor(() =>
-			expect(setSession).toHaveBeenLastCalledWith('bounds-1', {
-				frames: { floor: { opacity: 0.35 } },
-			})
-		)
+		expect(setSession).toHaveBeenLastCalledWith('bounds-1', {
+			frames: { floor: { opacity: 0.35 } },
+		})
 	})
 
 	it('shows the saved value for a key the session leaves unset', () => {

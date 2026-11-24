@@ -634,15 +634,14 @@
 		"@types/three": "0.187.0",
 		"@typescript-eslint/eslint-plugin": "8.73.0",
 		"@typescript-eslint/parser": "8.73.0",
-		"@viamrobotics/prime-controls": "0.5.0",
+		"@viamrobotics/prime-controls": "0.7.0",
 		"@viamrobotics/prime-core": "0.1.23",
-		"@viamrobotics/prime-editor": "0.1.1",
-		"@viamrobotics/prime-ui": "0.6.0",
+		"@viamrobotics/prime-editor": "0.2.0",
+		"@viamrobotics/prime-ui": "0.7.0",
 		"@viamrobotics/sdk": "0.79.0",
 		"@viamrobotics/svelte-sdk": "1.5.3",
-		"@viamrobotics/tailwind-config": "1.11.0",
+		"@viamrobotics/tailwind-config": "1.12.0",
 		"@viamrobotics/test-widgets": "0.15.0",
-		"@viamrobotics/tweakpane-config": "0.1.1",
 		"@vitest/browser-playwright": "4.1.9",
 		"@vitest/coverage-v8": "4.1.9",
 		"@zag-js/collapsible": "1.49.0",
@@ -675,7 +674,6 @@
 		"runed": "0.38.0",
 		"svelte": "5.58.1",
 		"svelte-check": "4.7.8",
-		"svelte-tweakpane-ui": "1.5.20",
 		"svelte-virtuallists": "1.4.2",
 		"tailwind-merge": "^3.6.0",
 		"tailwindcss": "4.3.1",
@@ -703,9 +701,9 @@
 		"@threlte/extras": ">=9.22.3",
 		"@threlte/rapier": ">=3",
 		"@threlte/xr": ">=1",
-		"@viamrobotics/prime-controls": ">=0.5",
-		"@viamrobotics/prime-editor": ">=0.1",
-		"@viamrobotics/prime-ui": ">=0.6",
+		"@viamrobotics/prime-controls": ">=0.7",
+		"@viamrobotics/prime-editor": ">=0.2",
+		"@viamrobotics/prime-ui": ">=0.7",
 		"@viamrobotics/svelte-sdk": ">=1.4.0",
 		"@viamrobotics/test-widgets": ">=0.15.0",
 		"@zag-js/floating-panel": ">=1.45",
@@ -719,7 +717,6 @@
 		"lucide-svelte": ">=0.511",
 		"runed": ">=0.28",
 		"svelte": ">=5",
-		"svelte-tweakpane-ui": ">=1.5",
 		"svelte-virtuallists": ">=1",
 		"three": ">=0.185"
 	},
@@ -799,6 +796,10 @@
 			"types": "./dist/plugins/ControlWidgets/index.d.ts",
 			"svelte": "./dist/plugins/ControlWidgets/index.js"
 		},
+		"./render-stats": {
+			"types": "./dist/plugins/RenderStats/index.d.ts",
+			"svelte": "./dist/plugins/RenderStats/index.js"
+		},
 		"./scene-builder": {
 			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",
 			"default": "./dist/plugins/LLMSceneBuilder/index.js"
@@ -819,11 +820,13 @@
 	"dependencies": {
 		"@bufbuild/protobuf": "1.10.1",
 		"@neodrag/svelte": "^2.3.3",
+		"@viamrobotics/tweakpane-config": "0.1.1",
 		"d3-force": "^3.0.0",
 		"fflate": "0.8.3",
 		"filtrex": "^3.1.0",
 		"koota": "0.6.6",
 		"lodash-es": "4.18.1",
+		"svelte-tweakpane-ui": "1.5.20",
 		"three-mesh-bvh": "^0.9.14",
 		"uuid-tool": "^2.0.3",
 		"zod": "^4.4.3"

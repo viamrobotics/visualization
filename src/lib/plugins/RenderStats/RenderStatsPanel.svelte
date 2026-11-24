@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useStage, useTask, useThrelte } from '@threlte/core/webgpu'
+	import { primeTheme } from '@viamrobotics/tweakpane-config'
 	import { Folder, FpsGraph, Monitor, Pane, WaveformMonitor } from 'svelte-tweakpane-ui'
 
 	import { useWorld } from '#lib/ecs/index.js'
@@ -256,6 +257,7 @@
 	position="draggable"
 	title="Render stats"
 	localStoreId="render-stats"
+	theme={primeTheme}
 >
 	<FpsGraph
 		bind:begin={beginFpsSample}

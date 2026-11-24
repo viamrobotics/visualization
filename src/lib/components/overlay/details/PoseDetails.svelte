@@ -2,7 +2,7 @@
 	import type { Entity } from 'koota'
 
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { List, type ListChangeEvent } from 'svelte-tweakpane-ui'
+	import { Select } from '@viamrobotics/prime-controls'
 
 	import type { PosePatch } from '#lib/math/index.js'
 
@@ -102,26 +102,18 @@
 	})
 
 	/**
-	 * The `<List>`'s bound value must be one of its options, or the native select
-	 * snaps to selectedIndex -1 and renders blank. `useParentFrameOptions` can lag
-	 * the current parent, such as an unresolved orphan or frames that have not loaded
-	 * yet. Always include what the field shows, so it renders. A shared current
-	 * parent is cycle-safe, since it is neither self nor a descendant of any of them.
+	 * `useParentFrameOptions` can lag the current parent, such as an unresolved orphan or frames
+	 * that have not loaded yet, and a select shows no label for a value it has no item for. So a
+	 * shared parent is always offered. It is cycle-safe, being neither self nor a descendant.
 	 */
-	const parentFrameOptions = $derived.by(() => {
-		const value = parentName === MIXED ? MIXED_TEXT : parentName
+	const parentFrameItems = $derived.by(() => {
 		const options = parentOptions.current
-		return options.includes(value) ? options : [value, ...options]
+		const names =
+			parentName === MIXED || options.includes(parentName) ? options : [parentName, ...options]
+		return names.map((name) => ({ value: name, label: name }))
 	})
 
-	// Remounts the parent `<List>` when the selection changes. See the markup for why.
-	const selectionKey = $derived(entities.join(','))
-
-	const handleParentChange = (event: ListChangeEvent) => {
-		if (event.detail.origin !== 'internal') return
-		const value = event.detail.value as string
-		if (value === MIXED_TEXT) return
-
+	const setParent = (value: string) => {
 		for (const [index, entity] of entities.entries()) {
 			if (parentNames[index] !== value) frameEditor.setParent(entity, value)
 		}
@@ -147,24 +139,17 @@
 				— <EntityLink entity={parentEntity} />
 			</span>
 		{/if}
-		<!--
-			Remount on selection change. svelte-tweakpane-ui's List runs
-			`listBlade.value = value` on the still-mounted blade before its
-			`options` prop has propagated, so the new selection's parent name
-			(absent from the previous selection's option set) hits Tweakpane's
-			ListConstraint, snaps to the first option, and fires a change
-			event that handleParentChange interprets as a user pick — silently
-			reparenting the clicked frames.
-		-->
-		{#key selectionKey}
-			<div aria-label="mutable parent frame">
-				<List
-					options={parentFrameOptions}
-					value={parentName === MIXED ? MIXED_TEXT : parentName}
-					on:change={handleParentChange}
-				/>
-			</div>
-		{/key}
+		<Select
+			aria-label="parent frame"
+			items={parentFrameItems}
+			placeholder={MIXED_TEXT}
+			bind:value={
+				() => (parentName === MIXED ? undefined : parentName),
+				(next) => {
+					if (next) setParent(next)
+				}
+			}
+		/>
 	{:else}
 		<div class="mt-0.5 flex gap-3">
 			{#if parentEntity !== MIXED && parentEntity}

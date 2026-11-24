@@ -73,7 +73,7 @@
 just the inputs) raises it via `focus-within:z-5`. -->
 		<div
 			id="details-panel"
-			class="border-medium absolute top-10 right-0 z-4 m-2 w-70 border text-xs focus-within:z-5"
+			class="border-medium absolute top-10 right-0 z-4 m-2 w-76 border text-xs focus-within:z-5"
 			role="region"
 			aria-label="Details panel"
 			tabindex="-1"
@@ -121,7 +121,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								{/if}
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">Copy details to clipboard</Tooltip.Content>
+						<Tooltip.Content side="bottom">Copy details to clipboard</Tooltip.Content>
 					</Tooltip>
 				{/if}
 
@@ -140,7 +140,7 @@ just the inputs) raises it via `focus-within:z-5`. -->
 								<Icon icon={mdiTrashCanOutline} />
 							</button>
 						</Tooltip.Trigger>
-						<Tooltip.Content placement="bottom">Remove from scene</Tooltip.Content>
+						<Tooltip.Content side="bottom">Remove from scene</Tooltip.Content>
 					</Tooltip>
 				{/if}
 			</div>

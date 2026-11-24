@@ -1,14 +1,9 @@
 <script lang="ts">
-	import {
-		Point,
-		type PointChangeEvent,
-		type PointValue3dObject,
-		Stepper,
-		type StepperChangeEvent,
-	} from 'svelte-tweakpane-ui'
+	import { NumberField } from '@viamrobotics/prime-controls'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
+	import SharedNumberFields from '#lib/components/overlay/details/SharedNumberFields.svelte'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { BOUNDS_FACES, type BoundsFace, type BoundsHint } from '#lib/obstacleAttributes.js'
 	import { obstacleEditorHint } from '#lib/obstacleEditorType.js'
@@ -23,8 +18,14 @@
 
 	const partConfig = usePartConfig()
 
-	// The fields clamp to these, so a typed 0 lands on a value the hint accepts instead of being dropped.
+	// The steppers stop here. A typed value below it is not positive enough to commit, so it is dropped.
 	const MIN_WALL_THICKNESS_MM = 1
+
+	const INTERIOR_FIELDS = [
+		{ key: 'x_mm', label: 'X' },
+		{ key: 'y_mm', label: 'Y' },
+		{ key: 'z_mm', label: 'Z' },
+	] as const
 
 	const FACE_LABELS: Record<BoundsFace, string> = {
 		x_max: '+X wall',
@@ -58,17 +59,6 @@
 		})
 	}
 
-	const handleInteriorChange = (event: PointChangeEvent) => {
-		if (!hint || event.detail.origin !== 'internal') return
-		const { x, y, z } = event.detail.value as PointValue3dObject
-		commit({ ...hint, x_mm: x, y_mm: y, z_mm: z })
-	}
-
-	const handleThicknessChange = (event: StepperChangeEvent) => {
-		if (!hint || event.detail.origin !== 'internal') return
-		commit({ ...hint, wall_thickness_mm: event.detail.value })
-	}
-
 	const handleFaceChange = (face: BoundsFace, included: boolean) => {
 		if (!hint) return
 		const excluded = new Set(hint.exclude)
@@ -79,31 +69,30 @@
 </script>
 
 {#if hint}
+	{@const current = hint}
 	<div class="flex flex-col gap-2">
 		<div>
 			<strong class="font-semibold">interior</strong>
 			<span class="text-subtle-2">(mm)</span>
-			<div aria-label="mutable interior size">
-				<Point
-					value={{ x: hint.x_mm, y: hint.y_mm, z: hint.z_mm }}
-					min={MIN_INTERIOR_MM}
-					on:change={handleInteriorChange}
-				/>
-			</div>
+			<SharedNumberFields
+				aria-label="interior size (mm)"
+				fields={INTERIOR_FIELDS}
+				values={current}
+				min={MIN_INTERIOR_MM}
+				onchange={(patch) => commit({ ...current, ...patch })}
+			/>
 		</div>
 
-		<div>
-			<strong class="font-semibold">wall thickness</strong>
-			<span class="text-subtle-2">(mm)</span>
-			<div aria-label="mutable wall thickness">
-				<Stepper
-					label="t"
-					value={hint.wall_thickness_mm}
-					min={MIN_WALL_THICKNESS_MM}
-					on:change={handleThicknessChange}
-				/>
-			</div>
-		</div>
+		<NumberField
+			label="wall thickness (mm)"
+			min={MIN_WALL_THICKNESS_MM}
+			bind:value={
+				() => current.wall_thickness_mm,
+				(next) => {
+					if (next !== undefined) commit({ ...current, wall_thickness_mm: next })
+				}
+			}
+		/>
 
 		<fieldset class="flex flex-col gap-1 border-0 p-0">
 			<legend class="mb-1 p-0 font-semibold">walls</legend>

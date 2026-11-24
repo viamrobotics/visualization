@@ -65,6 +65,7 @@ export default defineConfig({
 						{ label: '<MeasureTool />', link: '/plugins/measure-tool/' },
 						{ label: '<Monitor />', link: '/plugins/monitor/' },
 						{ label: '<MotionPlanReplayer />', link: '/plugins/motion-plan-replayer/' },
+						{ label: '<RenderStats />', link: '/plugins/render-stats/' },
 						{ label: '<SelectionTool />', link: '/plugins/selection/' },
 						{ label: '<SensorCoverage />', link: '/plugins/sensor-coverage/' },
 						{ label: '<Settings />', link: '/plugins/settings/' },

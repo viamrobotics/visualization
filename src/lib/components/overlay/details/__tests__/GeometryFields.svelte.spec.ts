@@ -3,71 +3,91 @@ import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom/vitest'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 
 import GeometryFields from '../GeometryFields.svelte'
+import { MIXED, type Shared } from '../sharedValue'
+
+const renderBox = (
+	dimensions: Record<'x' | 'y' | 'z', Shared<number>> = { x: 10, y: 20, z: 30 }
+) => {
+	const ontypechange = vi.fn()
+	const ondimensionchange = vi.fn()
+	render(GeometryFields, {
+		props: { type: 'box', dimensions, includeNone: true, ontypechange, ondimensionchange },
+	})
+	return { ontypechange, ondimensionchange }
+}
 
 describe('GeometryFields', () => {
-	it('renders the box controls for a box value', () => {
-		render(GeometryFields, {
-			props: { geometry: { type: 'box', x: 1, y: 2, z: 3 }, onchange: vi.fn(), includeNone: true },
-		})
+	it('renders the box dimensions for a box', () => {
+		renderBox()
 
-		expect(screen.getByLabelText('mutable box dimensions')).toBeInTheDocument()
+		expect(screen.getByRole('group', { name: 'box dimensions (mm)' })).toBeInTheDocument()
 	})
 
-	it('renders no dimension controls for undefined', () => {
-		render(GeometryFields, { props: { geometry: undefined, onchange: vi.fn(), includeNone: true } })
-
-		expect(screen.queryByLabelText('mutable box dimensions')).not.toBeInTheDocument()
-		expect(screen.queryByLabelText('mutable sphere dimensions')).not.toBeInTheDocument()
-		expect(screen.queryByLabelText('mutable capsule dimensions')).not.toBeInTheDocument()
-		expect(screen.getByText('None')).toBeInTheDocument()
-	})
-
-	it('emits that type default when a tab is picked', async () => {
-		const emitted: EditableFrameGeometry[] = []
+	it('renders no dimension fields for none', () => {
 		render(GeometryFields, {
 			props: {
-				geometry: { type: 'box', x: 1, y: 2, z: 3 },
-				onchange: (next: EditableFrameGeometry) => emitted.push(next),
+				type: 'none',
+				dimensions: {},
 				includeNone: true,
+				ontypechange: vi.fn(),
+				ondimensionchange: vi.fn(),
 			},
 		})
 
-		await userEvent.click(screen.getByText('Sphere'))
-
-		await vi.waitFor(() => expect(emitted).toEqual([{ type: 'sphere', r: 100 }]))
+		expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+		expect(screen.getByRole('tab', { name: 'None' })).toHaveAttribute('aria-selected', 'true')
 	})
 
-	it('emits the whole box with the other dimensions preserved on a dimension change', async () => {
-		const emitted: EditableFrameGeometry[] = []
-		render(GeometryFields, {
-			props: {
-				geometry: { type: 'box', x: 10, y: 20, z: 30 },
-				onchange: (next: EditableFrameGeometry) => emitted.push(next),
-				includeNone: true,
-			},
-		})
-		await vi.waitFor(() => expect(document.querySelector('.tp-pndtxtv input')).not.toBeNull())
-		const xInput = document.querySelector<HTMLInputElement>('.tp-pndtxtv input')
-		expect(xInput).not.toBeNull()
+	it('reports the picked type', async () => {
+		const { ontypechange } = renderBox()
 
-		await userEvent.tripleClick(xInput!)
-		await userEvent.keyboard('55{Tab}')
+		await userEvent.click(screen.getByRole('tab', { name: 'Sphere' }))
 
-		await vi.waitFor(() => expect(emitted.at(-1)).toEqual({ type: 'box', x: 55, y: 20, z: 30 }))
+		expect(ontypechange).toHaveBeenCalledWith('sphere')
 	})
 
-	it('does not emit when the geometry prop changes', async () => {
-		const onchange = vi.fn()
+	it('reports only the dimension the user changed', async () => {
+		const { ondimensionchange } = renderBox()
+
+		await userEvent.type(screen.getByRole('spinbutton', { name: 'X' }), '5')
+
+		expect(ondimensionchange).toHaveBeenLastCalledWith({ x: 105 })
+	})
+
+	it('reports no size of 0 or less, since typing is not clamped to the minimum', async () => {
+		const { ondimensionchange } = renderBox()
+
+		await enterNumber(axisField('box dimensions (mm)', 'X'), '-5')
+
+		expect(ondimensionchange).not.toHaveBeenCalled()
+	})
+
+	it('shows a mixed dimension empty', () => {
+		renderBox({ x: MIXED, y: 20, z: 30 })
+
+		expect(screen.getByRole('spinbutton', { name: 'X' })).toHaveValue(null)
+	})
+
+	it('does not report a change when the props change', async () => {
+		const ontypechange = vi.fn()
+		const ondimensionchange = vi.fn()
 		const { rerender } = render(GeometryFields, {
-			props: { geometry: { type: 'box', x: 1, y: 2, z: 3 }, onchange, includeNone: true },
+			props: {
+				type: 'box',
+				dimensions: { x: 1, y: 2, z: 3 },
+				includeNone: true,
+				ontypechange,
+				ondimensionchange,
+			},
 		})
 
-		await rerender({ geometry: { type: 'sphere', r: 5 }, onchange })
-		await rerender({ geometry: { type: 'box', x: 9, y: 9, z: 9 }, onchange })
+		await rerender({ type: 'sphere', dimensions: { r: 5 } })
+		await rerender({ type: 'box', dimensions: { x: 9, y: 9, z: 9 } })
 
-		expect(onchange).not.toHaveBeenCalled()
+		expect(ontypechange).not.toHaveBeenCalled()
+		expect(ondimensionchange).not.toHaveBeenCalled()
 	})
 })

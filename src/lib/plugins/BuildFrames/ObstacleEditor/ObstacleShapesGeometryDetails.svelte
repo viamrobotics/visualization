@@ -4,17 +4,14 @@
 The geometry of several selected Complex obstacle shapes. A dimension that differs across them shows as a dash, and an edit writes only the field it changes to every shape.
 -->
 <script lang="ts">
-	import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
-
 	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
 	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
 	import {
-		changedAxes,
-		MIXED,
-		sharedNumber,
-		sharedValue,
-		toInputNumber,
-	} from '#lib/components/overlay/details/sharedValue.js'
+		type GeometryDimension,
+		sharedGeometryDimensions,
+	} from '#lib/components/overlay/details/sharedGeometryDimensions.js'
+	import { MIXED, sharedValue } from '#lib/components/overlay/details/sharedValue.js'
+	import { defaultFrameGeometry } from '#lib/defaultFrameGeometry.js'
 	import { obstacleGeometriesOf, type ObstacleShape } from '#lib/obstacleAttributes.js'
 
 	import { type SelectedObstacleShape, shapePatchEdits } from './selectedObstacleShapes'
@@ -35,44 +32,16 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 
 	const geometryType = $derived(sharedValue(entries.map((entry) => entry?.type)))
 
-	/** One dimension across shapes that share a type, as the number its input shows. */
-	const shownDimension = (key: 'x' | 'y' | 'z' | 'r' | 'l'): number =>
-		toInputNumber(
-			sharedNumber(
-				entries.map(
-					(entry) => (entry as Partial<Record<typeof key, number>> | undefined)?.[key] ?? Number.NaN
-				)
-			)
+	const dimensions = $derived(
+		sharedGeometryDimensions(
+			entries as readonly (Partial<Record<GeometryDimension, number>> | undefined)[]
 		)
-
-	// Mixed dimensions are handed over as NaN, which the fields show as a dash.
-	const geometry = $derived.by((): EditableFrameGeometry | undefined => {
-		if (geometryType === 'box') {
-			return { type: 'box', x: shownDimension('x'), y: shownDimension('y'), z: shownDimension('z') }
-		}
-		if (geometryType === 'sphere') return { type: 'sphere', r: shownDimension('r') }
-		if (geometryType === 'capsule') {
-			return { type: 'capsule', r: shownDimension('r'), l: shownDimension('l') }
-		}
-		return undefined
-	})
+	)
 
 	let error = $state<string | undefined>()
 
-	const dimensionsOf = (shape: EditableFrameGeometry): Record<string, number> =>
-		Object.fromEntries(Object.entries(shape).filter(([key]) => key !== 'type'))
-
-	const handleChange = (next: EditableFrameGeometry) => {
-		if (next.type === 'none' || !geometry) return
-
-		// A type switch replaces every shape's fields with that type's defaults. Otherwise each shape
-		// keeps its own value for every dimension left alone.
-		const patch =
-			next.type === geometry.type
-				? changedAxes(dimensionsOf(geometry), dimensionsOf(next))
-				: (next as ObstacleShape)
-		if (Object.keys(patch).length === 0) return
-
+	/** Writes one patch to every selected shape, so each keeps its own value for every field left alone. */
+	const writeAll = (patch: Partial<ObstacleShape>) => {
 		error = shapeWrites.write(
 			shapePatchEdits(
 				shapes,
@@ -87,7 +56,7 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 		label="geometry"
 		message="The selected shapes have different geometry types."
 	/>
-{:else if geometry === undefined}
+{:else if geometryType !== 'box' && geometryType !== 'sphere' && geometryType !== 'capsule'}
 	<SectionNotice
 		label="geometry"
 		message="The selected shapes have a geometry type that can't be edited here."
@@ -95,8 +64,13 @@ The geometry of several selected Complex obstacle shapes. A dimension that diffe
 {:else}
 	<GeometryFields
 		includeNone={false}
-		{geometry}
-		onchange={handleChange}
+		type={geometryType}
+		{dimensions}
+		ontypechange={(type) => {
+			// A type switch replaces every shape's fields with that type's defaults.
+			if (type !== 'none') writeAll(defaultFrameGeometry(type) as ObstacleShape)
+		}}
+		ondimensionchange={(patch) => writeAll(patch as Partial<ObstacleShape>)}
 	/>
 {/if}
 

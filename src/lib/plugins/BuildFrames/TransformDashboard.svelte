@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Checkbox, Separator, Slider } from 'svelte-tweakpane-ui'
+	import { NumberField } from '@viamrobotics/prime-controls'
+	import { Switch } from '@viamrobotics/prime-ui'
 
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
 	import DropdownPane from '#lib/components/overlay/dashboard/DropdownPane.svelte'
@@ -84,62 +85,48 @@
 				active={settings.current.snapping}
 				description="Snapping settings"
 			>
-				<Checkbox
-					label="Increment"
-					bind:value={settings.current.snapIncrement}
-				/>
-				<!-- Units live in the labels: tweakpane parses typed text as a bare number, so a unit in the value would make every typed edit revert. -->
-				<Slider
+				<label class="flex items-center justify-between gap-2">
+					Increment <Switch bind:checked={settings.current.snapIncrement} />
+				</label>
+				<NumberField
 					label="Move (m)"
 					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.01}
-					value={settings.current.snapTranslate}
-					on:change={(event) => {
-						if (event.detail.origin === 'internal') {
-							settings.current.snapTranslate = event.detail.value
-						}
-					}}
+					bind:value={settings.current.snapTranslate}
 				/>
-				<Slider
+				<NumberField
 					label="Rotate (°)"
 					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.5}
-					value={settings.current.snapRotate}
-					on:change={(event) => {
-						if (event.detail.origin === 'internal') {
-							settings.current.snapRotate = event.detail.value
-						}
-					}}
+					bind:value={settings.current.snapRotate}
 				/>
-				<Slider
+				<NumberField
 					label="Scale"
 					disabled={!settings.current.snapIncrement}
 					min={0}
 					step={0.01}
-					value={settings.current.snapScale}
-					on:change={(event) => {
-						if (event.detail.origin === 'internal') {
-							settings.current.snapScale = event.detail.value
-						}
-					}}
+					bind:value={settings.current.snapScale}
 				/>
-				<Separator />
-				<Checkbox
-					label="Objects"
-					bind:value={settings.current.snapObjects}
-				/>
-				<Checkbox
-					label="Ground plane"
-					disabled={!settings.current.snapObjects}
-					bind:value={settings.current.snapGroundPlane}
-				/>
-				<Checkbox
-					label="Align rotation"
-					disabled={!settings.current.snapObjects}
-					bind:value={settings.current.snapAlignRotation}
-				/>
+				<hr class="border-light" />
+				<label class="flex items-center justify-between gap-2">
+					Objects <Switch bind:checked={settings.current.snapObjects} />
+				</label>
+				<label class="flex items-center justify-between gap-2">
+					Ground plane
+					<Switch
+						disabled={!settings.current.snapObjects}
+						bind:checked={settings.current.snapGroundPlane}
+					/>
+				</label>
+				<label class="flex items-center justify-between gap-2">
+					Align rotation
+					<Switch
+						disabled={!settings.current.snapObjects}
+						bind:checked={settings.current.snapAlignRotation}
+					/>
+				</label>
 			</DropdownPane>
 		</fieldset>
 

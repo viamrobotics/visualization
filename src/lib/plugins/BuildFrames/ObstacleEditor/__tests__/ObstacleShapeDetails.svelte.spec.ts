@@ -5,6 +5,7 @@ import { Matrix4 } from 'three'
 import '@testing-library/jest-dom/vitest'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { axisField, enterNumber } from '#lib/__tests__/__fixtures__/numberFields.js'
 import { createPartConfigFixture } from '#lib/__tests__/__fixtures__/partConfig.js'
 import { relations, traits } from '#lib/ecs/index.js'
 import { WORLD_CONTEXT_KEY } from '#lib/ecs/useWorld.js'
@@ -156,14 +157,9 @@ describe('ObstacleShapeDetails', () => {
 
 	it('writes an offset change to this shape only', async () => {
 		const partConfig = mountShape(1)
-		const x = screen
-			.getByLabelText('mutable local position')
-			.querySelector<HTMLInputElement>('.tp-pndtxtv input')!
 
-		await userEvent.tripleClick(x)
-		await userEvent.keyboard('42{Tab}')
+		await enterNumber(axisField('local position (mm)', 'X'), '42')
 
-		await vi.waitFor(() => expect(partConfig.updateComponent).toHaveBeenCalled())
 		const { attributes } = vi.mocked(partConfig.updateComponent).mock.lastCall![1]
 		const written = attributes!.geometries as ObstacleGeometryConfig[]
 		expect(written[0]).toEqual(defaultGeometries()[0])
