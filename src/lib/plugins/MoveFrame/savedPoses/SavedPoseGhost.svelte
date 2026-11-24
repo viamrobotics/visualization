@@ -12,16 +12,13 @@ the triad of where the end of the arm would be.
 	import { T, useThrelte } from '@threlte/core/webgpu'
 	import { Group } from 'three'
 
-	import { MOVE_GHOST_COLOR } from '#lib/components/motion/moveGhostColor.js'
-	import {
-		clearPreviewGhosts,
-		createPreviewGhosts,
-		spawnSavedPoseGhosts,
-	} from '#lib/components/motion/previewGhosts.js'
 	import { traits, useTrait, useWorld } from '#lib/ecs/index.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
 	import { frameSystemToPlanFrames } from '#lib/motion/frameSystemToPlanFrames.js'
+
+	import { MOVE_GHOST_COLOR } from '../moveGhostColor'
+	import { clearPreviewGhosts, createPreviewGhosts, spawnSavedPoseGhosts } from '../previewGhosts'
 
 	interface Props {
 		entity: Entity

@@ -2,11 +2,11 @@ import { createWorld, type Entity } from 'koota'
 import { Matrix4 } from 'three'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { GhostOf } from '#lib/components/motion/ghostOfRelation.js'
-import { PreviewGhost } from '#lib/components/motion/previewGhostTrait.js'
-import { previewName } from '#lib/components/motion/previewNames.js'
 import { relations, traits } from '#lib/ecs/index.js'
 
+import { GhostOf } from '../../ghostOfRelation'
+import { PreviewGhost } from '../../previewGhostTrait'
+import { previewName } from '../../previewNames'
 import { armBitFor, collectMembers, isGhost } from '../collisionMembers'
 import { ENVIRONMENT_BIT } from '../interactionGroups'
 

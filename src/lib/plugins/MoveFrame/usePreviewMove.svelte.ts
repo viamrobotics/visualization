@@ -4,21 +4,16 @@ import { untrack } from 'svelte'
 
 import type { FramesContext } from '#lib/hooks/useFrames.svelte.js'
 import type { Pose } from '#lib/math/index.js'
-import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 import type { TrajectoryStep } from '#lib/motion/trajectoryStep.js'
+import type { TrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
 
-import {
-	type PreviewDetail,
-	useTrajectoryDrawing,
-} from '#lib/components/motion/useTrajectoryDrawing.svelte.js'
 import { isAlreadyAtGoal, parsePlanResult, planCommand } from '#lib/motion/planDoCommand.js'
 
 import type { MoveOptions } from './parseMoveOptions'
 
-export {
-	type PreviewDetail,
-	previewFrameIntervalMs,
-} from '#lib/components/motion/useTrajectoryDrawing.svelte.js'
+import { type PreviewDetail, useTrajectoryDrawing } from './useTrajectoryDrawing.svelte'
+
+export { type PreviewDetail, previewFrameIntervalMs } from './useTrajectoryDrawing.svelte'
 
 /**
  * `already-at-goal` is not `error`: RDK answered, and the trajectory it returned is the start

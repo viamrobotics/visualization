@@ -69,18 +69,14 @@ and mounting with no provider is planned.
 	)
 </script>
 
-<div class="core">
+<!-- Inline styles, not Tailwind utilities, so the scene fills its box in a host that loads no Tailwind build. -->
+<div
+	style:position="relative"
+	style:width="100%"
+	style:height="100%"
+	style:overflow="clip"
+>
 	<SceneCanvas>
 		{@render children?.()}
 	</SceneCanvas>
 </div>
-
-<style>
-	/* Plain CSS, not Tailwind utilities, so the scene fills its box in a host that loads no Tailwind build. */
-	.core {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		overflow: clip;
-	}
-</style>
