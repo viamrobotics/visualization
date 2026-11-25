@@ -1,61 +1,20 @@
-export { default as TopDownLock } from './TopDownLock/TopDownLock.svelte'
-
-export { default as BuildFrames } from './BuildFrames/BuildFrames.svelte'
-
-export { default as Debug } from './Debug/Debug.svelte'
-
-export { default as DrawService } from './DrawService/DrawService.svelte'
-
-export { default as FileDrop } from './FileDrop/FileDrop.svelte'
-
-export { default as Maximize } from './Maximize/Maximize.svelte'
-
-export { default as Isolate } from './Isolate/Isolate.svelte'
-
-export { default as LLMSceneBuilder } from './LLMSceneBuilder/LLMSceneBuilder.svelte'
-export type { InferCallback, ComponentFrameInfo } from './LLMSceneBuilder/useSceneBuilder.svelte'
-export type { FrameDelta } from './LLMSceneBuilder/frameDeltaAdapter'
-
-export { default as Logs } from './Logs/Logs.svelte'
-export { useLogs } from './Logs/useLogs.svelte'
-
-export { default as Machine } from './Machine/Machine.svelte'
-
-export { default as MeasureTool } from './MeasureTool/MeasureTool.svelte'
-
-export { default as MotionPlanReplayer } from './MotionPlanReplayer/MotionPlanReplayer.svelte'
-export { useMotionPlanReplayer } from './MotionPlanReplayer/useMotionPlanReplayer.svelte'
-export type {
-	MotionPlanReplayerContext,
-	PlanEntry,
-} from './MotionPlanReplayer/useMotionPlanReplayer.svelte'
-// `MotionPlanReplayerContext.player` is public, so its type has to be nameable.
-export type { TrajectoryPlayer } from '../motion/trajectoryPlayer.svelte'
-export { transformBytesToSnapshots } from './MotionPlanReplayer/plan-to-snapshots'
-export type { ResolvePlanSnapshots } from './MotionPlanReplayer/plan-dropper'
-export type {
-	InspectIKResult,
-	ResolveIKSolutions,
-} from './MotionPlanReplayer/inspect-ik/inspect-ik-client'
-export type { IKSeedGroup } from './MotionPlanReplayer/inspect-ik/parse-ik-solutions'
-export { ikSeedGroupsFromProto } from './MotionPlanReplayer/inspect-ik/ik-seed-groups-from-proto'
-
-export { default as MoveFrame } from './MoveFrame/MoveFrame.svelte'
-
-export { default as SensorCoverage } from './SensorCoverage/SensorCoverage.svelte'
-
-export { default as Settings } from './Settings/Settings.svelte'
-
-export { default as SceneExport } from './SceneExport/SceneExport.svelte'
-
-export { default as SelectionTool } from './Selection/SelectionTool.svelte'
-export * as selectionTraits from './Selection/traits'
-export * as selectionRelations from './Selection/relations'
-export { useSelectionPlugin } from './Selection/useSelectionPlugin.svelte'
-
-export { default as Skybox } from './Skybox/Skybox.svelte'
-
-export { default as WorldTree } from './WorldTree/WorldTree.svelte'
-
-export { default as XR } from './XR/XR.svelte'
-export { default as XRMachine } from './XR/XRMachine.svelte'
+export * from './TopDownLock/index'
+export * from './BuildFrames/index'
+export * from './Debug/index'
+export * from './DrawService/index'
+export * from './FileDrop/index'
+export * from './Maximize/index'
+export * from './Isolate/index'
+export * from './LLMSceneBuilder/index'
+export * from './Logs/index'
+export * from './Machine/index'
+export * from './MeasureTool/index'
+export * from './MotionPlanReplayer/index'
+export * from './MoveFrame/index'
+export * from './SensorCoverage/index'
+export * from './Settings/index'
+export * from './SceneExport/index'
+export * from './Selection/index'
+export * from './Skybox/index'
+export * from './WorldTree/index'
+export * from './XR/index'

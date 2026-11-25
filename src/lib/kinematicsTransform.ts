@@ -40,6 +40,8 @@ export interface RawKinematicsLink {
 	translation?: RawKinematicsTranslation
 	orientation?: RawKinematicsOrientation
 	geometry?: RawKinematicsGeometry
+	/** Collision geometry beyond the first, which stays in `geometry`. */
+	geometries?: RawKinematicsGeometry[]
 }
 
 /**
@@ -56,10 +58,17 @@ export interface RawKinematicsJoint {
 	max?: number
 	/** Degrees or mm per second, as `min` and `max`. */
 	max_velocity?: number
+	/** Degrees or mm per second squared, as `min` and `max`. */
+	max_acceleration?: number
+	/** A prismatic joint's own collider. */
+	geometry?: RawKinematicsGeometry
+	/** Set when the joint follows another: `multiplier * source + offset`. It then has no limits. */
+	mimic?: { joint?: string; multiplier?: number; offset?: number }
 }
 
 /**
- * rdk's `ModelConfigJSON`, as it arrives in `FrameSystemConfig.kinematics`.
+ * rdk's `ModelConfigJSON`, as it arrives in the deprecated `FrameSystemConfig.kinematics`, and as
+ * `kinematicModelToJson` writes the typed `FrameSystemConfig.model` out.
  *
  * `FrameSystemPart.ToProtobuf` fills `kinematics` from the model's
  * `modelConfig` — the parse *input*, not the resolved model — so the fields

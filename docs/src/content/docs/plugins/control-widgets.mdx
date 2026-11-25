@@ -50,6 +50,6 @@ The store is backed by local storage, so it works whether or not the panel is mo
 
 ## Dependencies
 
-- **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are required peers of `@viamrobotics/visualization`, so they're already installed alongside it. The plugin also uses `@threlte/xr` to detect an active immersive session.
+- **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are optional peers of `@viamrobotics/visualization`, so install them to mount this plugin. The plugin also uses `@threlte/xr` to detect an active immersive session.
 - **Plugins:** none required — though its registry panels hide themselves while an immersive `<XR />` session is active (see [Plugin dependencies](../dependencies/)).
 - **Runtime:** a live machine connection. Resources are resolved per part, so the plugin must be mounted within the visualizer's scene, and the list stays empty until a machine is connected. Registry widget panels are automatically hidden while an immersive XR session is active.
