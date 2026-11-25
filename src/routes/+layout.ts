@@ -1,12 +1,11 @@
-import { browser } from '$app/environment'
-
 import { migrateLegacyStorage } from './lib/migrateLegacyStorage'
 import { STANDALONE_STORAGE_KEY } from './lib/standaloneStorageKey'
 
 export const ssr = false
 export const prerender = true
 
-// Before the layout mounts the visualizer, which reads the migrated keys on mount.
+// Before the layout mounts the visualizer, which reads the migrated keys on mount. Skipped
+// where there is no storage, such as prerendering.
 export const load = async () => {
-	if (browser) await migrateLegacyStorage(STANDALONE_STORAGE_KEY)
+	if (typeof localStorage !== 'undefined') await migrateLegacyStorage(STANDALONE_STORAGE_KEY)
 }
