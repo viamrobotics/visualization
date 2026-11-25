@@ -194,28 +194,32 @@ one-shot capture.
 </div>
 ```
 
-## Keeping state separate from the standalone app
+## Remembering state across reloads
 
-The visualizer remembers some state across reloads: settings, the workspace mode, the open
-details tab, and the orientation format. It stores them in the host page's origin. By default an
-embedded viewer shares that storage with the standalone app on the same origin, so changing the
-grid in one changes it in the other.
+The visualizer keeps some state as you use it: settings, the workspace mode, the open details
+tab, the orientation format, and what plugins keep, such as `<WorldTree />` folder expansion and
+open control widgets. Each `<Visualizer>` keeps its own, and every component inside one visualizer
+shares it.
 
-Pass `storageKey` to keep them apart. It is read once, on mount.
+By default that state lives in memory, so it is gone on reload, and storage is never read or
+written. Pass `storageKey` to persist it in the host page's origin, under that prefix. It is read
+once, on mount.
 
-| Value    | Effect                                                        |
-| -------- | ------------------------------------------------------------- |
-| omitted  | Shares the standalone app's storage.                          |
-| a string | Stores every key under that prefix, such as `widget:`.        |
-| `false`  | Keeps all of it in memory, and never reads or writes storage. |
+| Value    | Effect                                                                 |
+| -------- | ---------------------------------------------------------------------- |
+| omitted  | Keeps the state in memory, for this visualizer alone.                  |
+| a string | Persists every value under that prefix, such as `arm-widget:settings`. |
 
 ```svelte
 <Visualizer storageKey="arm-widget" />
 ```
 
-Give each embedded viewer that should remember its own state a different string. Use `false` for
-a viewer that should start fresh on every mount. Plugins that persist their own state, such as
-`<WorldTree />` folder expansion, do not read `storageKey` yet.
+Give each viewer that should remember its own state a different string. Visualizers given the same
+string share their persisted state. The standalone app uses `visualizer`, so pick another string
+unless an embedded viewer should share the app's state.
+
+XR's `anchorKey` is not under `storageKey`. It names a calibration stored on the headset, which
+every viewer on that device shares.
 
 ## Rendering snapshots
 

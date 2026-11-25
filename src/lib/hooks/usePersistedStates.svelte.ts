@@ -7,7 +7,13 @@ interface PersistedStatesContext {
 	states: Map<string, { current: unknown }>
 }
 
-const key = Symbol('persisted-states')
+/** Exported so tests can mount components into one visualizer's persisted states. */
+export const PERSISTED_STATES_CONTEXT_KEY = Symbol('persisted-states')
+
+/** A visualizer's persisted states, before any value is looked up. */
+export const createPersistedStatesContext = (
+	storageKey: string | undefined
+): PersistedStatesContext => ({ storageKey, states: new Map() })
 
 /**
  * State under `baseKey` remembered in `localStorage` as `<storageKey>:<baseKey>`. Without a
@@ -37,7 +43,7 @@ export const createStoredState = <TValue>(
  * kept in memory for this visualizer alone.
  */
 export const providePersistedStates = (storageKey: string | undefined): void => {
-	setContext<PersistedStatesContext>(key, { storageKey, states: new Map() })
+	setContext(PERSISTED_STATES_CONTEXT_KEY, createPersistedStatesContext(storageKey))
 }
 
 /**
@@ -50,10 +56,9 @@ export const usePersistedStates = (): (<TValue>(
 	baseKey: string,
 	initialValue: TValue
 ) => { current: TValue }) => {
-	const context = getContext<PersistedStatesContext | undefined>(key) ?? {
-		storageKey: undefined,
-		states: new Map(),
-	}
+	const context =
+		getContext<PersistedStatesContext | undefined>(PERSISTED_STATES_CONTEXT_KEY) ??
+		createPersistedStatesContext(undefined)
 
 	return <TValue>(baseKey: string, initialValue: TValue) => {
 		const existing = context.states.get(baseKey)
