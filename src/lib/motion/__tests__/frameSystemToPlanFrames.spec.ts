@@ -40,6 +40,7 @@ const part = (options: {
 		theta?: number
 	}
 	kinematics?: Struct
+	model?: commonApi.KinematicModel
 	geometry?: Geometry
 }): robotApi.FrameSystemConfig =>
 	new robotApi.FrameSystemConfig({
@@ -52,6 +53,7 @@ const part = (options: {
 			physicalObject: options.geometry,
 		}),
 		kinematics: options.kinematics,
+		model: options.model,
 	})
 
 const byName = (descriptors: FrameDescriptor[]) =>
@@ -579,6 +581,52 @@ describe('geometry crossing between the two generated protos', () => {
 		expect(mesh?.contentType).toBe('ply')
 		expect([...(mesh?.mesh ?? [])]).toEqual([...bytes])
 		expect(carried).toBeInstanceOf(LocalGeometry)
+	})
+})
+
+describe('the typed kinematic model', () => {
+	/** What rdk sends for a DH arm: the DH config in `kinematics`, and `model` with it expanded. */
+	const dhArm = () =>
+		part({
+			name: 'dh-arm',
+			kinematics: Struct.fromJson({
+				kinematic_param_type: 'DH',
+				dhParams: [{ id: 'a', parent: 'world' }],
+			}),
+			model: new commonApi.KinematicModel({
+				joints: [
+					new commonApi.KinematicJoint({
+						id: 'a_j',
+						parent: 'world',
+						type: commonApi.JointType.REVOLUTE,
+						axis: { x: 0, y: 0, z: 1 },
+					}),
+				],
+				links: [
+					new commonApi.KinematicLink({
+						id: 'a',
+						parent: 'a_j',
+						pose: { translation: { x: 100, y: 0, z: 0 } },
+					}),
+				],
+			}),
+		})
+
+	it('draws a DH arm from the model rdk expanded, instead of dropping it', () => {
+		const { frames, parents } = frameSystemToPlanFrames([dhArm()])
+
+		expect(frames['dh-arm']?.frame_type).toBe('model')
+		expect(frames['dh-arm:a_j']?.frame).toMatchObject({ inner_frame: { frame_type: 'rotational' } })
+		expect(parents['dh-arm:a']).toBe('dh-arm:a_j')
+	})
+
+	it('reads the model alone when a part carries no deprecated struct', () => {
+		const arm = dhArm()
+		const modelOnly = new robotApi.FrameSystemConfig({ frame: arm.frame, model: arm.model })
+
+		expect(frameSystemToPlanFrames([modelOnly]).frames['dh-arm:a']?.frame).toMatchObject({
+			inner_frame: { frame: { translation: { X: 100, Y: 0, Z: 0 } } },
+		})
 	})
 })
 

@@ -9,22 +9,23 @@ Every plugin mounts independently inside `<Visualizer />`, and none _requires_ a
 
 Most plugins need nothing beyond `@viamrobotics/visualization`. Several use **optional peer dependencies** — install them only when you use the plugin:
 
-| Plugin              | Install                                       |
-| ------------------- | --------------------------------------------- |
-| `<SelectionTool />` | `earcut`                                      |
-| `<DrawService />`   | `@connectrpc/connect @connectrpc/connect-web` |
-| `<Debug />`         | `@tanstack/svelte-query-devtools`             |
-| `<MoveFrame />`     | `@dimforge/rapier3d-compat @threlte/rapier`   |
-| `<Settings />`      | `@zag-js/tabs`                                |
-| `<WorldTree />`     | `@zag-js/tree-view svelte-virtuallists`       |
-| `<XR />`            | `@threlte/xr`                                 |
+| Plugin               | Install                                                              |
+| -------------------- | -------------------------------------------------------------------- |
+| `<Machine />`        | `@viamrobotics/svelte-sdk`                                           |
+| `<BuildFrames />`    | `@viamrobotics/svelte-sdk`                                           |
+| `<ControlWidgets />` | `@viamrobotics/test-widgets @viamrobotics/svelte-sdk`                |
+| `<SelectionTool />`  | `earcut`                                                             |
+| `<SensorCoverage />` | `@viamrobotics/svelte-sdk`                                           |
+| `<DrawService />`    | `@connectrpc/connect @connectrpc/connect-web`                        |
+| `<Debug />`          | `@tanstack/svelte-query-devtools`                                    |
+| `<MoveFrame />`      | `@dimforge/rapier3d-compat @threlte/rapier @viamrobotics/svelte-sdk` |
+| `<Settings />`       | `@zag-js/tabs`                                                       |
+| `<WorldTree />`      | `@zag-js/tree-view svelte-virtuallists`                              |
+| `<XR />`             | `@threlte/xr @viamrobotics/svelte-sdk`                               |
 
-Two more build on packages that ship as **required peers** of `@viamrobotics/visualization` — already installed with it, and listed here only for completeness:
-
-| Plugin               | Required peers                                           |
-| -------------------- | -------------------------------------------------------- |
-| `<ControlWidgets />` | `@viamrobotics/test-widgets`, `@viamrobotics/svelte-sdk` |
-| `<XR />`             | `@viamrobotics/svelte-sdk`                               |
+A peer stays optional only when you import each plugin from its own subpath, such as
+`@viamrobotics/visualization/plugins/measure-tool`. The `@viamrobotics/visualization/plugins`
+barrel loads every plugin, so importing anything from it needs every peer in this table.
 
 ## Plugin-to-plugin
 

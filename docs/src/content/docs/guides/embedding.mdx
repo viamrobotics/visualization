@@ -21,7 +21,7 @@ pnpm add @viamrobotics/visualization
 
 The package declares a list of `peerDependencies` (Svelte, Threlte, Three.js, the Viam SDK, prime-core, several Zag.js components, etc.). pnpm will print warnings for any that aren't already in your project — install whatever it asks for.
 
-Peers that only a plugin needs are marked optional, so you install them only if you mount that plugin: `@dimforge/rapier3d-compat` and `@threlte/rapier` for `MoveFrame`, `@zag-js/tree-view` and `svelte-virtuallists` for [`<WorldTree />`](../../plugins/world-tree/), `@zag-js/tabs` for [`<Settings />`](../../plugins/settings/), `@threlte/xr` for [`<XR />`](../../plugins/xr/), `earcut` for [`<SelectionTool />`](../../plugins/selection/), and the Connect RPC client for [`<DrawService />`](../../plugins/draw-service/).
+Peers that only a plugin needs are marked optional, so you install them only if you mount that plugin: `@viamrobotics/svelte-sdk` for [`<Machine />`](../../plugins/machine/) and the plugins that need a machine, `@viamrobotics/test-widgets` for [`<ControlWidgets />`](../../plugins/control-widgets/), `@dimforge/rapier3d-compat` and `@threlte/rapier` for `MoveFrame`, `@zag-js/tree-view` and `svelte-virtuallists` for [`<WorldTree />`](../../plugins/world-tree/), `@zag-js/tabs` for [`<Settings />`](../../plugins/settings/), `@threlte/xr` for [`<XR />`](../../plugins/xr/), `earcut` for [`<SelectionTool />`](../../plugins/selection/), and the Connect RPC client for [`<DrawService />`](../../plugins/draw-service/).
 
 <Aside
 	type="tip"
@@ -114,6 +114,20 @@ registers it, and mode plugins' mount order sets both the toggle's button order 
 priority. To embed a focused viewer, mount none of them —
 or just the one or two that earn their space.
 
+### Importing plugins
+
+Each plugin has its own subpath, named after the component in kebab case:
+
+```ts
+import { Machine } from '@viamrobotics/visualization/plugins/machine'
+import { MeasureTool } from '@viamrobotics/visualization/plugins/measure-tool'
+```
+
+Import from these subpaths. Each one loads only its own plugin, so you install only the optional
+peers for the plugins you mount. The `@viamrobotics/visualization/plugins` barrel still exports
+every plugin, but it loads all of them, so it needs every optional peer installed. See
+[Plugin dependencies](../../plugins/dependencies/) for which plugin needs which peer.
+
 <Aside
 	type="caution"
 	title="Chrome that reaches past the visualizer"
@@ -133,7 +147,7 @@ else is needed — no `partID`, and no network calls of its own.
 ```svelte
 <script lang="ts">
 	import { PCD, Visualizer } from '@viamrobotics/visualization'
-	import { MeasureTool } from '@viamrobotics/visualization/plugins'
+	import { MeasureTool } from '@viamrobotics/visualization/plugins/measure-tool'
 
 	interface Props {
 		data: Uint8Array

@@ -739,6 +739,12 @@
 		"@threlte/xr": {
 			"optional": true
 		},
+		"@viamrobotics/svelte-sdk": {
+			"optional": true
+		},
+		"@viamrobotics/test-widgets": {
+			"optional": true
+		},
 		"@zag-js/tabs": {
 			"optional": true
 		},
@@ -792,6 +798,86 @@
 			"types": "./dist/plugins/index.d.ts",
 			"svelte": "./dist/plugins/index.js"
 		},
+		"./plugins/build-frames": {
+			"types": "./dist/plugins/BuildFrames/index.d.ts",
+			"svelte": "./dist/plugins/BuildFrames/index.js"
+		},
+		"./plugins/debug": {
+			"types": "./dist/plugins/Debug/index.d.ts",
+			"svelte": "./dist/plugins/Debug/index.js"
+		},
+		"./plugins/draw-service": {
+			"types": "./dist/plugins/DrawService/index.d.ts",
+			"svelte": "./dist/plugins/DrawService/index.js"
+		},
+		"./plugins/file-drop": {
+			"types": "./dist/plugins/FileDrop/index.d.ts",
+			"svelte": "./dist/plugins/FileDrop/index.js"
+		},
+		"./plugins/isolate": {
+			"types": "./dist/plugins/Isolate/index.d.ts",
+			"svelte": "./dist/plugins/Isolate/index.js"
+		},
+		"./plugins/llm-scene-builder": {
+			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",
+			"svelte": "./dist/plugins/LLMSceneBuilder/index.js"
+		},
+		"./plugins/logs": {
+			"types": "./dist/plugins/Logs/index.d.ts",
+			"svelte": "./dist/plugins/Logs/index.js"
+		},
+		"./plugins/machine": {
+			"types": "./dist/plugins/Machine/index.d.ts",
+			"svelte": "./dist/plugins/Machine/index.js"
+		},
+		"./plugins/maximize": {
+			"types": "./dist/plugins/Maximize/index.d.ts",
+			"svelte": "./dist/plugins/Maximize/index.js"
+		},
+		"./plugins/measure-tool": {
+			"types": "./dist/plugins/MeasureTool/index.d.ts",
+			"svelte": "./dist/plugins/MeasureTool/index.js"
+		},
+		"./plugins/motion-plan-replayer": {
+			"types": "./dist/plugins/MotionPlanReplayer/index.d.ts",
+			"svelte": "./dist/plugins/MotionPlanReplayer/index.js"
+		},
+		"./plugins/move-frame": {
+			"types": "./dist/plugins/MoveFrame/index.d.ts",
+			"svelte": "./dist/plugins/MoveFrame/index.js"
+		},
+		"./plugins/scene-export": {
+			"types": "./dist/plugins/SceneExport/index.d.ts",
+			"svelte": "./dist/plugins/SceneExport/index.js"
+		},
+		"./plugins/selection-tool": {
+			"types": "./dist/plugins/Selection/index.d.ts",
+			"svelte": "./dist/plugins/Selection/index.js"
+		},
+		"./plugins/sensor-coverage": {
+			"types": "./dist/plugins/SensorCoverage/index.d.ts",
+			"svelte": "./dist/plugins/SensorCoverage/index.js"
+		},
+		"./plugins/settings": {
+			"types": "./dist/plugins/Settings/index.d.ts",
+			"svelte": "./dist/plugins/Settings/index.js"
+		},
+		"./plugins/skybox": {
+			"types": "./dist/plugins/Skybox/index.d.ts",
+			"svelte": "./dist/plugins/Skybox/index.js"
+		},
+		"./plugins/top-down-lock": {
+			"types": "./dist/plugins/TopDownLock/index.d.ts",
+			"svelte": "./dist/plugins/TopDownLock/index.js"
+		},
+		"./plugins/world-tree": {
+			"types": "./dist/plugins/WorldTree/index.d.ts",
+			"svelte": "./dist/plugins/WorldTree/index.js"
+		},
+		"./plugins/xr": {
+			"types": "./dist/plugins/XR/index.d.ts",
+			"svelte": "./dist/plugins/XR/index.js"
+		},
 		"./control-widgets": {
 			"types": "./dist/plugins/ControlWidgets/index.d.ts",
 			"svelte": "./dist/plugins/ControlWidgets/index.js"
@@ -801,8 +887,8 @@
 			"svelte": "./dist/plugins/RenderStats/index.js"
 		},
 		"./scene-builder": {
-			"types": "./dist/plugins/LLMSceneBuilder/index.d.ts",
-			"default": "./dist/plugins/LLMSceneBuilder/index.js"
+			"types": "./dist/plugins/LLMSceneBuilder/inferContractEntry.d.ts",
+			"default": "./dist/plugins/LLMSceneBuilder/inferContractEntry.js"
 		}
 	},
 	"repository": {

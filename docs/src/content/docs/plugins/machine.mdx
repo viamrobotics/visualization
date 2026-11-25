@@ -17,7 +17,10 @@ Mounting it adds
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { BuildFrames, Machine, MoveFrame, WorldTree } from '@viamrobotics/visualization/plugins'
+	import { BuildFrames } from '@viamrobotics/visualization/plugins/build-frames'
+	import { Machine } from '@viamrobotics/visualization/plugins/machine'
+	import { MoveFrame } from '@viamrobotics/visualization/plugins/move-frame'
+	import { WorldTree } from '@viamrobotics/visualization/plugins/world-tree'
 </script>
 
 <div class="h-screen w-screen">

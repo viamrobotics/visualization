@@ -14,7 +14,7 @@ Mount `<XR />` inside `<Visualizer />`:
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { XR } from '@viamrobotics/visualization/plugins'
+	import { XR } from '@viamrobotics/visualization/plugins/xr'
 </script>
 
 <div class="h-screen w-screen">
@@ -45,6 +45,6 @@ Put the headset on, open the machine's page, and tap **AR** to enter. Exiting th
 
 ## Dependencies
 
-- **External packages:** `@threlte/xr`, an optional peer — install it to mount this plugin — and `@viamrobotics/svelte-sdk`, a required peer installed alongside the package.
+- **External packages:** `@threlte/xr` and `@viamrobotics/svelte-sdk`, both optional peers. Install them to mount this plugin.
 - **Plugins:** none. Camera feeds, controller arm/gripper assignments, and other session options are all configured in the plugin's own **AR** settings panel. See [Plugin dependencies](../dependencies/).
 - **Runtime:** a WebXR-capable device to enter a session, and a live machine connection for teleoperation (the assigned arms and grippers).

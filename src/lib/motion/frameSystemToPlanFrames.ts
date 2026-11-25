@@ -4,10 +4,12 @@
  * cited by line.
  */
 
-import type { Struct } from '@bufbuild/protobuf'
 import type { commonApi, robotApi } from '@viamrobotics/sdk'
 
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
+
 import { Geometry } from '#lib/buf/common/v1/common_pb.js'
+import { partKinematicsJson } from '#lib/kinematicModelJson.js'
 import { Pose } from '#lib/math/index.js'
 
 import type { DecodedFrame, FrameSystemJson, RawFrame } from './frameDescriptors'
@@ -69,12 +71,12 @@ const nodeName = (value: string | undefined): string | undefined =>
  * children naming a frame nothing emits, so they draw at the scene origin rather than dropping.
  */
 const drawableModelOf = (
-	kinematics: Struct | undefined,
+	kinematics: RawKinematicsModel | undefined,
 	partName: string
 ): DrawableModel | undefined => {
 	if (!kinematics) return undefined
 
-	const config = kinematics.toJson() as ModelConfig
+	const config = kinematics as ModelConfig
 	const skip = (reason: string): undefined => {
 		console.warn(`[motion] "${partName}" ${reason} — its model is not drawn`)
 		return undefined
@@ -186,7 +188,7 @@ const addPart = (
 	// `ErrEmptyStringFrameName`, so rooting at the world keeps the rest of the scene drawable.
 	parents[origin] = transform.poseInObserverFrame?.referenceFrame || WORLD
 
-	const model = drawableModelOf(part.kinematics, name)
+	const model = drawableModelOf(partKinematicsJson(part), name)
 	const geometry = toLocalGeometry(transform.physicalObject)
 
 	// Unconditional: `createFramesFromPart` calls `ToStaticFrame(name + "_origin")`, which attaches

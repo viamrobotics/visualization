@@ -14,8 +14,11 @@ The plugin is model-agnostic: you wire in whatever LLM backend you prefer via th
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { LLMSceneBuilder } from '@viamrobotics/visualization/plugins'
-	import type { ComponentFrameInfo, FrameDelta } from '@viamrobotics/visualization/plugins'
+	import { LLMSceneBuilder } from '@viamrobotics/visualization/plugins/llm-scene-builder'
+	import type {
+		ComponentFrameInfo,
+		FrameDelta,
+	} from '@viamrobotics/visualization/plugins/llm-scene-builder'
 
 	async function handleInfer(
 		prompt: string,
