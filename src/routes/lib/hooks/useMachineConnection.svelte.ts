@@ -10,6 +10,8 @@ const TICK_MS = 500
 const key = Symbol('machine-connection-context')
 
 interface Context {
+	/** The picked machine part, or `''` when none is picked. */
+	partID: string
 	connectionStatus: MachineConnectionEvent
 	error: Error | undefined
 	/** Whether a machine is picked to connect to. Without one, the status is `DISCONNECTED` but nothing is offline. */
@@ -127,6 +129,9 @@ export const provideMachineConnection = (
 	})
 
 	const context: Context = {
+		get partID() {
+			return partID()
+		},
 		get connectionStatus() {
 			return robotConnection.connectionStatus
 		},
