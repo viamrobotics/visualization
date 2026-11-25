@@ -30,7 +30,7 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 	import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
 	import ArmModel from '#lib/components/ArmModel.svelte'
-	import { traits, useWorld } from '#lib/ecs/index.js'
+	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
 	import { TRANSLUCENT_GEOMETRY_OPACITY } from '#lib/ecs/opacity.svelte.js'
 	import { provide3DModels } from '#lib/hooks/use3DModels.svelte.js'
 	import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
@@ -50,12 +50,20 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 		partID: string
 		/** The arm component to draw. */
 		name: string
+
+		/** How often the arm's joint positions are read, in milliseconds. Defaults to 500. */
+		refreshRate?: number
+
+		/**
+		 * Called once the arm is drawn and placed in the scene, and again whenever it is redrawn: when
+		 * its kinematics change, or its pose becomes known again after being unknown. Not called on
+		 * joint updates. Its 3D models may still be loading.
+		 */
+		onready?: () => void
 	}
 
-	const { partID, name }: Props = $props()
-
-	/** Matches the live machine's arm polling in `provideArmClient`. */
-	const JOINT_POSITIONS_INTERVAL_MS = 500
+	// The default matches the live machine's arm polling in `provideArmClient`.
+	const { partID, name, refreshRate = 500, onready }: Props = $props()
 
 	provide3DModels(() => partID)
 
@@ -75,9 +83,9 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 		() => name
 	)
 
-	const jointPositions = createResourceQuery(armClient, 'getJointPositions', {
-		refetchInterval: JOINT_POSITIONS_INTERVAL_MS,
-	})
+	const jointPositions = createResourceQuery(armClient, 'getJointPositions', () => ({
+		refetchInterval: refreshRate,
+	}))
 
 	const descriptors = $derived.by(() => {
 		const part = armPartAtOrigin(frameSystem.data ?? [], name)
@@ -94,6 +102,12 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 	const hasInputs = $derived(inputs !== undefined)
 
 	let joints: PosedJoint[] = []
+
+	/** The arm's entities as last spawned. Replaced wholesale, so each spawn is a new reference. */
+	let spawned = $state.raw<Entity[]>([])
+	let announced: Entity[] | undefined
+
+	const orphans = useQuery(traits.Orphan)
 
 	// Respawns only when the kinematics change, or when the arm's pose becomes known or unknown.
 	// Drawing the arm before its joints are known would show a pose it is not in.
@@ -119,16 +133,29 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 			if (descriptor.kind === 'joint') joints.push({ descriptor, entity })
 		}
 
+		spawned = entities
+
 		return () => {
 			for (const entity of entities.toReversed()) {
 				if (entity.isAlive()) entity.destroy()
 			}
 			joints = []
+			spawned = []
 		}
 	})
 
 	$effect(() => {
 		if (inputs) applyInputs(joints, inputs)
+	})
+
+	// A frame spawns with `Orphan(parent)`, and the hierarchy resolver swaps it for `ChildOf` on a
+	// later flush. Until every one has resolved, world matrices, and so the arm's bounds, are wrong.
+	$effect(() => {
+		if (spawned.length === 0 || spawned === announced) return
+		if (orphans.current.some((entity) => spawned.includes(entity))) return
+
+		announced = spawned
+		untrack(() => onready?.())
 	})
 </script>
 

@@ -1,6 +1,7 @@
 export { default as Visualizer } from './components/App.svelte'
 
 export { useSettings } from './hooks/useSettings.svelte'
+export { useCamera } from './hooks/useCamera'
 export { type HotkeyDefinition, type Keybinding, useHotkey, useKeybinding } from './keybindings'
 export { useDeepLinkParam } from './deepLink/useDeepLink.svelte'
 export { default as DetailsSection } from './components/overlay/details/DetailsSection.svelte'
