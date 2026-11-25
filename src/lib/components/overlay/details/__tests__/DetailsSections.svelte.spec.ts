@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte'
-import { createWorld } from 'koota'
-import { describe, expect, it } from 'vitest'
+import { createWorld, type World } from 'koota'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
 import {
@@ -11,7 +11,15 @@ import {
 import DetailsSectionsHost from './__fixtures__/DetailsSectionsHost.svelte'
 
 describe('DetailsSections', () => {
-	const world = createWorld()
+	let world: World
+
+	beforeEach(() => {
+		world = createWorld()
+	})
+
+	afterEach(() => {
+		world.destroy()
+	})
 
 	const renderSections = (ownsAppearance: boolean) =>
 		render(DetailsSectionsHost, {
