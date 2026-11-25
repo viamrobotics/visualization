@@ -6,9 +6,11 @@ import {
 	ENVIRONMENT_MODE_STORAGE_KEY,
 } from '#lib/hooks/useEnvironment.svelte.js'
 
+const STORED_MODE_KEY = `test:${ENVIRONMENT_MODE_STORAGE_KEY}`
+
 describe('applyDeepLinkMode', () => {
 	beforeEach(() => {
-		localStorage.removeItem(ENVIRONMENT_MODE_STORAGE_KEY)
+		localStorage.removeItem(STORED_MODE_KEY)
 	})
 
 	it('assigns the mode when the first value names a registered mode', () => {
@@ -42,13 +44,13 @@ describe('applyDeepLinkMode', () => {
 	})
 
 	it('leaves the mode untouched when the first value is not a real mode', () => {
-		const environment = createEnvironment()
+		const environment = createEnvironment('test')
 		environment.registerMode('monitor')
 
 		applyDeepLinkMode(['teleport'], environment)
 
 		expect(environment.current.mode).toBe('monitor')
-		expect(localStorage.getItem(ENVIRONMENT_MODE_STORAGE_KEY)).toBe(JSON.stringify('monitor'))
+		expect(localStorage.getItem(STORED_MODE_KEY)).toBe(JSON.stringify('monitor'))
 	})
 
 	it('leaves the mode untouched when values is empty', () => {
@@ -71,11 +73,11 @@ describe('applyDeepLinkMode', () => {
 	})
 
 	it('persists the assigned mode through the environment setter', () => {
-		const environment = createEnvironment()
+		const environment = createEnvironment('test')
 		environment.registerMode('build')
 
 		applyDeepLinkMode(['build'], environment)
 
-		expect(localStorage.getItem(ENVIRONMENT_MODE_STORAGE_KEY)).toBe(JSON.stringify('build'))
+		expect(localStorage.getItem(STORED_MODE_KEY)).toBe(JSON.stringify('build'))
 	})
 })

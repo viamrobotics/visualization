@@ -7,10 +7,11 @@
 	import NullState from '#lib/components/overlay/NullState.svelte'
 	import { traits, useQuery } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
 	import type { TreeNode as TreeNodeType } from './buildTree'
 
-	import { isFolderExpanded, mergeExpandedFolders } from './expandedFolders.svelte'
+	import { createExpandedFolders, EXPANDED_FOLDERS_STORAGE_KEY } from './expandedFolders.svelte'
 	import { filterTree } from './filterTree'
 	import TreeNode from './TreeNode.svelte'
 
@@ -33,6 +34,9 @@
 	}: Props = $props()
 
 	const environment = useEnvironment()
+	const { isFolderExpanded, mergeExpandedFolders } = createExpandedFolders(
+		usePersistedStates()<Record<string, boolean>>(EXPANDED_FOLDERS_STORAGE_KEY, {})
+	)
 
 	const isFiltering = $derived(filter.trim() !== '')
 

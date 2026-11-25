@@ -12,21 +12,20 @@ import { Pose } from '#lib/math/index.js'
 
 import type { Frame } from './frame'
 
-/** Radius and tip-to-tip length in mm about the Z axis. `capped` false is an open tube. */
+/**
+ * Radius and tip-to-tip length in mm about the Z axis. `capped` false is an open tube. Absent means
+ * solid, as on the SDK's own `Cylinder`, which has no field for it.
+ */
 export interface Cylinder {
 	radiusMm: number
 	lengthMm: number
-	capped: boolean
+	capped?: boolean
 }
 
 /**
- * The geometry union the scene works in: the SDK's, widened with the cylinder
- * case `common.v1.Geometry` has no room for (rdk's own `Cylinder.ToProtobuf`
- * panics over the same gap).
- *
- * A cylinder reaches the scene only through `deriveKinematicsFrames`, whose
- * transforms never leave this client, so one cannot end up in a request body.
- * Anything that writes to the wire takes `RDKGeometry` instead.
+ * The geometry union the scene works in: the SDK's, widened with a cylinder that can be an open
+ * tube. `common.v1.Cylinder` carries no `capped`, so only `deriveKinematicsFrames` builds one, and
+ * its transforms never leave this client. Anything that writes to the wire takes `RDKGeometry`.
  */
 export type Geometry = Omit<RDKGeometry, 'geometryType'> & {
 	geometryType: RDKGeometry['geometryType'] | { case: 'cylinder'; value: Cylinder }

@@ -46,7 +46,10 @@ const widgets = useControlWidgets()
 | `rectFor(partID, resourceName, widgetId)`        | The saved panel geometry, if any.                           |
 | `saveRect(partID, resourceName, widgetId, rect)` | Persist a panel's geometry.                                 |
 
-The store is backed by local storage, so it works whether or not the panel is mounted.
+Call `useControlWidgets()` at the top level of a component's `<script>` inside `<Visualizer />`,
+since it reads the visualizer's context. Every caller in one visualizer shares the same open
+widgets, whether or not the panel is mounted. They persist across reloads when the visualizer has a
+[`storageKey`](../../guides/embedding/#remembering-state-across-reloads).
 
 ## Dependencies
 

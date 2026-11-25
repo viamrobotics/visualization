@@ -2,17 +2,16 @@ import { render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import { createRawSnippet } from 'svelte'
 import '@testing-library/jest-dom/vitest'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
+import {
+	createPersistedStatesContext,
+	PERSISTED_STATES_CONTEXT_KEY,
+} from '#lib/hooks/usePersistedStates.svelte.js'
 
 import DetailsTabs, { type DetailsTab } from '../DetailsTabs.svelte'
 
-const STORAGE_KEY = 'details-active-tab'
-
 describe('DetailsTabs', () => {
-	beforeEach(() => {
-		localStorage.removeItem(STORAGE_KEY)
-	})
-
 	const tabNamed = (id: string, label: string): DetailsTab => ({
 		id,
 		label,
@@ -38,12 +37,18 @@ describe('DetailsTabs', () => {
 		expect(screen.getByText('Details content')).not.toBeVisible()
 	})
 
-	it('reopens on the tab selected before the panel was closed', async () => {
-		const { unmount } = render(DetailsTabs, { props: { items: [details, appearance] } })
+	it('reopens on the tab selected before the panel was closed in the same visualizer', async () => {
+		const context = new Map([
+			[PERSISTED_STATES_CONTEXT_KEY, createPersistedStatesContext(undefined)],
+		])
+		const { unmount } = render(DetailsTabs, {
+			props: { items: [details, appearance] },
+			context,
+		})
 		await userEvent.click(screen.getByRole('tab', { name: 'Appearance' }))
 		unmount()
 
-		render(DetailsTabs, { props: { items: [details, appearance] } })
+		render(DetailsTabs, { props: { items: [details, appearance] }, context })
 
 		expect(screen.getByText('Appearance content')).toBeVisible()
 	})

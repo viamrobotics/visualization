@@ -3,9 +3,9 @@
 
 	import { mdiUnfoldLessHorizontal, mdiUnfoldMoreHorizontal } from '@mdi/js'
 	import { Icon, Switch } from '@viamrobotics/prime-ui'
-	import { PersistedState } from 'runed'
 
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
 	import { resourceWidgetToggles } from './resourceWidgetToggles'
 	import { useControlWidgets } from './useControlWidgets.svelte'
@@ -24,8 +24,9 @@
 		toggles.filter((toggle) => store.isOpen(partID.current, resource.name, toggle.id)).length
 	)
 
+	const persistedState = usePersistedStates()
 	const expanded = $derived(
-		new PersistedState(`${partID.current}:${resource.name}:widgets-expanded`, false)
+		persistedState(`${partID.current}:${resource.name}:widgets-expanded`, false)
 	)
 
 	const setWidget = (widgetId: string, on: boolean) => {

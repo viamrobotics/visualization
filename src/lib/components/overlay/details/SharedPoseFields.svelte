@@ -18,9 +18,10 @@ The local position and orientation of one or more poses. A value that differs ac
 
 <script lang="ts">
 	import { Tabs } from '@viamrobotics/prime-controls'
-	import { PersistedState } from 'runed'
 
 	import type { Pose, PosePatch } from '#lib/math/index.js'
+
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
 	import {
 		DEFAULT_ORIENTATION_FORMAT,
@@ -45,7 +46,7 @@ The local position and orientation of one or more poses. A value that differs ac
 
 	const { poses, editable, onchange }: Props = $props()
 
-	const orientationFormat = new PersistedState<OrientationFormat>(
+	const orientationFormat = usePersistedStates()<OrientationFormat>(
 		ORIENTATION_FORMAT_KEY,
 		DEFAULT_ORIENTATION_FORMAT
 	)

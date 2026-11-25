@@ -185,22 +185,21 @@ const defaults = (): Settings => ({
 	},
 })
 
-interface SettingsOptions {
-	/**
-	 * Load and save the settings in IndexedDB under `motion-tools-settings`, in the host's origin.
-	 * Off, the settings start from the defaults and are never read or written there.
-	 */
-	persist: boolean
-}
+/** The IndexedDB key the settings are saved under, after the visualizer's `storageKey` prefix. */
+export const SETTINGS_STORAGE_KEY = 'settings'
 
-export const provideSettings = ({ persist }: SettingsOptions = { persist: true }) => {
-	let isLoaded = $state(!persist)
+/**
+ * Loads and saves the settings in IndexedDB, in the host's origin, under `<storageKey>:settings`.
+ * Without a `storageKey` the settings start from the defaults and IndexedDB is never read or
+ * written.
+ */
+export const provideSettings = (storageKey: string | undefined) => {
+	const databaseKey = storageKey === undefined ? undefined : `${storageKey}:${SETTINGS_STORAGE_KEY}`
+	let isLoaded = $state(databaseKey === undefined)
 	let settings = $state<Settings>(defaults())
 
-	// Key kept as `motion-tools-settings` after the rename to visualization; renaming it
-	// would silently discard every existing user's saved settings.
-	if (persist) {
-		get<StoredSettings>('motion-tools-settings')
+	if (databaseKey !== undefined) {
+		get<StoredSettings>(databaseKey)
 			.then((response) => {
 				if (response) {
 					settings = { ...settings, ...migrateStoredSettings(response) }
@@ -215,9 +214,9 @@ export const provideSettings = ({ persist }: SettingsOptions = { persist: true }
 	// runs only what it has not seen. A user with no stored record never runs one,
 	// because `defaults()` is already current.
 	$effect(() => {
-		if (persist && isLoaded) {
+		if (databaseKey !== undefined && isLoaded) {
 			set(
-				'motion-tools-settings',
+				databaseKey,
 				$state.snapshot({
 					...settings,
 					interactionMode: 'navigate',

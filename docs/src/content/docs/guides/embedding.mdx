@@ -194,6 +194,33 @@ one-shot capture.
 </div>
 ```
 
+## Remembering state across reloads
+
+The visualizer keeps some state as you use it: settings, the workspace mode, the open details
+tab, the orientation format, and what plugins keep, such as `<WorldTree />` folder expansion and
+open control widgets. Each `<Visualizer>` keeps its own, and every component inside one visualizer
+shares it.
+
+By default that state lives in memory, so it is gone on reload, and storage is never read or
+written. Pass `storageKey` to persist it in the host page's origin, under that prefix. It is read
+once, on mount.
+
+| Value    | Effect                                                                 |
+| -------- | ---------------------------------------------------------------------- |
+| omitted  | Keeps the state in memory, for this visualizer alone.                  |
+| a string | Persists every value under that prefix, such as `arm-widget:settings`. |
+
+```svelte
+<Visualizer storageKey="arm-widget" />
+```
+
+Give each viewer that should remember its own state a different string. Visualizers given the same
+string share their persisted state. The standalone app uses `visualizer`, so pick another string
+unless an embedded viewer should share the app's state.
+
+XR's `anchorKey` is not under `storageKey`. It names a calibration stored on the headset, which
+every viewer on that device shares.
+
 ## Rendering snapshots
 
 A **snapshot** is a serialized scene — every transform, drawing, and camera setting captured into one protobuf payload. Snapshots render purely client-side; no draw server, no live machine, no network calls.
