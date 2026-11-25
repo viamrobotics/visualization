@@ -1,17 +1,16 @@
 <script lang="ts">
-	import { useThrelte } from '@threlte/core/webgpu'
 	import { Not } from 'koota'
 
-	import { focusCameraOnEntities } from '#lib/components/Entities/focusCameraOnEntities.js'
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
 	import DomPortalTarget from '#lib/components/overlay/Portals/DomPortalTarget.svelte'
 	import { traits, useQuery } from '#lib/ecs/index.js'
+	import { useCamera } from '#lib/hooks/useCamera.js'
 	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { useHotkey } from '#lib/keybindings/index.js'
 
-	const { scene } = useThrelte()
 	const settings = useSettings()
+	const camera = useCamera()
 	const cameraControls = useCameraControls()
 	const selected = useQuery(traits.Selected)
 	const visible = useQuery(traits.WorldMatrix, Not(traits.InheritedInvisible))
@@ -26,11 +25,7 @@
 
 	// With nothing selected, frames everything visible so a lost scene is one press away.
 	const focusSelection = () => {
-		focusCameraOnEntities(
-			cameraControls.current,
-			scene,
-			hasSelection ? selected.current : visible.current
-		)
+		camera.fit(hasSelection ? selected.current : undefined)
 	}
 
 	const projection = useHotkey({
