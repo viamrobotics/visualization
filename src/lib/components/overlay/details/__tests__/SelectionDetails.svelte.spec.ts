@@ -201,5 +201,27 @@ describe('SelectionDetails', () => {
 			expect(screen.getByText('session appearance')).toBeInTheDocument()
 			expect(screen.queryByRole('slider', { name: 'opacity' })).not.toBeInTheDocument()
 		})
+
+		it('asks for one kind of object when a section takes over only part of the selection', async () => {
+			const other = world.spawn(traits.Name('Other Object'))
+			renderPanel(
+				[
+					{
+						text: 'session appearance',
+						label: 'appearance',
+						tab: 'appearance',
+						replacesAppearance: true,
+						when: (candidate) => candidate === entity,
+					},
+				],
+				[entity, other]
+			)
+
+			await userEvent.click(screen.getByRole('tab', { name: 'Appearance' }))
+
+			expect(screen.getByRole('note', { name: 'appearance' })).toHaveTextContent(
+				'Some selected objects keep their appearance differently. Select only one kind to edit it.'
+			)
+		})
 	})
 })

@@ -6,10 +6,10 @@
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
-	import { useTakenResourceNames } from '#lib/hooks/useTakenResourceNames.js'
 	import { nextObstacleName } from '#lib/obstacle.js'
 
 	import { OBSTACLE_TYPE_OPTIONS, type ObstacleType } from './obstacleTypeOptions'
+	import { useTakenResourceNames } from './useTakenResourceNames'
 
 	interface Props {
 		open: boolean

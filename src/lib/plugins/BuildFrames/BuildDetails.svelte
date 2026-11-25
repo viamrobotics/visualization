@@ -14,7 +14,6 @@
 	import DetailsSections from '#lib/components/overlay/details/DetailsSections.svelte'
 	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '#lib/components/overlay/details/DimensionsDetails.svelte'
-	import EditGeometryDetails from '#lib/components/overlay/details/EditGeometryDetails.svelte'
 	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
@@ -30,6 +29,7 @@
 	import ConfigAppearanceDetails, {
 		type ConfigAppearanceTarget,
 	} from './ConfigAppearanceDetails.svelte'
+	import EditGeometryDetails from './EditGeometryDetails.svelte'
 	import EditPoseDetails from './EditPoseDetails.svelte'
 	import DeleteObstacleShapeButton from './ObstacleEditor/DeleteObstacleShapeButton.svelte'
 	import DuplicateObstaclesButton from './ObstacleEditor/DuplicateObstaclesButton.svelte'
@@ -329,9 +329,11 @@
 		</div>
 	{/if}
 
+	<!-- Build saves appearance to the config, so the session editor Machine contributes stays out. -->
 	<DetailsSections
 		{entities}
 		tab="appearance"
+		ownsAppearance
 	/>
 {/snippet}
 

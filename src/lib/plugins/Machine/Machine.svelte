@@ -37,7 +37,6 @@ inside it.
 	import { provideConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
 	import { useEnvironment, useEnvironmentMode } from '#lib/hooks/useEnvironment.svelte.js'
 	import { provideFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
-	import { useFramelessComponentEntities } from '#lib/hooks/useFramelessComponentEntities.svelte.js'
 	import { provideFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
 	import { provideFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { providePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
@@ -57,6 +56,7 @@ inside it.
 	import FramesSettings from './settings/FramesSettings.svelte'
 	import VisionSettings from './settings/VisionSettings.svelte'
 	import { useCameraTraits } from './useCameraTraits.svelte'
+	import { useFramelessComponentEntities } from './useFramelessComponentEntities.svelte'
 	import { useKinematicsTraits } from './useKinematicsTraits.svelte'
 	import WorldStates from './WorldStates.svelte'
 

@@ -12,10 +12,11 @@ Copies each selected part-owned obstacle in place under a `-copy` name, by butto
 	import { traits } from '#lib/ecs/index.js'
 	import { type PartComponent, usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { useSelectOnArrival } from '#lib/hooks/useSelectOnArrival.svelte.js'
-	import { useTakenResourceNames } from '#lib/hooks/useTakenResourceNames.js'
 	import { useHotkey } from '#lib/keybindings/index.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
 	import { nextCopyName } from '#lib/obstacleCopyName.js'
+
+	import { useTakenResourceNames } from '../useTakenResourceNames'
 
 	interface Props {
 		/** The selected obstacles' entities. Each one is an editable obstacle the part owns. */

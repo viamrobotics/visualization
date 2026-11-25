@@ -126,7 +126,6 @@
 
 						<BuildFrames />
 						<MoveFrame />
-						<MotionPlanReplayer {resolveIKSolutions} />
 
 						<XR anchorKey="xr-origin-anchor:{partID ?? ''}">
 							<XRMachine />
@@ -145,6 +144,7 @@
 		{/if}
 		<Isolate />
 		<MeasureTool />
+		<MotionPlanReplayer {resolveIKSolutions} />
 		<WorldTree />
 		<Logs />
 		<SceneExport />

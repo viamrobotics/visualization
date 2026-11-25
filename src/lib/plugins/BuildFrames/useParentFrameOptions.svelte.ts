@@ -1,8 +1,8 @@
-import { parentFrameOptions } from '#lib/parentFrameOptions.js'
+import { useConfigFrames } from '#lib/hooks/useConfigFrames.svelte.js'
+import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
+import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 
-import { useConfigFrames } from './useConfigFrames.svelte'
-import { useFragmentInfo } from './useFragmentInfo.svelte'
-import { useFrames } from './useFrames.svelte'
+import { parentFrameOptions } from './parentFrameOptions'
 
 /**
  * Reactive list of frames every named frame may be reparented to: the parents they

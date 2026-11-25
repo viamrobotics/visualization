@@ -3,14 +3,16 @@
 
 	import type { EditableFrameGeometry } from '#lib/defaultFrameGeometry.js'
 
+	import GeometryFields from '#lib/components/overlay/details/GeometryFields.svelte'
+	import SectionNotice from '#lib/components/overlay/details/SectionNotice.svelte'
+	import {
+		type GeometryDimension,
+		sharedGeometryDimensions,
+	} from '#lib/components/overlay/details/sharedGeometryDimensions.js'
+	import { MIXED, sharedValue } from '#lib/components/overlay/details/sharedValue.js'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
-
-	import GeometryFields from './GeometryFields.svelte'
-	import SectionNotice from './SectionNotice.svelte'
-	import { type GeometryDimension, sharedGeometryDimensions } from './sharedGeometryDimensions'
-	import { MIXED, sharedValue } from './sharedValue'
 
 	interface Props {
 		/** The selected frames. Never empty. */
