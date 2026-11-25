@@ -14,17 +14,20 @@ Which widgets are open, and where their panels sit, is kept per machine part. It
 
 ## Usage
 
-Mount `<TestWidgets />` inside `<Visualizer />`. It needs a connected machine to list resources:
+Mount `<TestWidgets />` inside [`<Machine />`](../machine/). It lists that part's resources:
 
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
+	import { Machine } from '@viamrobotics/visualization/plugins/machine'
 	import { TestWidgets } from '@viamrobotics/visualization/plugins/test-widgets'
 </script>
 
 <div class="h-screen w-screen">
 	<Visualizer>
-		<TestWidgets />
+		<Machine partID="my-part-id">
+			<TestWidgets />
+		</Machine>
 	</Visualizer>
 </div>
 ```
@@ -55,4 +58,4 @@ Call `useTestWidgets()` at the top level of a component's `<script>` inside `<Vi
 
 - **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are optional peers of `@viamrobotics/visualization`, so install them to mount this plugin.
 - **Plugins:** none required. Its widget panels hide while an immersive `<XR />` session is active (see [Plugin dependencies](../dependencies/)).
-- **Runtime:** a live machine connection. Resources are resolved per part, so the plugin must be mounted within the visualizer's scene, and the list stays empty until a machine is connected.
+- **Runtime:** a live machine connection through `<Machine />`. Resources are resolved per part, so the plugin must be mounted inside `<Machine />`, and the list stays empty until the machine is connected.
