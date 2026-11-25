@@ -39,6 +39,11 @@ export interface ModeOptions {
 	 * something, and `undefined` while it is safe to leave.
 	 */
 	confirmLeave?: () => LeaveConfirmation | undefined
+	/**
+	 * The mode shows its own details panel for the selection, so the visualizer leaves out the
+	 * one it shows otherwise.
+	 */
+	ownsDetails?: boolean
 }
 
 export interface EnvironmentContext {
@@ -53,6 +58,8 @@ export interface EnvironmentContext {
 	 * that reports anything. `undefined` when the switch loses nothing.
 	 */
 	leaveConfirmation: () => LeaveConfirmation | undefined
+	/** Whether the active mode shows its own details panel. See `ModeOptions.ownsDetails`. */
+	readonly modeOwnsDetails: boolean
 	/**
 	 * Every mode currently reachable, in registration order. Order is priority:
 	 * the first entry is the fallback when the stored mode is unreachable. Empty
@@ -80,6 +87,8 @@ export const createEnvironment = (): EnvironmentContext => {
 	const availableModes = new SvelteMap<EnvironmentMode, number>()
 	// Read only when a switch is requested, so it needs no reactivity.
 	const leaveGuards = new Map<EnvironmentMode, Set<NonNullable<ModeOptions['confirmLeave']>>>()
+	// Registrations that own the details panel, per mode. Counted, like `availableModes`.
+	const detailsOwners = new SvelteMap<EnvironmentMode, number>()
 
 	const effectiveMode = $derived.by((): EnvironmentMode | 'none' => {
 		const value = stored.current
@@ -108,6 +117,10 @@ export const createEnvironment = (): EnvironmentContext => {
 		get availableModes() {
 			return [...availableModes.keys()]
 		},
+		get modeOwnsDetails() {
+			const mode = effectiveMode
+			return mode !== 'none' && detailsOwners.has(mode)
+		},
 		leaveConfirmation() {
 			const mode = effectiveMode
 			if (mode === 'none') return undefined
@@ -131,12 +144,24 @@ export const createEnvironment = (): EnvironmentContext => {
 				leaveGuards.set(mode, guards)
 			}
 
+			const ownsDetails = options?.ownsDetails === true
+			if (ownsDetails) detailsOwners.set(mode, (detailsOwners.get(mode) ?? 0) + 1)
+
 			let released = false
 			return () => {
 				if (released) return
 				released = true
 
 				if (confirmLeave) leaveGuards.get(mode)?.delete(confirmLeave)
+
+				if (ownsDetails) {
+					const owners = (detailsOwners.get(mode) ?? 1) - 1
+					if (owners > 0) {
+						detailsOwners.set(mode, owners)
+					} else {
+						detailsOwners.delete(mode)
+					}
+				}
 
 				const count = (availableModes.get(mode) ?? 1) - 1
 				if (count > 0) {

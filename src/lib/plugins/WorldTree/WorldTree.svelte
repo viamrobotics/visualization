@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { type Entity, IsExcluded } from 'koota'
 
 	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
+	import DomPortalTarget from '#lib/components/overlay/Portals/DomPortalTarget.svelte'
 	import { setIssues, traits, useFolder, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
@@ -65,7 +65,7 @@
 >
 	{#snippet headerSuffix()}
 		<!-- Plugins that add objects to the scene portal their menus in here. -->
-		<PortalTarget id="world-tree-actions" />
+		<DomPortalTarget id="world-tree-actions" />
 	{/snippet}
 
 	<div

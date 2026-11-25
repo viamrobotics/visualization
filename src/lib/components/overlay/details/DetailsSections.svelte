@@ -11,6 +11,7 @@ registration order.
 
 	import { sectionsForTab, useDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
 
+	import DetailsSectionTarget from './DetailsSectionTarget.svelte'
 	import SectionNotice from './SectionNotice.svelte'
 
 	interface Props {
@@ -29,7 +30,10 @@ registration order.
 	{@const matching = entities.filter((entity) => section.when?.(entity) ?? true)}
 
 	{#if matching.length === entities.length}
-		{@render section.snippet({ entities })}
+		<DetailsSectionTarget
+			sectionId={section.id}
+			{entities}
+		/>
 	{:else if matching.length > 0}
 		<SectionNotice
 			label={section.label}

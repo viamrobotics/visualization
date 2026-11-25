@@ -30,7 +30,7 @@ const EDGES = [
 /**
  * Wireframe line-segment endpoints for a camera's view frustum, in the camera frame's
  * own coordinates: metres, optical axis along +Z, image-down along +Y — the convention
- * `FramePovWidget` renders against.
+ * `FramePovView` renders against.
  *
  * Suitable for a `LineSegments` position attribute as returned. Undefined when the
  * intrinsics cannot describe a frustum, or when the depth range is empty; the caller

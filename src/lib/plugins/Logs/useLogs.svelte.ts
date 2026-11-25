@@ -23,13 +23,18 @@ export interface Log extends LogTarget {
 	level: Level
 	/** Most recent occurrence, so a collapsed line still reads as current. */
 	timestamp: string
+	/**
+	 * The producer that filed the line, which is what `retractSource` matches. Two producers
+	 * reporting the same message about the same rows keep separate lines.
+	 */
+	source?: string
 }
 
 interface Context {
 	current: Log[]
 	errorCount: number
 	warnCount: number
-	add(message: string, level?: Level, target?: LogTarget): void
+	add(message: string, level?: Level, target?: LogTarget, source?: string): void
 	/**
 	 * Drops one line, matched the same way `add` collapses repeats. For a warning
 	 * that describes a state rather than an event: once the condition stops
@@ -38,19 +43,14 @@ interface Context {
 	 *
 	 * Silent when no line matches, so a caller can retract unconditionally.
 	 */
-	retract(message: string, level: Level, target?: LogTarget): void
+	retract(message: string, level: Level, target?: LogTarget, source?: string): void
 	/**
-	 * Drops every line filed against exactly this target, whatever its message or
-	 * level. For a producer that stops: a camera the user switched off has nothing
-	 * left to report, and its old failures would go on marking its rows. Lines
-	 * naming only one of the target's rows, or another pair, are left alone.
+	 * Drops every line `source` filed, whatever its message, level, or rows. For a producer that
+	 * stops, such as a camera the user switched off, whose old failures would go on marking its rows.
+	 * Another producer's lines about the same rows are left alone.
 	 */
-	retractTarget(target: LogTarget): void
-	/**
-	 * Drops every line and the row alerts they raised. Lines are about one machine,
-	 * so switching parts has to evict them rather than report the old part's
-	 * failures against the new part's resources.
-	 */
+	retractSource(source: string): void
+	/** Drops every line and the row alerts they raised, for the panel's clear button. */
 	clear(): void
 }
 
@@ -88,8 +88,8 @@ export const provideLogs = () => {
 	 * No timestamp: a line repeating across two clock minutes is the same line, and
 	 * keying on the time is what fragmented the list into near-identical rows.
 	 */
-	const dedupKey = (level: Level, target: LogTarget, message: string): string =>
-		`${level}\0${target.resource ?? ''}\0${target.folder ?? ''}\0${message}`
+	const dedupKey = (level: Level, target: LogTarget, message: string, source = ''): string =>
+		`${level}\0${target.resource ?? ''}\0${target.folder ?? ''}\0${source}\0${message}`
 
 	/** Move a line into or out of the badge totals. `delta` is `1` on add, `-1` on evict. */
 	const tally = (log: Log, delta: number): void => {
@@ -135,9 +135,9 @@ export const provideLogs = () => {
 		get warnCount() {
 			return lineCounts.warn
 		},
-		retract(message, level, target = {}) {
+		retract(message, level, target = {}, source) {
 			untrack(() => {
-				const key = dedupKey(level, target, message)
+				const key = dedupKey(level, target, message, source)
 				const match = entries.get(key)
 				if (!match) return
 
@@ -146,12 +146,12 @@ export const provideLogs = () => {
 				version++
 			})
 		},
-		retractTarget(target) {
+		retractSource(source) {
 			untrack(() => {
 				let retracted = false
 
 				for (const [key, log] of entries) {
-					if (log.resource !== target.resource || log.folder !== target.folder) continue
+					if (log.source !== source) continue
 
 					entries.delete(key)
 					tally(log, -1)
@@ -172,10 +172,10 @@ export const provideLogs = () => {
 				version++
 			})
 		},
-		add(message, level = 'info', target = {}) {
+		add(message, level = 'info', target = {}, source) {
 			untrack(() => {
 				const timestamp = intl.format(Date.now())
-				const key = dedupKey(level, target, message)
+				const key = dedupKey(level, target, message, source)
 				const match = entries.get(key)
 
 				if (match) {
@@ -195,6 +195,7 @@ export const provideLogs = () => {
 						resource: target.resource,
 						folder: target.folder,
 						timestamp,
+						source,
 					}
 					entries.set(key, log)
 					tally(log, 1)
@@ -226,14 +227,14 @@ const facade: Context = {
 	get warnCount() {
 		return context?.warnCount ?? 0
 	},
-	add(message, level, target) {
-		context?.add(message, level, target)
+	add(message, level, target, source) {
+		context?.add(message, level, target, source)
 	},
-	retract(message, level, target) {
-		context?.retract(message, level, target)
+	retract(message, level, target, source) {
+		context?.retract(message, level, target, source)
 	},
-	retractTarget(target) {
-		context?.retractTarget(target)
+	retractSource(source) {
+		context?.retractSource(source)
 	},
 	clear() {
 		context?.clear()

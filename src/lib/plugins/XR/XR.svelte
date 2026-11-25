@@ -1,28 +1,54 @@
+<!--
+@component
+
+Immersive AR: the session and its button, origin calibration, pointer controls, toasts, and the
+debug panel. Needs no machine. Machine features go in `children`, which render outside the
+session so their settings stay mounted, and read this component's origin context.
+
+```svelte
+<XR />
+
+<Machine {partID}>
+	<XR anchorKey="xr-origin-anchor:{partID}">
+		<XRMachine />
+	</XR>
+</Machine>
+```
+-->
 <script lang="ts">
+	import type { ComponentProps, Snippet } from 'svelte'
+
 	import { useThrelte } from '@threlte/core/webgpu'
 	import { useXR, XR, XRButton } from '@threlte/xr'
-	import { SvelteMap } from 'svelte/reactivity'
 	import { Quaternion } from 'three'
 
 	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
-	import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
-	import CameraFeed from './CameraFeed.svelte'
 	import DebugPanel from './DebugPanel.svelte'
-	import FrameConfigureControllers from './frame-configure/Controllers.svelte'
-	import JointLimitsWidget from './JointLimitsWidget.svelte'
 	import OriginMarker from './OriginMarker.svelte'
-	import PendingEditsPanel from './PendingEditsPanel.svelte'
-	import TeleopControllers from './teleop/Controllers.svelte'
 	import { provideAnchors } from './useAnchors.svelte'
 	import { provideOrigin } from './useOrigin.svelte'
 	import XRPlugins from './XRPlugins.svelte'
 	import XRSettings from './XRSettings.svelte'
 	import XRToast from './XRToast.svelte'
 
-	const { ...rest } = $props()
+	/** Spread onto the enter-session button. */
+	type ButtonProps = Omit<ComponentProps<typeof XRButton>, 'mode' | 'sessionInit' | 'children'>
+
+	interface Props extends ButtonProps {
+		/**
+		 * The `localStorage` key the calibrated origin's persistent anchor is saved under. Give
+		 * each physical setup its own key, such as one per machine part.
+		 */
+		anchorKey?: string
+
+		/** XR features that need more context than this component provides, such as `<XRMachine>`. */
+		children?: Snippet
+	}
+
+	const { anchorKey = 'xr-origin-anchor', children, ...rest }: Props = $props()
 
 	const origin = provideOrigin()
 	provideAnchors()
@@ -30,7 +56,6 @@
 	const { renderer } = useThrelte()
 	const { isPresenting } = useXR()
 	const settings = useSettings()
-	const resourceByName = useResourceByName()
 	const environment = useEnvironment()
 
 	// Publish the session state so the default camera, the grid and the DOM panels
@@ -44,31 +69,6 @@
 	})
 
 	const enableXR = $derived(settings.current.enableXR)
-
-	// Cameras chosen for in-headset display in the AR settings panel. Guard against
-	// stale names — a selected camera that was removed or is no longer a camera.
-	const enabledCameras = $derived.by(() => {
-		const names = new Set<string>()
-		for (const name of settings.current.xrCameras) {
-			if (resourceByName.current[name]?.subtype === 'camera') {
-				names.add(name)
-			}
-		}
-		return [...names]
-	})
-
-	const cameraAspects = new SvelteMap<string, number>()
-
-	const CAMERA_SCALE = 0.8
-	const CAMERA_GAP = 0.15
-
-	// Compute spacing from the widest camera feed (default 16:9 before any aspect is known)
-	const maxAspect = $derived(cameraAspects.size > 0 ? Math.max(...cameraAspects.values()) : 16 / 9)
-	const feedSpacing = $derived(maxAspect * CAMERA_SCALE + CAMERA_GAP)
-
-	const controllerConfig = $derived(settings.current.xrController)
-	const leftArmName = $derived(controllerConfig.left.armName)
-	const rightArmName = $derived(controllerConfig.right.armName)
 
 	// Compose the XR reference space from:
 	//   1) a -π/2 rotation around X to switch from WebXR's Y-up to Viam's Z-up
@@ -122,48 +122,9 @@
 			origin.set([0, 0, 0], 0)
 		}}
 	>
-		<!-- Render camera feeds only when presenting to avoid conflicting with overlay Camera widgets -->
-		{#if $isPresenting}
-			{#each enabledCameras as cameraName, index (cameraName)}
-				{@const centerOffset = ((enabledCameras.length - 1) * feedSpacing) / 2}
-				<CameraFeed
-					resourceName={cameraName}
-					offset={{ x: index * feedSpacing - centerOffset, y: 1.5, z: -2.5 }}
-					scale={CAMERA_SCALE}
-					enableProfiling={false}
-					onAspectChange={(a) => {
-						cameraAspects.set(cameraName, a)
-					}}
-				/>
-			{/each}
-		{/if}
-
-		{#if leftArmName}
-			<JointLimitsWidget
-				armName={leftArmName}
-				offset={{ x: -0.5, y: 2.5, z: -2.5 }}
-				scale={0.6}
-			/>
-		{/if}
-		{#if rightArmName}
-			<JointLimitsWidget
-				armName={rightArmName}
-				offset={{ x: 0.5, y: 2.5, z: -2.5 }}
-				scale={0.6}
-			/>
-		{/if}
-
 		<XRToast />
 		<DebugPanel />
-		<PendingEditsPanel />
-
-		{#if settings.current.xrMode === 'arm-teleop'}
-			<TeleopControllers />
-		{:else if settings.current.xrMode === 'frame-configure'}
-			<FrameConfigureControllers />
-		{/if}
-
-		<OriginMarker />
+		<OriginMarker {anchorKey} />
 	</XR>
 
 	<XRButton
@@ -192,3 +153,5 @@
 <SettingsPortal label="AR">
 	<XRSettings />
 </SettingsPortal>
+
+{@render children?.()}

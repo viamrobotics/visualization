@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { PortalTarget } from '@threlte/extras/webgpu'
-
+	import DomPortalTarget from '../Portals/DomPortalTarget.svelte'
 	import ModeToggle from './ModeToggle.svelte'
 
 	let { ...rest } = $props()
@@ -12,5 +11,5 @@
 >
 	<ModeToggle />
 
-	<PortalTarget id="workspace" />
+	<DomPortalTarget id="workspace" />
 </div>

@@ -4,7 +4,6 @@
 
 	import { mdiTrashCanOutline } from '@mdi/js'
 	import { draggable } from '@neodrag/svelte'
-	import { Portal } from '@threlte/extras/webgpu'
 	import { Icon, Tooltip, useToast } from '@viamrobotics/prime-ui'
 	import { type Entity } from 'koota'
 	import { Check, Copy } from 'lucide-svelte'
@@ -12,6 +11,7 @@
 	import { traits, useMappedEntitiesTraits, useWorld } from '#lib/ecs/index.js'
 	import { useEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
 
+	import DomPortal from '../Portals/DomPortal.svelte'
 	import { detailsClipboardText } from './detailsClipboardText'
 	import { MIXED, sharedValue } from './sharedValue'
 
@@ -60,7 +60,7 @@
 </script>
 
 {#if !environment.current.isImmersive}
-	<Portal id="dom">
+	<DomPortal id="dom">
 		<!-- tabindex makes the whole panel focusable so a click anywhere in it (not
 just the inputs) raises it via `focus-within:z-5`. -->
 		<div
@@ -141,5 +141,5 @@ just the inputs) raises it via `focus-within:z-5`. -->
 
 			{@render children()}
 		</div>
-	</Portal>
+	</DomPortal>
 {/if}

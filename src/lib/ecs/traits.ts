@@ -3,7 +3,8 @@ import type { GLTF as ThreeGltf } from 'three/examples/jsm/loaders/GLTFLoader.js
 import { type Entity, type Trait, trait } from 'koota'
 import { Group, Matrix4, BufferGeometry as ThreeBufferGeometry } from 'three'
 
-import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
+import type { Intrinsics } from '#lib/cameraIntrinsics.js'
+import type { RawKinematicsModel } from '#lib/kinematicsTransform.js'
 
 import { createBufferGeometry, updateBufferGeometry } from '#lib/attribute.js'
 import { ColorFormat } from '#lib/buf/draw/v1/metadata_pb.js'
@@ -317,8 +318,11 @@ export const Folder = trait(() => ({
 	collapsed: false,
 	/** Rows here have no scene object, so they get no visibility toggle. */
 	sceneless: false,
-	/** Poll that fills the folder, which puts refresh controls on its row. */
-	refreshRate: undefined as RefreshRateId | undefined,
+	/**
+	 * Puts a settings button on the folder's row. Its panel is a `DomPortalTarget` with the id
+	 * `folderSettingsPortalId(id)`, which whoever owns the folder fills.
+	 */
+	hasSettings: false,
 }))
 
 /** How bad an issue is. Ordered, so the worst of several is the greatest index. */
@@ -350,6 +354,15 @@ export const Issues = trait(() => new Map<string, IssueLine[]>())
 export const Editable = trait(() => true)
 
 export const ShowAxesHelper = trait(() => true)
+
+/**
+ * The entity is a camera. `intrinsics` is unset until the camera reports them, and stays unset
+ * when it reports none that describe a real pinhole camera.
+ */
+export const Camera = trait(() => ({ intrinsics: undefined as Intrinsics | undefined }))
+
+/** The kinematics model of the component this frame belongs to, as the frame system reports it. */
+export const Kinematics = trait(() => ({ model: undefined as RawKinematicsModel | undefined }))
 
 /**
  * The resource appearance last written onto this frame entity, serialized. An appearance change is

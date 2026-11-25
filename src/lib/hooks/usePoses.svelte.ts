@@ -2,6 +2,7 @@ import { commonApi, MachineConnectionEvent } from '@viamrobotics/sdk'
 import { createRobotQuery, useConnectionStatus, useRobotClient } from '@viamrobotics/svelte-sdk'
 import { type Entity, Not } from 'koota'
 import { getContext, setContext, untrack } from 'svelte'
+import { MathUtils } from 'three'
 
 import { RefetchRates } from '#lib/components/overlay/refetchRates.js'
 import { setIssues, traits, useParentName, useQuery, useTrait } from '#lib/ecs/index.js'
@@ -185,12 +186,21 @@ export const providePoses = (partID: () => string) => {
 	// row in the world tree, and repeats collapse into a single counted line.
 	const isLiveRate = $derived(interval === RefetchRates.FPS_30 || interval === RefetchRates.FPS_60)
 
+	const source = MathUtils.generateUUID()
+
+	// What was reported about one machine no longer holds once the part changes.
+	$effect(() => {
+		void partID()
+		return () => bus.publish('diagnostic-cleared', { source })
+	})
+
 	$effect(() => {
 		if (isLiveRate) {
 			bus.publish('diagnostic', {
 				message: `Fetching poses every ${interval}ms...`,
 				level: 'info',
 				target: { folder: 'frames' },
+				source,
 			})
 		}
 
@@ -202,12 +212,14 @@ export const providePoses = (partID: () => string) => {
 							message: `Error fetching pose for ${name.current}: ${query.error.message}`,
 							level: 'error',
 							target: { resource: name.current, folder: 'frames' },
+							source,
 						})
 					} else if (query.isFetching && !isLiveRate) {
 						bus.publish('diagnostic', {
 							message: `Fetching pose for ${name.current}...`,
 							level: 'info',
 							target: { resource: name.current, folder: 'frames' },
+							source,
 						})
 					}
 				})

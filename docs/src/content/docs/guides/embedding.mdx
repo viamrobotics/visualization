@@ -83,7 +83,7 @@ export const ssr = false
 That's enough to get an empty scene: the camera and its controls, the grid, the entity
 renderer, and the portal targets plugins render into. From there, you can:
 
-- **Pass `partID`** to bind it to a specific Viam machine part.
+- **Mount [`<Machine partID />`](../../plugins/machine/)** inside it to render a Viam machine part, with the plugins that work on the machine as its children.
 - **Pass `cameraPose`** to set an initial camera position and look-at target.
 - **Provide a `children` snippet** to render your own Threlte primitives or the `<Snapshot />` component inside the scene.
 
@@ -98,20 +98,20 @@ renderer, and the portal targets plugins render into. From there, you can:
 - selection and hover affordances
 - the portal targets that plugins render their UI into
 
-Everything else is a plugin you opt into — including the workspace modes: with no mode plugin mounted the mode is `none` and the visualizer is a bare renderer, with no toggle, no details cards, and no live-query pausing. The visualizer's own chrome ships as six plugins:
+It also shows a details panel for whatever you select. Everything else is a plugin you opt into — including the workspace modes: with no mode plugin mounted the mode is `none`, with no toggle and no live-query pausing. The visualizer's own chrome ships as plugins:
 
-| Plugin                                           | Adds                                            |
-| ------------------------------------------------ | ----------------------------------------------- |
-| [`<Monitor />`](../../plugins/monitor/)          | Monitor mode: the mode button and details cards |
-| [`<WorldTree />`](../../plugins/world-tree/)     | The scene hierarchy panel                       |
-| [`<Settings />`](../../plugins/settings/)        | The settings cog and its tabbed popover         |
-| [`<BuildFrames />`](../../plugins/build-frames/) | Build mode: gizmos, snapping, frame editing     |
-| [`<FileDrop />`](../../plugins/file-drop/)       | Drag-and-drop loading of snapshots, PCD and PLY |
-| [`<FramePov />`](../../plugins/frame-pov/)       | Per-frame point-of-view panels                  |
+| Plugin                                           | Adds                                             |
+| ------------------------------------------------ | ------------------------------------------------ |
+| [`<Machine />`](../../plugins/machine/)          | A machine part, and monitor mode for watching it |
+| [`<WorldTree />`](../../plugins/world-tree/)     | The scene hierarchy panel                        |
+| [`<Settings />`](../../plugins/settings/)        | The settings cog and its tabbed popover          |
+| [`<BuildFrames />`](../../plugins/build-frames/) | Build mode: gizmos, snapping, frame editing      |
+| [`<FileDrop />`](../../plugins/file-drop/)       | Drag-and-drop loading of snapshots, PCD and PLY  |
 
-To reproduce the standalone app, mount all six plus the feature plugins you want, keeping
-`Monitor` before `BuildFrames` before `MoveFrame` — mode plugins' mount order sets both the
-toggle's button order and the fallback priority. To embed a focused viewer, mount none of them —
+To reproduce the standalone app, mount all of these plus the feature plugins you want, keeping
+`BuildFrames` before `MoveFrame` inside `Machine`. Monitor mode comes first because `Machine`
+registers it, and mode plugins' mount order sets both the toggle's button order and the fallback
+priority. To embed a focused viewer, mount none of them —
 or just the one or two that earn their space.
 
 <Aside
@@ -172,10 +172,7 @@ one-shot capture.
 </script>
 
 <div class="h-screen w-screen">
-	<Visualizer
-		partID="my-part-id"
-		cameraPose={{ position: [2, 2, 2], lookAt: [0, 0, 0] }}
-	>
+	<Visualizer cameraPose={{ position: [2, 2, 2], lookAt: [0, 0, 0] }}>
 		{#snippet children()}
 			<!-- Anything Threlte-compatible. Runs inside <Canvas>. -->
 		{/snippet}

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { PortalTarget } from '@threlte/extras/webgpu'
 	import { Not } from 'koota'
 
 	import { focusCameraOnEntities } from '#lib/components/Entities/focusCameraOnEntities.js'
 	import Button from '#lib/components/overlay/dashboard/Button.svelte'
+	import DomPortalTarget from '#lib/components/overlay/Portals/DomPortalTarget.svelte'
 	import { traits, useQuery } from '#lib/ecs/index.js'
 	import { useCameraControls } from '#lib/hooks/useControls.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
@@ -52,7 +52,7 @@
 </script>
 
 <div class="absolute right-2 bottom-26 z-4 flex flex-col items-end gap-2">
-	<PortalTarget id="controls" />
+	<DomPortalTarget id="controls" />
 
 	<fieldset class="flex flex-col">
 		<Button

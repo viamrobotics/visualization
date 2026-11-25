@@ -11,9 +11,9 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 <script lang="ts">
 	import type { Entity } from 'koota'
 
+	import DetailsSection from '#lib/components/overlay/details/DetailsSection.svelte'
 	import SettingsPortal from '#lib/components/overlay/Portals/SettingsPortal.svelte'
 	import { traits } from '#lib/ecs/index.js'
-	import { useDetailsSection } from '#lib/hooks/useDetailsSections.svelte.js'
 	import { useFrameEntities } from '#lib/hooks/useFrameEntities.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
@@ -42,21 +42,20 @@ from the intrinsics it reports, with nothing rendered or ray-traced.
 		const name = entity.get(traits.Name)
 		return name !== undefined && cameraNames.has(name)
 	}
-
-	useDetailsSection({
-		snippet: coverageRow,
-		label: 'show coverage',
-		when: isCameraFrame,
-		tab: 'appearance',
-	})
 </script>
 
-{#snippet coverageRow({ entities }: { entities: readonly Entity[] })}
-	<SensorCoverageToggle
-		{entities}
-		intrinsicsStatus={frusta.intrinsicsStatus}
-	/>
-{/snippet}
+<DetailsSection
+	label="show coverage"
+	when={isCameraFrame}
+	tab="appearance"
+>
+	{#snippet children({ entities })}
+		<SensorCoverageToggle
+			{entities}
+			intrinsicsStatus={frusta.intrinsicsStatus}
+		/>
+	{/snippet}
+</DetailsSection>
 
 <SettingsPortal label="Sensors">
 	<SensorCoverageSettings

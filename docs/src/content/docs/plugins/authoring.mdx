@@ -203,25 +203,26 @@ For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `Float
 </FloatingPanel>
 ```
 
-To add UI to the **details panel** instead, contribute a section with `useDetailsSection`. This is another contribution point, like keyboard shortcuts and workspace modes below. The panel describes the whole selection, so the section renders once with every selected entity as `{ entities }`. The optional `when` is checked per entity. If it holds for every selected entity, the section renders. If it holds for some, the panel shows a notice naming the section's `label`. If it holds for none, the section is left out.
+To add UI to the **details panel** instead, mount a `<DetailsSection>`. This is another contribution point, like keyboard shortcuts and workspace modes below. The panel describes the whole selection, so the section renders once with every selected entity as `{ entities }`. The optional `when` is checked per entity. If it holds for every selected entity, the section renders. If it holds for some, the panel shows a notice naming the section's `label`. If it holds for none, the section is left out.
 
 ```svelte
 <script lang="ts">
-	import { traits, useDetailsSection } from '@viamrobotics/visualization'
-
-	useDetailsSection({
-		snippet: batteryRow,
-		label: 'battery',
-		when: (entity) => entity.has(traits.FramesAPI),
-	})
+	import { DetailsSection, traits } from '@viamrobotics/visualization'
 </script>
 
-{#snippet batteryRow({ entities })}
-	<!-- rows for the selection: show a dash where the selected entities' values differ -->
-{/snippet}
+<DetailsSection
+	label="battery"
+	when={(entity) => entity.has(traits.FramesAPI)}
+>
+	{#snippet children({ entities })}
+		<!-- rows for the selection: show a dash where the selected entities' values differ -->
+	{/snippet}
+</DetailsSection>
 ```
 
-Sections render at the bottom of the panel in registration order. An embedding app can also pass a `details` snippet straight to `<Visualizer />`. It is registered as a section automatically and receives the same `{ entities }`. For an entity whose panel is fully custom, add the `traits.CustomDetails` tag to it. The panel then suppresses its default pose, color, opacity, and axes rows and shows only contributed content.
+The section's content renders where you declare it and moves into the panel, so it reads context from your plugin. Sections render at the bottom of the panel in registration order. `tab="appearance"` or `tab="test"` puts one in another tab, and `replacesAppearance` on an appearance section leaves out the panel's own color and opacity controls for the entities it applies to. An embedding app can also pass a `details` snippet straight to `<Visualizer />`, which becomes a section receiving the same `{ entities }`. For an entity whose panel is fully custom, add the `traits.CustomDetails` tag to it. The panel then suppresses its default pose, color, opacity, and axes rows and shows only contributed content.
+
+The visualizer shows the panel for the selection in every mode. A mode that shows its own instead registers with `useEnvironmentMode(mode, { ownsDetails: true })`, as build and move do.
 
 ## Reading and writing scene state
 
@@ -314,7 +315,7 @@ export const provideWaypoints = () => {
 export const useWaypoints = () => getContext<ReturnType<typeof provideWaypoints>>(KEY)
 ```
 
-Your plugin's root component calls `provideWaypoints()`; its children — and the host app — call `useWaypoints()`. This is exactly the shape of [`useFullscreen`](../fullscreen/) and [`useSelectionPlugin`](../selection/#reading-the-selection), and it's how a plugin publishes an API without prop drilling.
+Your plugin's root component calls `provideWaypoints()`; its children — and the host app — call `useWaypoints()`. This is exactly the shape of [`useSelectionPlugin`](../selection/#reading-the-selection), and it's how a plugin publishes an API without prop drilling.
 
 ## Reacting to user input
 
@@ -379,7 +380,7 @@ Dispatch policy belongs to the dispatcher, not to your binding: keys typed into 
 
 ## Contributing a workspace mode
 
-Workspace modes follow the same contribution shape. The visualizer has three (`monitor`, `build`, `move`), every one contributed by a plugin, and the active one is persisted across sessions — so a plugin that owns a mode must declare it reachable while mounted, or a stored mode could name UI that no longer exists. `useEnvironmentMode` does exactly that: it registers in setup and releases on unmount. Registration order is priority order: a persisted mode nothing currently contributes resolves to the first-registered mode, and with no mode plugins mounted at all the mode is `none` — a bare renderer with no mode UI.
+Workspace modes follow the same contribution shape. Every mode, such as `monitor` or `build`, is contributed by a plugin, and the active one is persisted across sessions — so a plugin that owns a mode must declare it reachable while mounted, or a stored mode could name UI that no longer exists. `useEnvironmentMode` does exactly that: it registers in setup and releases on unmount. Registration order is priority order: a persisted mode nothing currently contributes resolves to the first-registered mode, and with no mode plugins mounted at all the mode is `none` — a bare renderer with no mode UI.
 
 ```svelte
 <script lang="ts">

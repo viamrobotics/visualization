@@ -15,6 +15,7 @@
 	import DetailsTabs from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import DimensionsDetails from '#lib/components/overlay/details/DimensionsDetails.svelte'
 	import EditGeometryDetails from '#lib/components/overlay/details/EditGeometryDetails.svelte'
+	import FramePovTab from '#lib/components/overlay/details/FramePovTab.svelte'
 	import GeometryOffsetDetails from '#lib/components/overlay/details/GeometryOffsetDetails.svelte'
 	import PoseDetails from '#lib/components/overlay/details/PoseDetails.svelte'
 	import RelationshipDetails from '#lib/components/overlay/details/RelationshipDetails.svelte'
@@ -25,11 +26,11 @@
 	import { useFragmentInfo } from '#lib/hooks/useFragmentInfo.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { isObstacleComponent } from '#lib/obstacleAttributes.js'
-	import FramePovTab from '#lib/plugins/FramePov/FramePovTab.svelte'
 
 	import ConfigAppearanceDetails, {
 		type ConfigAppearanceTarget,
 	} from './ConfigAppearanceDetails.svelte'
+	import EditPoseDetails from './EditPoseDetails.svelte'
 	import DeleteObstacleShapeButton from './ObstacleEditor/DeleteObstacleShapeButton.svelte'
 	import DuplicateObstaclesButton from './ObstacleEditor/DuplicateObstaclesButton.svelte'
 	import DuplicateObstacleShapeButton from './ObstacleEditor/DuplicateObstacleShapeButton.svelte'
@@ -230,11 +231,10 @@
 				/>
 			{/if}
 
-			{#if !isAnyCustom}
-				<PoseDetails
-					{entities}
-					editable={isEditable && !hasShapeOwner}
-				/>
+			{#if !isAnyCustom && isEditable && !hasShapeOwner}
+				<EditPoseDetails {entities} />
+			{:else if !isAnyCustom}
+				<PoseDetails {entities} />
 			{:else if !isAllCustom}
 				<SectionNotice
 					label="pose"
@@ -337,10 +337,7 @@
 
 {#snippet povTab()}
 	{#if only?.name !== undefined}
-		<FramePovTab
-			entity={only.entity}
-			frameName={only.name}
-		/>
+		<FramePovTab entity={only.entity} />
 	{:else}
 		<div class="pt-3">
 			<SectionNotice

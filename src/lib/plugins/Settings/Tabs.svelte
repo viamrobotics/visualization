@@ -1,22 +1,17 @@
 <script lang="ts">
-	import type { Component, Snippet } from 'svelte'
+	import type { Component } from 'svelte'
 
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tabs from '@zag-js/tabs'
 
+	import DomPortalTarget from '#lib/components/overlay/Portals/DomPortalTarget.svelte'
+	import { settingsTabPortalId } from '#lib/components/overlay/Portals/useSettingsTabs.svelte.js'
+
 	interface Props {
 		defaultTab?: string
 		onValueChange: (value: string) => void
-		items: (
-			| {
-					label: string
-					component: Component
-			  }
-			| {
-					label: string
-					children: Snippet
-			  }
-		)[]
+		/** A tab with no `component` is contributed through `SettingsPortal`, which moves its content in. */
+		items: { label: string; component?: Component }[]
 	}
 
 	let { defaultTab, items, onValueChange }: Props = $props()
@@ -55,12 +50,10 @@
 			{...api.getContentProps({ value: item.label })}
 			class="h-full w-full overflow-y-auto p-4"
 		>
-			{#if 'component' in item}
-				{@const Component = item.component}
-
-				<Component />
-			{:else if 'children' in item}
-				{@render item.children()}
+			{#if item.component}
+				<item.component />
+			{:else}
+				<DomPortalTarget id={settingsTabPortalId(item.label)} />
 			{/if}
 		</div>
 	{/each}

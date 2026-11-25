@@ -7,6 +7,9 @@ const GRIPPER = { resource: 'gripper' }
 const FRAMES = { folder: 'frames' }
 const POINTCLOUDS = { folder: 'pointclouds' }
 const CAMERA_POINTCLOUDS = { resource: 'camera', folder: 'pointclouds' }
+const ARM_FRAMES = { resource: 'arm', folder: 'frames' }
+const CAMERA_SOURCE = 'camera-producer'
+const OTHER_SOURCE = 'other-producer'
 
 describe('provideLogs', () => {
 	it('collapses a repeated line into one entry with a count', () => {
@@ -85,13 +88,13 @@ describe('provideLogs', () => {
 		expect(logs.warnCount).toBe(1)
 	})
 
-	it('takes every line of a retracted target off the trigger badge count', () => {
+	it('takes every line of a retracted source off the trigger badge count', () => {
 		const logs = provideLogs()
-		logs.add('Pose request failed', 'error', CAMERA_POINTCLOUDS)
-		logs.add('Pose is stale', 'warn', CAMERA_POINTCLOUDS)
-		logs.add('Unrelated', 'warn', GRIPPER)
+		logs.add('Pose request failed', 'error', CAMERA_POINTCLOUDS, CAMERA_SOURCE)
+		logs.add('Pose is stale', 'warn', CAMERA_POINTCLOUDS, CAMERA_SOURCE)
+		logs.add('Unrelated', 'warn', GRIPPER, OTHER_SOURCE)
 
-		logs.retractTarget(CAMERA_POINTCLOUDS)
+		logs.retractSource(CAMERA_SOURCE)
 
 		expect(logs.errorCount).toBe(0)
 		expect(logs.warnCount).toBe(1)
@@ -127,28 +130,26 @@ describe('provideLogs', () => {
 		expect(logs.current[0]).toMatchObject({ message: 'arm has no frame', count: 1 })
 	})
 
-	it('drops every line filed against a target on retractTarget', () => {
+	it('drops every line a source filed on retractSource, whatever its rows', () => {
 		const logs = provideLogs()
-		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS)
-		logs.add('camera has no frame', 'warn', CAMERA_POINTCLOUDS)
-		logs.add('Fetching pointcloud...', 'info', CAMERA_POINTCLOUDS)
+		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS, CAMERA_SOURCE)
+		logs.add('camera has no frame', 'warn', { resource: 'camera' }, CAMERA_SOURCE)
+		logs.add('Fetching pointclouds...', 'info', POINTCLOUDS, CAMERA_SOURCE)
 
-		logs.retractTarget(CAMERA_POINTCLOUDS)
+		logs.retractSource(CAMERA_SOURCE)
 
 		expect(logs.current).toEqual([])
 	})
 
-	it('keeps lines filed against only one row of the retracted target', () => {
+	it('keeps another source’s identical line about the same rows on retractSource', () => {
 		const logs = provideLogs()
-		logs.add('Error fetching pointcloud', 'error', CAMERA_POINTCLOUDS)
-		logs.add('Camera unreachable', 'error', { resource: 'camera' })
-		logs.add('Pointcloud poll failed', 'warn', POINTCLOUDS)
+		logs.add('Error fetching pose for arm', 'error', ARM_FRAMES, CAMERA_SOURCE)
+		logs.add('Error fetching pose for arm', 'error', ARM_FRAMES, OTHER_SOURCE)
 
-		logs.retractTarget(CAMERA_POINTCLOUDS)
+		logs.retractSource(CAMERA_SOURCE)
 
-		expect(logs.current.map((log) => log.message)).toEqual([
-			'Pointcloud poll failed',
-			'Camera unreachable',
+		expect(logs.current).toMatchObject([
+			{ message: 'Error fetching pose for arm', source: OTHER_SOURCE, count: 1 },
 		])
 	})
 

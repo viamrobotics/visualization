@@ -68,7 +68,12 @@ export function provideDrawService() {
 	// Everything this service reports lands in the world tree's Drawn folder, which
 	// is the only row standing for the draw server's connection.
 	const log = (message: string, level: 'info' | 'warn' | 'error' = 'info') => {
-		bus.publish('diagnostic', { message, level, target: { folder: 'drawn' } })
+		bus.publish('diagnostic', {
+			message,
+			level,
+			target: { folder: 'drawn' },
+			source: 'draw-service',
+		})
 	}
 
 	let connectionStatus = $state<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)

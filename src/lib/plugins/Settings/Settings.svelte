@@ -9,22 +9,19 @@
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import ControlsSettings from './ControlsSettings.svelte'
-	import FramesSettings from './FramesSettings.svelte'
 	import KeybindingsSettings from './KeybindingsSettings.svelte'
 	import PointcloudSettings from './PointcloudSettings.svelte'
 	import SceneSettings from './SceneSettings.svelte'
 	import Tabs from './Tabs.svelte'
-	import VisionSettings from './VisionSettings.svelte'
 	import WeblabSettings from './WeblabSettings.svelte'
 
+	// Spaced out, so a plugin's tab can sit between two of these. `Machine` puts its tabs at 10, 25, and 30.
 	const BUILT_IN_TABS = [
-		{ label: 'Scene', component: SceneSettings },
-		{ label: 'Frames', component: FramesSettings },
-		{ label: 'Pointclouds', component: PointcloudSettings },
-		{ label: 'Vision', component: VisionSettings },
-		{ label: 'Controls', component: ControlsSettings },
-		{ label: 'Keybindings', component: KeybindingsSettings },
-		{ label: 'Weblabs', component: WeblabSettings },
+		{ label: 'Scene', component: SceneSettings, order: 0 },
+		{ label: 'Pointclouds', component: PointcloudSettings, order: 20 },
+		{ label: 'Controls', component: ControlsSettings, order: 40 },
+		{ label: 'Keybindings', component: KeybindingsSettings, order: 50 },
+		{ label: 'Weblabs', component: WeblabSettings, order: 60 },
 	]
 
 	const { invalidate } = useThrelte()
@@ -42,7 +39,13 @@
 	})
 
 	const activeTab = new PersistedState('settings-active-tab', BUILT_IN_TABS[0].label)
-	const items = $derived([...BUILT_IN_TABS, ...settingsTabs.current])
+	// `toSorted` is stable, so tabs without an order keep the order their plugins mounted in.
+	// Two of those subtract to `NaN`, which `|| 0` turns into a tie.
+	const items = $derived(
+		[...BUILT_IN_TABS, ...settingsTabs.current].toSorted(
+			(a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || 0
+		)
+	)
 
 	// A stored label can name a tab that no longer exists, which would open the
 	// panel with nothing selected.

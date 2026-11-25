@@ -1,0 +1,49 @@
+---
+title: <Machine />
+description: Render a Viam machine part in the scene, and provide it to the plugins that work on it.
+---
+
+`<Machine />` renders one machine part in the scene: its frames and geometries, point clouds, vision results, arm models, and world state. It also provides that machine to its children, so plugins that work on a machine are mounted inside it.
+
+Mounting it adds
+
+- **monitor mode**, for watching live machine data. It registers ahead of the modes its children add, so it is the leftmost toggle button and the fallback when a persisted mode is unreachable,
+- an appearance section in the details panel for the machine's frames. A frame's color and opacity apply for the session to every frame of its resource,
+- the **Frames**, **Cameras**, and **Vision** tabs to the settings pane, with refresh rates and the cameras and vision services to draw,
+- settings buttons on the frames, point cloud, and vision folders in the [world tree](../world-tree/).
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { BuildFrames, Machine, MoveFrame, WorldTree } from '@viamrobotics/visualization/plugins'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<Machine partID="my-part-id">
+			<BuildFrames />
+			<MoveFrame />
+		</Machine>
+
+		<WorldTree />
+	</Visualizer>
+</div>
+```
+
+Plugins that need no machine, such as `<WorldTree />` or `<Settings />`, sit outside it.
+
+## Props
+
+| Prop                          | Type                           | Description                                                                                                   |
+| ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `partID`                      | `string`                       | The machine part to render.                                                                                   |
+| `localConfigProps`            | `AppEmbeddedPartConfigProps`   | The part config, when the host owns and saves it. Omit it and the part config is loaded and saved directly.   |
+| `componentNameToFragmentInfo` | `Record<string, FragmentInfo>` | Which fragment defines each component, when the host already knows. Omit it to compute it from the fragments. |
+| `children`                    | `Snippet`                      | Plugins that need the machine.                                                                                |
+
+## Runtime requirements
+
+- `<ViamProvider>` from `@viamrobotics/svelte-sdk` around it, with a dial config for `partID`. Machine reads the part's resources, frames, and poses through it.
+- `<ViamAppProvider>` around it to load and save the part config itself. Without one, pass `localConfigProps`.

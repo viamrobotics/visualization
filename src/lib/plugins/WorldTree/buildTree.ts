@@ -1,7 +1,5 @@
 import type { Entity, World } from 'koota'
 
-import type { RefreshRateId } from '#lib/hooks/useSettings.svelte.js'
-
 import { relations, traits } from '#lib/ecs/index.js'
 
 export interface TreeFolderRow {
@@ -11,8 +9,8 @@ export interface TreeFolderRow {
 	name: string
 	/** Starts closed. See `traits.Folder`. */
 	collapsed: boolean
-	/** Poll that fills the folder. See `traits.Folder`. */
-	refreshRate?: RefreshRateId
+	/** Shows a settings button. See `traits.Folder`. */
+	hasSettings: boolean
 	/** Entities in the folder at any depth, not just the rows directly under it. */
 	itemCount: number
 	/** Shown in place of rows while the folder is empty. */
@@ -232,7 +230,7 @@ export const buildTree = (world: World, fallback: FallbackFolders): Tree => {
 				id: spec?.id ?? '',
 				name: spec?.name ?? '',
 				collapsed: spec?.collapsed ?? false,
-				refreshRate: spec?.refreshRate,
+				hasSettings: spec?.hasSettings ?? false,
 				itemCount: folderCounts.get(folder) ?? 0,
 				placeholder: isEmpty ? spec?.placeholder : undefined,
 			},
