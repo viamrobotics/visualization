@@ -27,12 +27,14 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 	} from '@viamrobotics/svelte-sdk'
 	import { untrack } from 'svelte'
 
+	import type { Settings } from '#lib/hooks/useSettings.svelte.js'
 	import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
 	import ArmModel from '#lib/components/ArmModel.svelte'
 	import { traits, useQuery, useWorld } from '#lib/ecs/index.js'
 	import { TRANSLUCENT_GEOMETRY_OPACITY } from '#lib/ecs/opacity.svelte.js'
 	import { provide3DModels } from '#lib/hooks/use3DModels.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 	import { armInputsFromJointPositions } from '#lib/motion/armInputsFromJointPositions.js'
 	import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
@@ -55,6 +57,12 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 		refreshRate?: number
 
 		/**
+		 * What the arm draws: its colliders, its 3D models, or both. A link without a model draws its
+		 * collider either way. Defaults to the visualizer's arm models setting.
+		 */
+		display?: Settings['renderArmModels']
+
+		/**
 		 * Called once the arm is drawn and placed in the scene, and again whenever it is redrawn: when
 		 * its kinematics change, or its pose becomes known again after being unknown. Not called on
 		 * joint updates. Its 3D models may still be loading.
@@ -63,9 +71,14 @@ the motion previews use. Until the arm reports positions that fit its kinematics
 	}
 
 	// The default matches the live machine's arm polling in `provideArmClient`.
-	const { partID, name, refreshRate = 500, onready }: Props = $props()
+	const { partID, name, refreshRate = 500, display, onready }: Props = $props()
 
-	provide3DModels(() => partID)
+	const settings = useSettings()
+
+	provide3DModels(
+		() => partID,
+		() => display ?? settings.current.renderArmModels
+	)
 
 	const world = useWorld()
 	const robotClient = useRobotClient(() => partID)

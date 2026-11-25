@@ -32,6 +32,7 @@ It suits a view of one arm, such as an arm control card. For the whole machine, 
 | `partID`      | `string`     | The machine part the arm is on.                                                                                |
 | `name`        | `string`     | The name of the arm component.                                                                                 |
 | `refreshRate` | `number`     | How often the joint positions are read, in milliseconds. Defaults to `500`.                                    |
+| `display` | `'colliders' \| 'model' \| 'colliders+model'` | What the arm draws. Defaults to the **Arm models** setting. See below. |
 | `onready`     | `() => void` | Called once the arm is drawn and placed, and again each time it is redrawn. Never on joint updates. See below. |
 
 ## Fitting the camera
@@ -61,7 +62,11 @@ The links are posed on the client from the arm's joint positions, read every `re
 
 The arm is drawn only once its joint positions are known and fit its kinematics. Until then, and while they are unknown, nothing is drawn rather than a pose the arm is not in.
 
-The arm's 3D models are drawn when the machine provides them, following the **Arm models** setting.
+## What it draws
+
+`display` picks the arm's colliders, its 3D models, or both. Without it, the arm follows the **Arm models** setting. With it, the prop wins for this arm and the setting is left alone.
+
+Models come from the machine. A link with no model, one still loading, or one that failed to load draws its collider, even when `display` is `'model'`.
 
 ## Runtime requirements
 

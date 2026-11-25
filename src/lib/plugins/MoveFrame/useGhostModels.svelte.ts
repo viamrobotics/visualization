@@ -5,7 +5,7 @@ import { matchModel, syncModelTrait, use3DModels } from '#lib/hooks/use3DModels.
 
 /**
  * Hands each ghost the 3D model of the link it copies, named by its `GhostModelKey`, so the ghost
- * draws the way its live link does. Follows models finishing loading and the setting.
+ * draws the way its live link does. Follows models finishing loading and the provider's display.
  */
 export const useGhostModels = (): void => {
 	const world = useWorld()
@@ -13,8 +13,9 @@ export const useGhostModels = (): void => {
 
 	$effect(() => {
 		const loaded = models.shouldRender ? models.current : {}
+		const { display } = models
 		const sync = (entity: Entity) =>
-			syncModelTrait(entity, matchModel(entity.get(traits.GhostModelKey), loaded))
+			syncModelTrait(entity, matchModel(entity.get(traits.GhostModelKey), loaded), display)
 
 		for (const entity of world.query(traits.GhostModelKey)) sync(entity)
 

@@ -9,11 +9,14 @@ import { getContext, setContext } from 'svelte'
 import { setOrAddTrait, traits, useWorld } from '#lib/ecs/index.js'
 import { gltfLoader } from '#lib/loaders/gltf.js'
 
-import { useSettings } from './useSettings.svelte'
+import { type Settings, useSettings } from './useSettings.svelte'
 
 const key = Symbol('3d-models-context')
 
 type Models = Record<string, Record<string, Group>>
+
+/** What an arm link draws: its collider, its 3D model, or both. */
+type ModelDisplay = Settings['renderArmModels']
 
 /** The GLB buffers `get3DModels` returns, keyed by kinematics link id. */
 type ArmMeshes = Awaited<ReturnType<ArmClient['get3DModels']>>
@@ -23,6 +26,8 @@ interface Context {
 	readonly arms: string[]
 	/** Whether an arm's models are worth fetching at all. */
 	readonly shouldRender: boolean
+	/** What the links this provider serves draw, for anyone attaching its models elsewhere. */
+	readonly display: ModelDisplay
 	/** Hands one arm's fetched meshes to the shared parse queue. */
 	parseArm: (armName: string, meshes: ArmMeshes) => void
 }
@@ -39,12 +44,29 @@ export const matchModel = (name: string | undefined, models: Models): Group | un
 	return models[componentName]?.[id]
 }
 
-/** Attaches `model` as the entity's `Model`, or removes its `Model` when there is none. */
-export const syncModelTrait = (entity: Entity, model: Group | undefined): void => {
+/**
+ * Attaches `model` as the entity's `Model`, or removes its `Model` when there is none. Hides the
+ * entity's collider only while a model is attached and `display` is `'model'`, so a link whose
+ * model is missing, still loading, or failed to parse draws its collider instead.
+ */
+export const syncModelTrait = (
+	entity: Entity,
+	model: Group | undefined,
+	display: ModelDisplay
+): void => {
 	if (model === undefined) {
 		if (entity.has(traits.Model)) entity.remove(traits.Model)
 	} else if (entity.get(traits.Model) !== model) {
 		setOrAddTrait(entity, traits.Model, model)
+	}
+
+	const shouldHideCollider = model !== undefined && display === 'model'
+	if (shouldHideCollider === entity.has(traits.ColliderHidden)) return
+
+	if (shouldHideCollider) {
+		entity.add(traits.ColliderHidden)
+	} else {
+		entity.remove(traits.ColliderHidden)
 	}
 }
 
@@ -64,15 +86,19 @@ const applyModelAppearance = (object: Object3D) => {
 	}
 }
 
-export const provide3DModels = (partID: () => string) => {
+/**
+ * Fetches, parses and attaches arm models for `partID`, and owns what its links draw.
+ *
+ * @param display What the links draw. Read here and nowhere else, so pass the setting, or a
+ *   caller's own choice in its place.
+ */
+export const provide3DModels = (partID: () => string, display: () => ModelDisplay) => {
 	const settings = useSettings()
 	const world = useWorld()
 	const connectionStatus = useConnectionStatus(partID)
 
 	const isConnected = $derived(connectionStatus.current === MachineConnectionEvent.CONNECTED)
-	const shouldRenderModels = $derived(
-		settings.isLoaded && settings.current.renderArmModels.includes('model')
-	)
+	const shouldRenderModels = $derived(settings.isLoaded && display().includes('model'))
 
 	const armStatuses = useResourceStatuses(partID, 'arm')
 
@@ -184,13 +210,14 @@ export const provide3DModels = (partID: () => string) => {
 
 	/**
 	 * Hands each kinematics link frame, named `<component>:<id>`, its loaded model.
-	 * Reacts to `current` (models finishing loading) and the setting. The `onAdd`
+	 * Reacts to `current` (models finishing loading) and `display`. The `onAdd`
 	 * listener covers frames that stream in while neither has changed.
 	 */
 	$effect(() => {
 		const models = shouldRenderModels ? current : {}
+		const currentDisplay = display()
 		const sync = (entity: Entity) =>
-			syncModelTrait(entity, matchModel(entity.get(traits.Name), models))
+			syncModelTrait(entity, matchModel(entity.get(traits.Name), models), currentDisplay)
 
 		for (const entity of world.query(traits.KinematicLink)) sync(entity)
 
@@ -233,6 +260,9 @@ export const provide3DModels = (partID: () => string) => {
 		},
 		get shouldRender() {
 			return shouldRenderModels
+		},
+		get display() {
+			return display()
 		},
 		parseArm,
 	})

@@ -16,6 +16,11 @@
 	<Arm
 		partID={machineConnection.partID}
 		name={firstArm.name}
-		onready={() => camera.fit()}
+		display="model"
+		refreshRate={200}
+		onready={() => {
+			console.log('here')
+			camera.fit()
+		}}
 	/>
 {/if}
