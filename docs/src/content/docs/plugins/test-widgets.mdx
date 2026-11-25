@@ -1,0 +1,58 @@
+---
+title: <TestWidgets />
+description: Drive a connected machine's resources from inside a Viam visualizer.
+---
+
+`<TestWidgets />` brings the resource widgets from `@viamrobotics/test-widgets` into the visualizer. They exercise component and service APIs: jog a motor, move an arm, view a camera, and so on. The plugin adds two places to reach them:
+
+- A **Widgets** tab in the settings popover lists the connected machine's resources. Toggle on a widget for any resource to open it as its own panel, which you can move and resize.
+- A **Test** tab in the details panel shows the widgets for the selected resource.
+
+Every resource that supports the generic **DoCommand** API also offers a **DoCommand** control: a JSON editor to send a raw command and inspect the response. For generic components and services, whose only API is DoCommand, it's the sole control.
+
+Which widgets are open, and where their panels sit, is kept per machine part. It persists across reloads when the visualizer has a [`storageKey`](../../guides/embedding/#remembering-state-across-reloads).
+
+## Usage
+
+Mount `<TestWidgets />` inside `<Visualizer />`. It needs a connected machine to list resources:
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { TestWidgets } from '@viamrobotics/visualization/plugins/test-widgets'
+</script>
+
+<div class="h-screen w-screen">
+	<Visualizer>
+		<TestWidgets />
+	</Visualizer>
+</div>
+```
+
+`<TestWidgets />` is not in the `@viamrobotics/visualization/plugins` barrel, because `@viamrobotics/test-widgets` imports this package. Import it from its own subpath.
+
+## Reading open widgets
+
+For advanced use, such as reflecting state in your own UI or opening widgets programmatically, the `useTestWidgets` hook exposes the plugin's per-part store:
+
+```ts
+import { useTestWidgets } from '@viamrobotics/visualization/plugins/test-widgets'
+
+const widgets = useTestWidgets()
+```
+
+| Method                                           | Description                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `openFor(partID)`                                | The open widgets (`{ resourceName, widgetId }`) for a part. |
+| `isOpen(partID, resourceName, widgetId)`         | Whether a specific widget is open.                          |
+| `setOpen(partID, resourceName, widgetId, on)`    | Open or close a widget.                                     |
+| `rectFor(partID, resourceName, widgetId)`        | The saved panel geometry, if any.                           |
+| `saveRect(partID, resourceName, widgetId, rect)` | Persist a panel's geometry.                                 |
+
+Call `useTestWidgets()` at the top level of a component's `<script>` inside `<Visualizer />`, since it reads the visualizer's context. Every caller in one visualizer shares the same open widgets, whether or not a panel is mounted.
+
+## Dependencies
+
+- **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are optional peers of `@viamrobotics/visualization`, so install them to mount this plugin.
+- **Plugins:** none required. Its widget panels hide while an immersive `<XR />` session is active (see [Plugin dependencies](../dependencies/)).
+- **Runtime:** a live machine connection. Resources are resolved per part, so the plugin must be mounted within the visualizer's scene, and the list stays empty until a machine is connected.

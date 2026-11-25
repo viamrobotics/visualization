@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 
 import ResourceWidgetPanel from '../ResourceWidgetPanel.svelte'
-import { useControlWidgets } from '../useControlWidgets.svelte'
+import { useTestWidgets } from '../useTestWidgets.svelte'
 import DummyWidget from './__fixtures__/DummyWidget.svelte'
 
 vi.mock('#lib/components/overlay/FloatingPanel.svelte', async () => {
@@ -20,7 +20,7 @@ vi.mock('@threlte/core/webgpu', () => ({
 }))
 
 vi.mock('#lib/hooks/usePartID.svelte.js', () => ({ usePartID: vi.fn() }))
-vi.mock('../useControlWidgets.svelte', () => ({ useControlWidgets: vi.fn() }))
+vi.mock('../useTestWidgets.svelte', () => ({ useTestWidgets: vi.fn() }))
 
 describe('ResourceWidgetPanel', () => {
 	const partID = 'part1'
@@ -43,7 +43,7 @@ describe('ResourceWidgetPanel', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
-		vi.mocked(useControlWidgets).mockReturnValue(store as never)
+		vi.mocked(useTestWidgets).mockReturnValue(store as never)
 		vi.mocked(usePartID).mockReturnValue(mockPartID as never)
 	})
 

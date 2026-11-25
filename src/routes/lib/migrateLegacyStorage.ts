@@ -9,8 +9,8 @@ const LEGACY_SETTINGS_KEY = 'motion-tools-settings'
 /** Legacy `localStorage` keys, each with the base key it now lives under. */
 const RENAMED_KEYS: Record<string, string> = {
 	'motion-tools:environment-mode': 'environment-mode',
-	'motion-tools:control-widgets': 'control-widgets',
-	'motion-tools:control-widget-rects': 'control-widget-rects',
+	'motion-tools:control-widgets': 'test-widgets',
+	'motion-tools:control-widget-rects': 'test-widget-rects',
 	'details-active-tab': 'details-active-tab',
 	'orientation-format': 'orientation-format',
 	'settings-active-tab': 'settings-active-tab',

@@ -170,7 +170,7 @@ To place DOM chrome in the visualizer's overlay, render it into one of the expor
 	visualizer's design system.
 </Aside>
 
-For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `FloatingPanel` whose `isOpen` you bind — this is exactly how [`<ControlWidgets />`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/ControlWidgets/ControlWidgets.svelte) works:
+For a launcher-plus-panel pattern, pair a `WorkspacePortal` button with a `FloatingPanel` whose `isOpen` you bind. [`<LLMSceneBuilder />`](https://github.com/viamrobotics/visualization/blob/main/src/lib/plugins/LLMSceneBuilder/SceneBuilder.svelte) does the same from a `DashboardPortal` button:
 
 ```svelte
 <script lang="ts">

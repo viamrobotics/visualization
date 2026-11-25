@@ -874,6 +874,10 @@
 			"types": "./dist/plugins/Skybox/index.d.ts",
 			"svelte": "./dist/plugins/Skybox/index.js"
 		},
+		"./plugins/test-widgets": {
+			"types": "./dist/plugins/TestWidgets/index.d.ts",
+			"svelte": "./dist/plugins/TestWidgets/index.js"
+		},
 		"./plugins/top-down-lock": {
 			"types": "./dist/plugins/TopDownLock/index.d.ts",
 			"svelte": "./dist/plugins/TopDownLock/index.js"
@@ -885,10 +889,6 @@
 		"./plugins/xr": {
 			"types": "./dist/plugins/XR/index.d.ts",
 			"svelte": "./dist/plugins/XR/index.js"
-		},
-		"./control-widgets": {
-			"types": "./dist/plugins/ControlWidgets/index.d.ts",
-			"svelte": "./dist/plugins/ControlWidgets/index.js"
 		},
 		"./render-stats": {
 			"types": "./dist/plugins/RenderStats/index.d.ts",
