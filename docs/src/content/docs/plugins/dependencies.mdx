@@ -9,20 +9,20 @@ Every plugin mounts independently inside `<Visualizer />`, and none _requires_ a
 
 Most plugins need nothing beyond `@viamrobotics/visualization`. Several use **optional peer dependencies** — install them only when you use the plugin:
 
-| Plugin                | Install                                                              |
-| --------------------- | -------------------------------------------------------------------- |
-| `<Machine />`         | `@viamrobotics/svelte-sdk`                                           |
-| `<Arm />`             | `@viamrobotics/svelte-sdk`                                           |
-| `<LLMSceneBuilder />` | `@viamrobotics/svelte-sdk`                                           |
-| `<BuildFrames />`     | `@viamrobotics/svelte-sdk`                                           |
-| `<ControlWidgets />`  | `@viamrobotics/test-widgets @viamrobotics/svelte-sdk`                |
-| `<SelectionTool />`   | `earcut`                                                             |
-| `<SensorCoverage />`  | `@viamrobotics/svelte-sdk`                                           |
-| `<DrawService />`     | `@connectrpc/connect @connectrpc/connect-web`                        |
-| `<Debug />`           | `@tanstack/svelte-query-devtools`                                    |
-| `<MoveFrame />`       | `@dimforge/rapier3d-compat @threlte/rapier @viamrobotics/svelte-sdk` |
-| `<WorldTree />`       | `@zag-js/tree-view svelte-virtuallists`                              |
-| `<XR />`              | `@threlte/xr @viamrobotics/svelte-sdk`                               |
+| Plugin                | Install                                                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `<Machine />`         | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                                                      |
+| `<Arm />`             | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                                                      |
+| `<LLMSceneBuilder />` | `@viamrobotics/svelte-sdk`                                                                                        |
+| `<BuildFrames />`     | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                                                      |
+| `<TestWidgets />`     | `@viamrobotics/test-widgets @viamrobotics/svelte-sdk`                                                             |
+| `<SelectionTool />`   | `earcut`                                                                                                          |
+| `<SensorCoverage />`  | `@viamrobotics/svelte-sdk`                                                                                        |
+| `<DrawService />`     | `@connectrpc/connect @connectrpc/connect-web`                                                                     |
+| `<Debug />`           | `@tanstack/svelte-query-devtools`                                                                                 |
+| `<MoveFrame />`       | `@dimforge/rapier3d-compat @threlte/rapier @viamrobotics/prime-editor @viamrobotics/sdk @viamrobotics/svelte-sdk` |
+| `<WorldTree />`       | `@zag-js/tree-view svelte-virtuallists`                                                                           |
+| `<XR />`              | `@threlte/xr @viamrobotics/sdk @viamrobotics/svelte-sdk`                                                          |
 
 A peer stays optional only when you import each plugin from its own subpath, such as
 `@viamrobotics/visualization/plugins/measure-tool`. The `@viamrobotics/visualization/plugins`
@@ -34,19 +34,19 @@ No plugin imports another as a hard requirement, but several pairs coordinate at
 
 | Plugin                    | Coordinates with | What happens                                                                                                             |
 | ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `<ControlWidgets />`      | `<XR />`         | Registry widget panels are hidden while an immersive XR session is active.                                               |
+| `<TestWidgets />`         | `<XR />`         | Registry widget panels are hidden while an immersive XR session is active.                                               |
 | `<DrawService />`         | `<Logs />`       | Connection status and errors are written to the Logs panel. Without Logs, they're dropped silently.                      |
 | mode plugins              | each other       | Buttons portal into the mode toggle in mount order, which is also fallback priority. Machine's monitor mode comes first. |
 | any `SettingsPortal` user | `<Settings />`   | The contributed tab is registered either way, but only renders when Settings is mounted.                                 |
 
 ```text
-ControlWidgets ──► XR         panels hide during an immersive session
+TestWidgets ──► XR            panels hide during an immersive session
 DrawService ──► Logs          draw-server diagnostics, if Logs is mounted
 Machine ──► BuildFrames ──► MoveFrame   mount order is button order and priority
 SettingsPortal ──► Settings   contributed tabs need a popover to live in
 ```
 
-The `<ControlWidgets />` ──► `<XR />` link only observes the session state XR publishes to `useEnvironment().current.isImmersive`, not the other plugin's internals — which is what lets `@threlte/xr` stay an optional peer. Which cameras appear in a headset is chosen independently in the [`<XR />`](../xr/) plugin's own **AR** settings panel.
+The `<TestWidgets />` ──► `<XR />` link only observes the session state XR publishes to `useEnvironment().current.isImmersive`, not the other plugin's internals — which is what lets `@threlte/xr` stay an optional peer. Which cameras appear in a headset is chosen independently in the [`<XR />`](../xr/) plugin's own **AR** settings panel.
 
 ## Plugins
 
@@ -58,12 +58,12 @@ One of them reaches beyond the visualizer element: `<FileDrop />` listens for dr
 
 Some plugins need more than a mounted `<Visualizer />`:
 
-| Plugin                                                                                              | Also needs                                                                          |
-| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `<ControlWidgets />`, `<LLMSceneBuilder />`, `<MoveFrame />`, `<SensorCoverage />`, `<XRMachine />` | to be inside `<Machine />`                                                          |
-| `<BuildFrames />`                                                                                   | to be inside `<Machine />`, with edit permissions on its part                       |
-| `<Arm />`                                                                                           | `<ViamProvider>` from `@viamrobotics/svelte-sdk`, with a dial config for its part   |
-| `<XR />`                                                                                            | a WebXR-capable device to enter a session                                           |
-| `<Isolate />`                                                                                       | an active selection. Click an entity first                                          |
-| `<DrawService />`                                                                                   | a running draw server (see its [page](../draw-service/))                            |
-| `<TopDownLock />`                                                                                   | orbit-style camera controls, the default. It has no effect under trackball controls |
+| Plugin                                                                                           | Also needs                                                                          |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `<TestWidgets />`, `<LLMSceneBuilder />`, `<MoveFrame />`, `<SensorCoverage />`, `<XRMachine />` | to be inside `<Machine />`                                                          |
+| `<BuildFrames />`                                                                                | to be inside `<Machine />`, with edit permissions on its part                       |
+| `<Arm />`                                                                                        | `<ViamProvider>` from `@viamrobotics/svelte-sdk`, with a dial config for its part   |
+| `<XR />`                                                                                         | a WebXR-capable device to enter a session                                           |
+| `<Isolate />`                                                                                    | an active selection. Click an entity first                                          |
+| `<DrawService />`                                                                                | a running draw server (see its [page](../draw-service/))                            |
+| `<TopDownLock />`                                                                                | orbit-style camera controls, the default. It has no effect under trackball controls |

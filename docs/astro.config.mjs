@@ -55,7 +55,7 @@ export default defineConfig({
 						{ label: 'Plugin dependencies', link: '/plugins/dependencies/' },
 						{ label: '<Arm />', link: '/plugins/arm/' },
 						{ label: '<BuildFrames />', link: '/plugins/build-frames/' },
-						{ label: '<ControlWidgets />', link: '/plugins/control-widgets/' },
+						{ label: '<TestWidgets />', link: '/plugins/test-widgets/' },
 						{ label: '<Debug />', link: '/plugins/debug/' },
 						{ label: '<DrawService />', link: '/plugins/draw-service/' },
 						{ label: '<FileDrop />', link: '/plugins/file-drop/' },

@@ -7,7 +7,6 @@ import { MathUtils } from 'three'
 import type { Transform } from '#lib/geometry.js'
 
 import { appearanceColorsByFrame } from '#lib/appearanceColors.js'
-import { resourceNameToColor, subtypeToColor } from '#lib/color.js'
 import {
 	type FolderSpec,
 	hierarchy,
@@ -22,6 +21,7 @@ import { kinematicsByComponent as kinematicsByComponentOf } from '#lib/kinematic
 import { deriveKinematicsFrames, ownerOfInternalFrame } from '#lib/kinematicsFrames.js'
 import { Pose } from '#lib/math/index.js'
 import { obstacleShapeEntries } from '#lib/obstacleShapeEntries.js'
+import { subtypeToColor } from '#lib/resourceColors.js'
 
 import { machineFrameNames } from './machineFrameNames'
 import { mergeObstacleFrames } from './mergeObstacleFrames'
@@ -277,7 +277,7 @@ export const provideFrames = (partID: () => string) => {
 				const color =
 					currentAppearanceColors.get(name) ??
 					currentAppearanceColors.get(owner) ??
-					resourceNameToColor(resourceName) ??
+					subtypeToColor(resourceName?.subtype) ??
 					subtypeToColor(currentComponentSubtypeByName[owner])
 
 				// A config obstacle is config-only even when the machine knows the name, or pose polling

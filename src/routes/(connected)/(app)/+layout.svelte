@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { backendIP } from '#lib/defines.js'
-	import { ControlWidgets } from '#lib/plugins/ControlWidgets/index.js'
 	import {
 		BuildFrames,
 		DrawService,
@@ -19,6 +18,7 @@
 		XRMachine,
 	} from '#lib/plugins/index.js'
 	import { RenderStats } from '#lib/plugins/RenderStats/index.js'
+	import { TestWidgets } from '#lib/plugins/TestWidgets/index.js'
 
 	import { createIKSolutionsResolver } from '../../lib/createIKSolutionsResolver'
 	import { useDrawServer } from '../../lib/hooks/useDrawServer.svelte'
@@ -44,7 +44,7 @@
 		<XRMachine />
 	</XR>
 
-	<ControlWidgets />
+	<TestWidgets />
 </Machine>
 
 {#if drawServer.ready}

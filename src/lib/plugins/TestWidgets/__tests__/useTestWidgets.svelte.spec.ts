@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { addWidget, isWidgetOpen, removeWidget } from '../useControlWidgets.svelte'
+import { addWidget, isWidgetOpen, removeWidget } from '../useTestWidgets.svelte'
 
-describe('open control-widget list helpers', () => {
+describe('open test-widget list helpers', () => {
 	const list = [
 		{ resourceName: 'arm1', widgetId: 'is-moving' },
 		{ resourceName: 'cam1', widgetId: '__resource_card__' },

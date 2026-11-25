@@ -9,7 +9,7 @@
 
 	import ResourceTypeBadge from './ResourceTypeBadge.svelte'
 	import { DO_COMMAND_WIDGET_ID } from './resourceWidgetToggles'
-	import { useControlWidgets, type WidgetRect } from './useControlWidgets.svelte'
+	import { useTestWidgets, type WidgetRect } from './useTestWidgets.svelte'
 
 	interface Props {
 		resource: ResourceName
@@ -21,14 +21,14 @@
 
 	const { resource, widgetId, widgets, title, stackIndex }: Props = $props()
 
-	const store = useControlWidgets()
+	const store = useTestWidgets()
 	const partID = usePartID()
 	const { dom } = useThrelte()
 
 	const CASCADE_STEP = 40
 
 	// The DoCommand widget lays out two side-by-side JSON editors, so it needs more room
-	// than the single-column control widgets. Saved geometry still wins over this default.
+	// than the single-column test widgets. Saved geometry still wins over this default.
 	const baseSize = $derived(
 		widgetId === DO_COMMAND_WIDGET_ID ? { width: 600, height: 460 } : { width: 340, height: 420 }
 	)

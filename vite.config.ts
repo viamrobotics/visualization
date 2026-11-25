@@ -17,7 +17,6 @@ dns.setDefaultResultOrder('verbatim')
 const https = process.argv.includes('--https')
 
 export default defineConfig({
-	assetsInclude: ['**/*.hdr'],
 	plugins: [
 		sentrySvelteKit({
 			org: 'viam',

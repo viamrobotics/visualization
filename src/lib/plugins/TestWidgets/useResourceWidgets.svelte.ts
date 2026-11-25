@@ -5,7 +5,7 @@ import { usePartID } from '#lib/hooks/usePartID.svelte.js'
 import { useResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
 
 import { resourceWidgetToggles } from './resourceWidgetToggles'
-import { useControlWidgets } from './useControlWidgets.svelte'
+import { useTestWidgets } from './useTestWidgets.svelte'
 
 export interface ResolvedResourceWidget {
 	key: string
@@ -26,7 +26,7 @@ const widgetKey = (resourceName: string, widgetId: string) => `${resourceName}__
  * Must be called inside `<SceneProviders>`, where `provideResourceByName` runs.
  */
 export const useResourceWidgets = () => {
-	const store = useControlWidgets()
+	const store = useTestWidgets()
 	const partID = usePartID()
 	const resourceByName = useResourceByName()
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { NumberField } from '@viamrobotics/prime-controls'
+	import { Checkbox, Field, Label } from '@viamrobotics/prime-ui'
 
 	import { generateBoundsGeometries } from '#lib/boundsGeometries.js'
 	import { MIN_INTERIOR_MM } from '#lib/boundsObstacleInterior.js'
@@ -99,17 +100,17 @@
 			{#each BOUNDS_FACES as face (face)}
 				{@const isIncluded = !hint.exclude.includes(face)}
 				{@const isLastWall = isIncluded && includedWallCount === 1}
-				<label class="text-default flex items-center gap-2">
-					<input
-						type="checkbox"
-						class="focus-visible:outline-gray-6 focus-visible:outline focus-visible:-outline-offset-1 disabled:cursor-not-allowed"
-						checked={isIncluded}
-						disabled={isLastWall}
+				<Field
+					label={FACE_LABELS[face]}
+					disabled={isLastWall}
+					class="text-default flex items-center gap-2"
+				>
+					<Checkbox
+						bind:checked={() => isIncluded, (next) => handleFaceChange(face, next)}
 						title={isLastWall ? 'An obstacle needs at least one wall.' : undefined}
-						onchange={(event) => handleFaceChange(face, event.currentTarget.checked)}
 					/>
-					{FACE_LABELS[face]}
-				</label>
+					<Label />
+				</Field>
 			{/each}
 		</fieldset>
 	</div>

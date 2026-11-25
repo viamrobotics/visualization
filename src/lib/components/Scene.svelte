@@ -16,7 +16,6 @@
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { useHotkey } from '#lib/keybindings/index.js'
 
-	import hdrImage from '../assets/ferndale_studio_11_1k.hdr'
 	import BatchedArrows from './BatchedArrows.svelte'
 	import CameraControls from './CameraControls.svelte'
 	import KeyboardBindings from './KeyboardBindings.svelte'
@@ -27,6 +26,9 @@
 	}
 
 	let { children }: Props = $props()
+
+	// `new URL` rather than an `import`, so a host's bundler emits the file with no `.hdr` loader configured.
+	const hdrImage = new URL('../assets/ferndale_studio_11_1k.hdr', import.meta.url).href
 
 	const threlte = useThrelte()
 	const settings = useSettings()

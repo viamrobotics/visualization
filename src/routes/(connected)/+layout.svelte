@@ -80,9 +80,10 @@
 			{partID}
 			{dialConfig}
 		>
-			{@render children()}
-
+			<!-- Ahead of the route, so its workspace button lands first, beside the mode toggle. -->
 			<Machines {launch} />
+
+			{@render children()}
 		</MachineConnectionProvider>
 	</ViamAppProvider>
 </ViamProvider>

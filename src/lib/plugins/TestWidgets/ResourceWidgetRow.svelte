@@ -8,7 +8,7 @@
 	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
 	import { resourceWidgetToggles } from './resourceWidgetToggles'
-	import { useControlWidgets } from './useControlWidgets.svelte'
+	import { useTestWidgets } from './useTestWidgets.svelte'
 
 	interface Props {
 		resource: ResourceName
@@ -16,7 +16,7 @@
 
 	const { resource }: Props = $props()
 
-	const store = useControlWidgets()
+	const store = useTestWidgets()
 	const partID = usePartID()
 
 	const toggles = $derived(resourceWidgetToggles(resource))
