@@ -12,7 +12,6 @@
 	import Cylinders from './Cylinders.svelte'
 	import GeometryModel from './GeometryModel.svelte'
 	import GLTF from './GLTF.svelte'
-	import { useModelColliderHiding } from './hooks/useModelColliderHiding.svelte'
 	import Labels from './Labels.svelte'
 	import Line from './Line.svelte'
 	import Mesh from './Mesh.svelte'
@@ -30,8 +29,6 @@
 	const environment = useEnvironment()
 
 	const enableLabels = $derived(settings.current.enableLabels)
-
-	useModelColliderHiding()
 </script>
 
 {#each modelEntities.current as entity (entity)}

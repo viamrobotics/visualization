@@ -1,0 +1,74 @@
+---
+title: <Arm />
+description: Draw one arm live, in its own base frame.
+---
+
+`<Arm />` draws a single arm with its base at the world origin, its links following the arm's live joint positions. Nothing else on the machine is drawn. A gripper or camera mounted on the arm is left out, because each is a part of its own rather than part of the arm's kinematics.
+
+It suits a view of one arm, such as an arm control card. For the whole machine, use [`<Machine />`](../machine/).
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Arm } from '@viamrobotics/visualization/plugins/arm'
+</script>
+
+<div class="h-96 w-96">
+	<Visualizer>
+		<Arm
+			partID="my-part-id"
+			name="my-arm"
+		/>
+	</Visualizer>
+</div>
+```
+
+## Props
+
+| Prop          | Type                                          | Description                                                                                                    |
+| ------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `partID`      | `string`                                      | The machine part the arm is on.                                                                                |
+| `name`        | `string`                                      | The name of the arm component.                                                                                 |
+| `refreshRate` | `number`                                      | How often the joint positions are read, in milliseconds. Defaults to `500`.                                    |
+| `display`     | `'colliders' \| 'model' \| 'colliders+model'` | What the arm draws. Defaults to the **Arm models** setting. See below.                                         |
+| `onready`     | `() => void`                                  | Called once the arm is drawn and placed, and again each time it is redrawn. Never on joint updates. See below. |
+
+## Fitting the camera
+
+The arm appears only once the machine reports its kinematics and joint positions, so a camera aimed on mount points at an empty scene. Frame it from `onready` instead, with [`useCamera`](../authoring/#framing-the-camera) in a component inside `<Visualizer>`:
+
+```svelte
+<script lang="ts">
+	import { useCamera } from '@viamrobotics/visualization'
+	import { Arm } from '@viamrobotics/visualization/plugins/arm'
+
+	const camera = useCamera()
+</script>
+
+<Arm
+	partID="my-part-id"
+	name="my-arm"
+	onready={() => camera.fit()}
+/>
+```
+
+`onready` fires again when the arm is redrawn, such as after its kinematics change or its pose comes back after a disconnect. It does not wait for the arm's 3D models. The fit frames the arm's collision geometry, which the models closely follow.
+
+## How it is posed
+
+The links are posed on the client from the arm's joint positions, read every `refreshRate` milliseconds, through the kinematic model the machine reports for the arm. Every link comes from the same reading, so a moving arm never tears between links.
+
+The arm is drawn only once its joint positions are known and fit its kinematics. Until then, and while they are unknown, nothing is drawn rather than a pose the arm is not in.
+
+## What it draws
+
+`display` picks the arm's colliders, its 3D models, or both. Without it, the arm follows the **Arm models** setting. With it, the prop wins for this arm and the setting is left alone.
+
+Models come from the machine. A link with no model, one still loading, or one that failed to load draws its collider, even when `display` is `'model'`.
+
+## Runtime requirements
+
+- `<ViamProvider>` from `@viamrobotics/svelte-sdk` around it, with a dial config for `partID`.
+- Don't render the same arm with `<Arm />` and `<Machine />` in one `<Visualizer>`. Both name the arm's frames the same way, so their frames would collide.

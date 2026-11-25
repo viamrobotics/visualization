@@ -1,11 +1,11 @@
 import { type ConfigurableTrait, type Entity, type World } from 'koota'
 import { Color } from 'three'
 
-import type { FrameDescriptor, JointFrameDescriptor } from '#lib/motion/frameDescriptors.js'
+import type { FrameDescriptor } from '#lib/motion/frameDescriptors.js'
 import type { TrajectoryStep } from '#lib/motion/jointPose.js'
 
-import { hierarchy, traits } from '#lib/ecs/index.js'
-import { descriptorLocalPose } from '#lib/motion/jointPose.js'
+import { traits } from '#lib/ecs/index.js'
+import { descriptorGeometryTraits, type PosedJoint, spawnPosedFrame } from '#lib/posedFrames.js'
 
 import { MOVE_GHOST_COLOR } from './moveGhostColor'
 import { PreviewGhost } from './previewGhostTrait'
@@ -20,17 +20,11 @@ const PREVIEW_OPACITY = 0.35
 /** Matches `moveGhosts`: `traits.Color` is read back through `Color.setRGB`, which does not convert. */
 const ghostColor = new Color(MOVE_GHOST_COLOR)
 
-/** A joint twin and the descriptor that says where it sits at a given step. */
-interface PreviewJoint {
-	descriptor: JointFrameDescriptor
-	entity: Entity
-}
-
 export interface PreviewGhosts {
 	/** Every twin the preview owns, root-most first, which is the order teardown wants. */
 	entities: Entity[]
 	/** The twins a step rewrites. Static frames hold still for the whole scrub. */
-	joints: PreviewJoint[]
+	joints: PosedJoint[]
 	/** How many twins carry geometry. Zero means the preview would draw nothing at all. */
 	drawn: number
 }
@@ -220,44 +214,20 @@ const spawnGhosts = (
 			if (descriptor.kind === 'static') drawable.push(traits.GhostModelKey(descriptor.name))
 			drawable.push(
 				traits.Color({ r: ghostColor.r, g: ghostColor.g, b: ghostColor.b }),
-				traits.Opacity(PREVIEW_OPACITY)
+				traits.Opacity(PREVIEW_OPACITY),
+				...descriptorGeometryTraits(descriptor)
 			)
-
-			if (descriptor.geometry) {
-				drawable.push(traits.Geometry(descriptor.geometry))
-				const center = descriptor.geometry.center
-				if (center) drawable.push(traits.Center(center))
-			}
 		}
 
-		const entity = world.spawn(
-			traits.Name(ghostName(descriptor.name)),
+		const entity = spawnPosedFrame(world, descriptor, ghostName(descriptor.name), parent, start, [
 			traits.NonSelectable,
-			traits.Matrix(descriptorLocalPose(descriptor, start).toMatrix4()),
 			PreviewGhost,
-			...hierarchy.parentTraits(parent),
-			...drawable
-		)
+			...drawable,
+		])
 
 		ghosts.entities.push(entity)
 		if (hasCollider) ghosts.drawn += 1
 		if (descriptor.kind === 'joint') ghosts.joints.push({ descriptor, entity })
-	}
-}
-
-/**
- * Move the preview to one step of the plan. Only the joints are rewritten, because only a joint's
- * local pose depends on the step, and the ECS recomposes everything below each one.
- */
-export const applyPreviewStep = (ghosts: PreviewGhosts, stepInputs: TrajectoryStep): void => {
-	for (const { descriptor, entity } of ghosts.joints) {
-		if (!entity.isAlive()) continue
-
-		const matrix = entity.get(traits.Matrix)
-		if (!matrix) continue
-
-		descriptorLocalPose(descriptor, stepInputs).toMatrix4(matrix)
-		entity.changed(traits.Matrix)
 	}
 }
 

@@ -347,6 +347,22 @@ For picking points and objects in the scene, use Threlte's pointer events — th
 	living in an external app use Threlte's pointer events instead.
 </Aside>
 
+## Framing the camera
+
+`useCamera()` gives any component inside `<Visualizer>` the camera. `fit()` frames everything visible, as the **Fit scene in view** button does, and `fit(entities)` frames just those entities. Both keep the current viewing angle.
+
+```svelte
+<script lang="ts">
+	import { useCamera } from '@viamrobotics/visualization'
+
+	const camera = useCamera()
+</script>
+
+<button onclick={() => camera.fit()}>Fit</button>
+```
+
+Call it when your content is in place, not on mount. Content plugins that load asynchronously say when that is, such as [`<Arm onready>`](../arm/#fitting-the-camera).
+
 ## Contributing keyboard shortcuts
 
 Keyboard input is a **contribution point**: a plugin declares a binding where the behavior lives, and the visualizer owns the single window listener that dispatches it. This is the same declare-while-mounted shape as the overlay Portals and `SettingsPortal` tabs — the plugin contributes content, core owns the collection, and one owner renders or executes it.

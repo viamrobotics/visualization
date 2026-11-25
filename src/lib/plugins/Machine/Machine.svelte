@@ -46,6 +46,7 @@ inside it.
 	import { providePoses } from '#lib/hooks/usePoses.svelte.js'
 	import { provideResourceAppearance } from '#lib/hooks/useResourceAppearance.svelte.js'
 	import { provideResourceByName } from '#lib/hooks/useResourceByName.svelte.js'
+	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { provideWorldStates } from '#lib/hooks/useWorldState.svelte.js'
 
 	import ArmModels from './ArmModels.svelte'
@@ -79,6 +80,7 @@ inside it.
 	const { partID, localConfigProps, componentNameToFragmentInfo, children }: Props = $props()
 
 	const environment = useEnvironment()
+	const settings = useSettings()
 	const toast = useToast()
 
 	// Registered here, ahead of any mode its children add, so monitor is the first mode and the fallback.
@@ -112,7 +114,10 @@ inside it.
 	provideResourceAppearance(() => partID)
 	provideFrames(() => partID)
 	providePoses(() => partID)
-	provide3DModels(() => partID)
+	provide3DModels(
+		() => partID,
+		() => settings.current.renderArmModels
+	)
 	providePointclouds(() => partID)
 	providePointcloudObjects(() => partID)
 	provideArmClient(() => partID)
