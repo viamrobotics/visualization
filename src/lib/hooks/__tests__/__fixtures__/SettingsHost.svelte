@@ -4,12 +4,12 @@
 	import { provideSettings, useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	interface Props {
-		persist: boolean
+		storageKey: string | undefined
 	}
 
-	let { persist }: Props = $props()
+	let { storageKey }: Props = $props()
 
-	provideSettings({ persist: untrack(() => persist) })
+	provideSettings(untrack(() => storageKey))
 
 	const settings = useSettings()
 </script>

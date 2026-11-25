@@ -5,9 +5,47 @@ import {
 	ENVIRONMENT_MODE_STORAGE_KEY,
 } from '#lib/hooks/useEnvironment.svelte.js'
 
+const STORED_MODE_KEY = `test:${ENVIRONMENT_MODE_STORAGE_KEY}`
+
+describe('createEnvironment mode storage', () => {
+	beforeEach(() => {
+		localStorage.clear()
+	})
+
+	it('ignores a stored mode without a storage key', () => {
+		localStorage.setItem(ENVIRONMENT_MODE_STORAGE_KEY, JSON.stringify('build'))
+
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('build')
+
+		expect(environment.current.mode).toBe('monitor')
+	})
+
+	it('writes nothing to storage without a storage key', () => {
+		const environment = createEnvironment()
+		environment.registerMode('monitor')
+		environment.registerMode('build')
+
+		environment.current.mode = 'build'
+
+		expect(localStorage.length).toBe(0)
+	})
+
+	it('persists the mode under the storage key prefix', () => {
+		const environment = createEnvironment('test')
+		environment.registerMode('monitor')
+		environment.registerMode('build')
+
+		environment.current.mode = 'build'
+
+		expect(localStorage.getItem(STORED_MODE_KEY)).toBe(JSON.stringify('build'))
+	})
+})
+
 describe('createEnvironment mode availability', () => {
 	beforeEach(() => {
-		localStorage.removeItem(ENVIRONMENT_MODE_STORAGE_KEY)
+		localStorage.removeItem(STORED_MODE_KEY)
 	})
 
 	it('has no mode until a plugin contributes one', () => {
@@ -27,9 +65,9 @@ describe('createEnvironment mode availability', () => {
 	})
 
 	it('falls back to the first registered mode when the stored one is unreachable', () => {
-		localStorage.setItem(ENVIRONMENT_MODE_STORAGE_KEY, JSON.stringify('move'))
+		localStorage.setItem(STORED_MODE_KEY, JSON.stringify('move'))
 
-		const environment = createEnvironment()
+		const environment = createEnvironment('test')
 		environment.registerMode('build')
 		environment.registerMode('monitor')
 
@@ -37,9 +75,9 @@ describe('createEnvironment mode availability', () => {
 	})
 
 	it('restores a persisted mode once its plugin registers it', () => {
-		localStorage.setItem(ENVIRONMENT_MODE_STORAGE_KEY, JSON.stringify('build'))
+		localStorage.setItem(STORED_MODE_KEY, JSON.stringify('build'))
 
-		const environment = createEnvironment()
+		const environment = createEnvironment('test')
 		environment.registerMode('monitor')
 		expect(environment.current.mode).toBe('monitor')
 
@@ -48,9 +86,9 @@ describe('createEnvironment mode availability', () => {
 	})
 
 	it('restores a persisted replay mode once its plugin registers it', () => {
-		localStorage.setItem(ENVIRONMENT_MODE_STORAGE_KEY, JSON.stringify('replay'))
+		localStorage.setItem(STORED_MODE_KEY, JSON.stringify('replay'))
 
-		const environment = createEnvironment()
+		const environment = createEnvironment('test')
 		environment.registerMode('monitor')
 		environment.registerMode('replay')
 

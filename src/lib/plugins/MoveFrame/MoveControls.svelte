@@ -7,7 +7,6 @@
 	import { useToast } from '@viamrobotics/prime-ui'
 	import { MotionClient } from '@viamrobotics/sdk'
 	import { createResourceClient, useResourceStatuses } from '@viamrobotics/svelte-sdk'
-	import { PersistedState } from 'runed'
 
 	import type { DetailsTab } from '#lib/components/overlay/details/DetailsTabs.svelte'
 	import type { Pose, PosePatch } from '#lib/math/index.js'
@@ -23,6 +22,7 @@
 	import { useArmClient } from '#lib/hooks/useArmClient.svelte.js'
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 	import { setOrientationFromEuler } from '#lib/math/transform.js'
 	import { executeCommand } from '#lib/motion/planDoCommand.js'
 
@@ -80,14 +80,13 @@
 	)
 
 	// Hand-written JSON is expensive to retype, and the panel unmounts with the
-	// selection, so keep each frame's fields across mounts and reloads. The
-	// `motion-tools:` prefix predates the rename to visualization and is kept so
-	// existing users don't lose saved input.
+	// selection, so keep each frame's fields across mounts and reloads.
+	const persistedState = usePersistedStates()
 	const worldStateJson = $derived(
-		new PersistedState(`motion-tools:move-world-state:${partID.current}:${frameName}`, '')
+		persistedState(`move-world-state:${partID.current}:${frameName}`, '')
 	)
 	const constraintsJson = $derived(
-		new PersistedState(`motion-tools:move-constraints:${partID.current}:${frameName}`, '')
+		persistedState(`move-constraints:${partID.current}:${frameName}`, '')
 	)
 
 	/** This panel's own move is running, so it shows progress rather than disabling outright. */
@@ -157,7 +156,7 @@
 			: undefined
 	)
 
-	const orientationFormat = new PersistedState<OrientationFormat>(
+	const orientationFormat = persistedState<OrientationFormat>(
 		ORIENTATION_FORMAT_KEY,
 		DEFAULT_ORIENTATION_FORMAT
 	)
@@ -548,7 +547,7 @@
 
 	<DetailsTabs
 		items={tabs}
-		storageKey={`motion-tools:move-tab:${partID.current}:${frameName}`}
+		storageKey={`move-tab:${partID.current}:${frameName}`}
 	/>
 </DetailsPanel>
 

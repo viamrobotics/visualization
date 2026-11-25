@@ -43,6 +43,7 @@
 	} from './lib/hooks/useConnectionConfigs.svelte'
 	import { readDrawServicePortOverride } from './lib/readDrawServicePortOverride'
 	import { type AccountConnection, resolveConnection } from './lib/resolveConnection'
+	import { STANDALONE_STORAGE_KEY } from './lib/standaloneStorageKey'
 	import { provideAccountMachines } from './lib/viamLogin/useAccountMachines.svelte'
 	import { provideAccountPart } from './lib/viamLogin/useAccountPart.svelte'
 	import { provideFavoriteMachines } from './lib/viamLogin/useFavoriteMachines.svelte'
@@ -105,7 +106,7 @@
 	const resolveIKSolutions = createIKSolutionsResolver(() => drawServerUrl)
 </script>
 
-<Visualizer>
+<Visualizer storageKey={STANDALONE_STORAGE_KEY}>
 	{@render children()}
 
 	{#if pluginsEnabled}

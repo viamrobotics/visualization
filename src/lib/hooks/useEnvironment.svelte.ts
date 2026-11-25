@@ -1,6 +1,7 @@
-import { PersistedState } from 'runed'
 import { getContext, onDestroy, setContext } from 'svelte'
 import { SvelteMap } from 'svelte/reactivity'
+
+import { createStoredState } from './usePersistedStates.svelte'
 
 export const ENVIRONMENT_CONTEXT_KEY = Symbol('environment')
 
@@ -68,19 +69,18 @@ export interface EnvironmentContext {
 	readonly availableModes: EnvironmentMode[]
 }
 
-/**
- * Where the persisted mode lives. Exported so tests can reset it. Kept as
- * `motion-tools:` after the rename to visualization so existing users keep their mode.
- */
-export const ENVIRONMENT_MODE_STORAGE_KEY = 'motion-tools:environment-mode'
+/** Where the persisted mode lives, after the visualizer's `storageKey` prefix. */
+export const ENVIRONMENT_MODE_STORAGE_KEY = 'environment-mode'
 
 const modes = new Set(['monitor', 'build', 'move', 'replay'])
 
 /** Whether `value` names one of the closed set of modes. */
 export const isEnvironmentMode = (value: string): value is EnvironmentMode => modes.has(value)
 
-export const createEnvironment = (): EnvironmentContext => {
-	const stored = new PersistedState<EnvironmentMode | 'none'>(
+/** The mode persists under `<storageKey>:environment-mode`, or in memory without a key. */
+export const createEnvironment = (storageKey?: string): EnvironmentContext => {
+	const stored = createStoredState<EnvironmentMode | 'none'>(
+		storageKey,
 		ENVIRONMENT_MODE_STORAGE_KEY,
 		'monitor'
 	)
@@ -176,8 +176,8 @@ export const createEnvironment = (): EnvironmentContext => {
 	return context
 }
 
-export const provideEnvironment = () => {
-	const context = createEnvironment()
+export const provideEnvironment = (storageKey: string | undefined) => {
+	const context = createEnvironment(storageKey)
 	setContext<EnvironmentContext>(ENVIRONMENT_CONTEXT_KEY, context)
 	return context
 }

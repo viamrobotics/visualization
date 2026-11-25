@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { useThrelte } from '@threlte/core/webgpu'
-	import { PersistedState } from 'runed'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import Popover from '#lib/components/overlay/Popover.svelte'
 	import { useSettingsTabs } from '#lib/components/overlay/Portals/useSettingsTabs.svelte.js'
 	import WorkspacePortal from '#lib/components/overlay/Portals/WorkspacePortal.svelte'
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 	import { useSettings } from '#lib/hooks/useSettings.svelte.js'
 
 	import ControlsSettings from './ControlsSettings.svelte'
@@ -38,7 +38,7 @@
 		invalidate()
 	})
 
-	const activeTab = new PersistedState('settings-active-tab', BUILT_IN_TABS[0].label)
+	const activeTab = usePersistedStates()('settings-active-tab', BUILT_IN_TABS[0].label)
 	// `toSorted` is stable, so tabs without an order keep the order their plugins mounted in.
 	// Two of those subtract to `NaN`, which `|| 0` turns into a tie.
 	const items = $derived(

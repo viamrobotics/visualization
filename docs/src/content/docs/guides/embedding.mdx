@@ -194,6 +194,29 @@ one-shot capture.
 </div>
 ```
 
+## Keeping state separate from the standalone app
+
+The visualizer remembers some state across reloads: settings, the workspace mode, the open
+details tab, and the orientation format. It stores them in the host page's origin. By default an
+embedded viewer shares that storage with the standalone app on the same origin, so changing the
+grid in one changes it in the other.
+
+Pass `storageKey` to keep them apart. It is read once, on mount.
+
+| Value    | Effect                                                        |
+| -------- | ------------------------------------------------------------- |
+| omitted  | Shares the standalone app's storage.                          |
+| a string | Stores every key under that prefix, such as `widget:`.        |
+| `false`  | Keeps all of it in memory, and never reads or writes storage. |
+
+```svelte
+<Visualizer storageKey="arm-widget" />
+```
+
+Give each embedded viewer that should remember its own state a different string. Use `false` for
+a viewer that should start fresh on every mount. Plugins that persist their own state, such as
+`<WorldTree />` folder expansion, do not read `storageKey` yet.
+
 ## Rendering snapshots
 
 A **snapshot** is a serialized scene — every transform, drawing, and camera setting captured into one protobuf payload. Snapshots render purely client-side; no draw server, no live machine, no network calls.

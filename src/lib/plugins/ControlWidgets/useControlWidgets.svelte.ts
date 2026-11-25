@@ -1,17 +1,7 @@
-import { PersistedState } from 'runed'
+import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
-// Keys kept as `motion-tools:` after the rename to visualization; renaming them would
-// silently discard every existing user's open widgets and their positions.
-
-const open = new PersistedState<Record<string, OpenResourceWidget[]>>(
-	'motion-tools:control-widgets',
-	{}
-)
-
-const rects = new PersistedState<Record<string, WidgetRect>>(
-	'motion-tools:control-widget-rects',
-	{}
-)
+const OPEN_WIDGETS_STORAGE_KEY = 'control-widgets'
+const WIDGET_RECTS_STORAGE_KEY = 'control-widget-rects'
 
 export interface OpenResourceWidget {
 	resourceName: string
@@ -55,31 +45,39 @@ export interface ControlWidgetsStore {
 
 /**
  * Self-contained state for the ControlWidgets plugin: which registry widget panels
- * are open per part, and their persisted geometry.
+ * are open per part, and their persisted geometry. Call it while a component under
+ * `<Visualizer>` initializes. Every caller in that visualizer shares one store, kept
+ * under the visualizer's `storageKey`.
  */
-export const useControlWidgets = (): ControlWidgetsStore => ({
-	openFor: (partID) => open.current[partID] ?? [],
+export const useControlWidgets = (): ControlWidgetsStore => {
+	const persistedState = usePersistedStates()
+	const open = persistedState<Record<string, OpenResourceWidget[]>>(OPEN_WIDGETS_STORAGE_KEY, {})
+	const rects = persistedState<Record<string, WidgetRect>>(WIDGET_RECTS_STORAGE_KEY, {})
 
-	isOpen: (partID, resourceName, widgetId) =>
-		isWidgetOpen(open.current[partID] ?? [], resourceName, widgetId),
+	return {
+		openFor: (partID) => open.current[partID] ?? [],
 
-	setOpen: (partID, resourceName, widgetId, on) => {
-		const list = open.current[partID] ?? []
-		const next = on
-			? addWidget(list, resourceName, widgetId)
-			: removeWidget(list, resourceName, widgetId)
-		if (next.length === list.length) return
+		isOpen: (partID, resourceName, widgetId) =>
+			isWidgetOpen(open.current[partID] ?? [], resourceName, widgetId),
 
-		open.current = { ...open.current, [partID]: next }
-	},
+		setOpen: (partID, resourceName, widgetId, on) => {
+			const list = open.current[partID] ?? []
+			const next = on
+				? addWidget(list, resourceName, widgetId)
+				: removeWidget(list, resourceName, widgetId)
+			if (next.length === list.length) return
 
-	rectFor: (partID, resourceName, widgetId) =>
-		rects.current[rectKey(partID, resourceName, widgetId)],
+			open.current = { ...open.current, [partID]: next }
+		},
 
-	saveRect: (partID, resourceName, widgetId, rect) => {
-		rects.current = { ...rects.current, [rectKey(partID, resourceName, widgetId)]: rect }
-	},
-})
+		rectFor: (partID, resourceName, widgetId) =>
+			rects.current[rectKey(partID, resourceName, widgetId)],
+
+		saveRect: (partID, resourceName, widgetId, rect) => {
+			rects.current = { ...rects.current, [rectKey(partID, resourceName, widgetId)]: rect }
+		},
+	}
+}
 
 const rectKey = (partID: string, resourceName: string, widgetId: string) =>
 	`${partID} ${resourceName} ${widgetId}`

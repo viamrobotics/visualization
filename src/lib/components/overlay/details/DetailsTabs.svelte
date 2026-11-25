@@ -22,7 +22,8 @@
 <script lang="ts">
 	import { normalizeProps, useMachine } from '@zag-js/svelte'
 	import * as tabs from '@zag-js/tabs'
-	import { PersistedState } from 'runed'
+
+	import { usePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 
 	interface Props {
 		/** Rendered left to right. The first one is selected until the user picks another. */
@@ -38,7 +39,8 @@
 
 	const id = $props.id()
 
-	const selection = $derived(new PersistedState<string | undefined>(storageKey, undefined))
+	const persistedState = usePersistedStates()
+	const selection = $derived(persistedState<string | undefined>(storageKey, undefined))
 
 	// Callers drop a tab when the entity has nothing to put in it, so a stale
 	// selection has to fall back rather than leave every panel hidden.

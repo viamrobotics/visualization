@@ -18,24 +18,32 @@ beforeEach(() => {
 })
 
 describe('settings persistence', () => {
-	it('writes a changed setting under motion-tools-settings', async () => {
-		render(SettingsHost, { persist: true })
+	it('writes a changed setting under the storage key prefix', async () => {
+		render(SettingsHost, { storageKey: 'widget' })
 		await waitFor(() => expect(screen.getByTestId('loaded')).toHaveTextContent('true'))
 
 		await userEvent.click(screen.getByRole('button', { name: 'Toggle' }))
 
 		await waitFor(() => {
 			const written = vi.mocked(set).mock.calls.at(-1)
-			expect(written?.[0]).toBe('motion-tools-settings')
+			expect(written?.[0]).toBe('widget:settings')
 			expect(written?.[1]).toMatchObject({ enableDollyToCursor: expect.any(Boolean) })
 		})
-		const keys = vi.mocked(set).mock.calls.map(([key]) => key)
-		expect(keys.length).toBeGreaterThan(0)
-		expect(new Set(keys)).toEqual(new Set(['motion-tools-settings']))
 	})
 
-	it('touches no storage and is loaded at once when persist is off', async () => {
-		render(SettingsHost, { persist: false })
+	it('reads and writes no key outside its storage key prefix', async () => {
+		render(SettingsHost, { storageKey: 'widget' })
+		await waitFor(() => expect(screen.getByTestId('loaded')).toHaveTextContent('true'))
+
+		await userEvent.click(screen.getByRole('button', { name: 'Toggle' }))
+
+		await waitFor(() => expect(set).toHaveBeenCalled())
+		const keys = [...vi.mocked(get).mock.calls, ...vi.mocked(set).mock.calls].map(([key]) => key)
+		expect(new Set(keys)).toEqual(new Set(['widget:settings']))
+	})
+
+	it('touches no storage and is loaded at once without a storage key', async () => {
+		render(SettingsHost, { storageKey: undefined })
 
 		expect(screen.getByTestId('loaded')).toHaveTextContent('true')
 

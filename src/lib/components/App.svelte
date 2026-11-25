@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { Entity } from 'koota'
-	import type { Snippet } from 'svelte'
 
 	import { Canvas } from '@threlte/core/webgpu'
 	import { provideToast, Toast } from '@viamrobotics/prime-ui'
+	import { type Snippet, untrack } from 'svelte'
 	import { NeutralToneMapping } from 'three'
 	import { WebGPURenderer } from 'three/webgpu'
 
@@ -17,6 +17,7 @@
 	import { type CameraPose, provideCameraControls } from '#lib/hooks/useControls.svelte.js'
 	import { provideDetailsSections } from '#lib/hooks/useDetailsSections.svelte.js'
 	import { provideEnvironment } from '#lib/hooks/useEnvironment.svelte.js'
+	import { providePersistedStates } from '#lib/hooks/usePersistedStates.svelte.js'
 	import { provideSettings } from '#lib/hooks/useSettings.svelte.js'
 	import { provideTransformGizmos } from '#lib/hooks/useTransformGizmos.svelte.js'
 	import { provideVisualizerRoot } from '#lib/hooks/useVisualizerRoot.svelte.js'
@@ -50,9 +51,24 @@
 		 * selected entity, so it shows or edits the selection as a whole.
 		 */
 		details?: Snippet<[{ entities: readonly Entity[] }]>
+
+		/**
+		 * Persists this visualizer's remembered state, such as settings, workspace mode, and what
+		 * plugins keep, under this prefix across reloads. Visualizers given the same key share it.
+		 * Omit it to keep the state in memory for this visualizer alone. Read once, on mount.
+		 */
+		storageKey?: string
 	}
 
-	let { inputBindingsEnabled = true, cameraPose, children: appChildren, details }: Props = $props()
+	let {
+		inputBindingsEnabled = true,
+		cameraPose,
+		children: appChildren,
+		details,
+		storageKey,
+	}: Props = $props()
+
+	const persistedStorageKey = untrack(() => storageKey)
 
 	provideWorld()
 	provideDomPortals()
@@ -60,8 +76,9 @@
 	provideKeybindings()
 	provideTransformGizmos()
 
-	provideSettings()
-	const environment = provideEnvironment()
+	providePersistedStates(persistedStorageKey)
+	provideSettings(persistedStorageKey)
+	const environment = provideEnvironment(persistedStorageKey)
 
 	// After the world and the environment, since the consumers write to them.
 	provideDeepLink()
