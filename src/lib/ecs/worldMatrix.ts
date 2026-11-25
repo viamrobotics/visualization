@@ -141,6 +141,17 @@ const flushDirty = (world: World, dirty: Set<Entity>) => {
 	}
 }
 
+/** The flush each world has queued and not yet run, if any. */
+const pendingFlushes = new WeakMap<World, Promise<void>>()
+
+/**
+ * Resolves once every `WorldMatrix` change already queued on `world` has been written, or right
+ * away when none is. Await it before measuring the scene: a frame spawned or reparented in this
+ * flush still holds its previous `WorldMatrix` until then.
+ */
+export const worldMatricesSettled = (world: World): Promise<void> =>
+	pendingFlushes.get(world) ?? Promise.resolve()
+
 /**
  * Wire up listeners that maintain `WorldMatrix` reactively. Subscribes to
  * add/change/remove on `Matrix`, `EditedMatrix`, `LiveMatrix`, and `ChildOf`;
@@ -160,9 +171,18 @@ export const installWorldMatrixListeners = (world: World): (() => void) => {
 		dirty.add(entity)
 		if (scheduled) return
 		scheduled = true
+
+		const { promise, resolve } = Promise.withResolvers<void>()
+		pendingFlushes.set(world, promise)
+
 		queueMicrotask(() => {
 			scheduled = false
-			flushDirty(world, dirty)
+			try {
+				flushDirty(world, dirty)
+			} finally {
+				pendingFlushes.delete(world)
+				resolve()
+			}
 		})
 	}
 
