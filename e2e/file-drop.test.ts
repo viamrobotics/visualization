@@ -2,6 +2,7 @@ import path from 'node:path'
 import url from 'node:url'
 
 import { expect, test } from './fixtures/drawing'
+import { dismissToast } from './helpers/dismissToast'
 import { screenshotCanvas } from './helpers/screenshot'
 
 const __filename = url.fileURLToPath(import.meta.url)
@@ -13,6 +14,7 @@ test.describe('file drop', () => {
 
 		await expect(page.getByText('simple.pcd', { exact: true })).toBeVisible({ timeout: 10000 })
 		await expect(page.getByText('simple.pcd loaded.')).toBeVisible({ timeout: 5000 })
+		await dismissToast(page, 'simple.pcd loaded.')
 
 		await screenshotCanvas(page, 'FILE_DROP_PCD')
 	})
@@ -22,6 +24,7 @@ test.describe('file drop', () => {
 
 		await expect(page.getByText('lod_100.ply', { exact: true })).toBeVisible({ timeout: 10000 })
 		await expect(page.getByText('lod_100.ply loaded.')).toBeVisible({ timeout: 5000 })
+		await dismissToast(page, 'lod_100.ply loaded.')
 
 		await screenshotCanvas(page, 'FILE_DROP_PLY')
 	})

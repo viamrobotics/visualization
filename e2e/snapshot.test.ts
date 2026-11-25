@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { expect, test } from './fixtures/drawing'
+import { dismissToast } from './helpers/dismissToast'
 import { screenshotCanvas } from './helpers/screenshot'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -29,13 +30,7 @@ for (const snapshot of snapshots) {
 			timeout: 30000,
 		})
 
-		const dismissButton = page.getByRole('button', { name: 'Dismiss toast' })
-		await expect(dismissButton).toBeVisible({ timeout: 10000 })
-		// The toast flies in from below the viewport and on CI can stay unstable for the whole
-		// test timeout, so the click is dispatched. The not.toBeVisible below confirms it.
-		await dismissButton.dispatchEvent('click')
-
-		await expect(page.getByText(`${snapshot.file}.pb.gz loaded.`)).not.toBeVisible()
+		await dismissToast(page, `${snapshot.file}.pb.gz loaded.`)
 
 		for (const label of snapshot.waitFor ?? []) {
 			await expect(page.getByText(label, { exact: true }).first()).toBeVisible({
@@ -52,8 +47,7 @@ test('drops visualization_snapshot_metadata', async ({ page, dropFile }) => {
 
 	await dropFile(path.resolve(snapshotsDir, filename))
 	await expect(page.getByText(`${filename} loaded.`)).toBeVisible({ timeout: 10000 })
-	await page.getByRole('button', { name: 'Dismiss toast' }).click()
-	await expect(page.getByText(`${filename} loaded.`)).not.toBeVisible()
+	await dismissToast(page, `${filename} loaded.`)
 
 	await page.getByText('relationship-arrows', { exact: true }).first().click()
 
