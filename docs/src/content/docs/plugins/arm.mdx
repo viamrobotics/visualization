@@ -27,13 +27,13 @@ It suits a view of one arm, such as an arm control card. For the whole machine, 
 
 ## Props
 
-| Prop          | Type         | Description                                                                                                    |
-| ------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `partID`      | `string`     | The machine part the arm is on.                                                                                |
-| `name`        | `string`     | The name of the arm component.                                                                                 |
-| `refreshRate` | `number`     | How often the joint positions are read, in milliseconds. Defaults to `500`.                                    |
-| `display` | `'colliders' \| 'model' \| 'colliders+model'` | What the arm draws. Defaults to the **Arm models** setting. See below. |
-| `onready`     | `() => void` | Called once the arm is drawn and placed, and again each time it is redrawn. Never on joint updates. See below. |
+| Prop          | Type                                          | Description                                                                                                    |
+| ------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `partID`      | `string`                                      | The machine part the arm is on.                                                                                |
+| `name`        | `string`                                      | The name of the arm component.                                                                                 |
+| `refreshRate` | `number`                                      | How often the joint positions are read, in milliseconds. Defaults to `500`.                                    |
+| `display`     | `'colliders' \| 'model' \| 'colliders+model'` | What the arm draws. Defaults to the **Arm models** setting. See below.                                         |
+| `onready`     | `() => void`                                  | Called once the arm is drawn and placed, and again each time it is redrawn. Never on joint updates. See below. |
 
 ## Fitting the camera
 
