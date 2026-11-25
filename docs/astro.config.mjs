@@ -59,7 +59,7 @@ export default defineConfig({
 						{ label: '<Debug />', link: '/plugins/debug/' },
 						{ label: '<DrawService />', link: '/plugins/draw-service/' },
 						{ label: '<FileDrop />', link: '/plugins/file-drop/' },
-						{ label: '<Isolate />', link: '/plugins/focus/' },
+						{ label: '<Isolate />', link: '/plugins/isolate/' },
 						{ label: '<Logs />', link: '/plugins/logs/' },
 						{ label: '<Machine />', link: '/plugins/machine/' },
 						{ label: '<Maximize />', link: '/plugins/maximize/' },

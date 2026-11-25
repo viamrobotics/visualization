@@ -36,4 +36,4 @@ To toggle the lock at runtime, mount the plugin conditionally — it locks on mo
 
 - **External packages:** none.
 - **Plugins:** none.
-- **Runtime:** acts on the visualizer's active camera controls. It only takes effect with the default orbit-style controls, which expose a polar angle. While another plugin swaps in trackball controls — for example `<Focus />` during focus mode — there is no polar angle to clamp and the lock stays inert until those controls are relinquished.
+- **Runtime:** acts on the visualizer's active camera controls. It only takes effect with the default orbit-style controls, which expose a polar angle. While another plugin swaps in trackball controls, such as [`<Isolate />`](../isolate/) while a selection is isolated, there is no polar angle to clamp. The lock stays inert until those controls are relinquished.

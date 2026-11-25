@@ -11,9 +11,12 @@ The plugin is model-agnostic: you wire in whatever LLM backend you prefer via th
 
 ## Usage
 
+Mount `<LLMSceneBuilder />` inside [`<Machine />`](../machine/). It reads the part config and fragment frames that `<Machine />` provides, so it needs `@viamrobotics/svelte-sdk` installed.
+
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
+	import { Machine } from '@viamrobotics/visualization/plugins/machine'
 	import { LLMSceneBuilder } from '@viamrobotics/visualization/plugins/llm-scene-builder'
 	import type {
 		ComponentFrameInfo,
@@ -35,7 +38,9 @@ The plugin is model-agnostic: you wire in whatever LLM backend you prefer via th
 
 <div class="h-screen w-screen">
 	<Visualizer>
-		<LLMSceneBuilder onInfer={handleInfer} />
+		<Machine partID="my-part-id">
+			<LLMSceneBuilder onInfer={handleInfer} />
+		</Machine>
 	</Visualizer>
 </div>
 ```

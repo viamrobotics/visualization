@@ -11,17 +11,20 @@ Which widgets are open, and where their panels sit, is remembered per machine pa
 
 ## Usage
 
-Mount `<ControlWidgets />` inside `<Visualizer />`. It needs a connected machine to list resources:
+Mount `<ControlWidgets />` inside [`<Machine />`](../machine/). It lists that part's resources:
 
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
 	import { ControlWidgets } from '@viamrobotics/visualization/control-widgets'
+	import { Machine } from '@viamrobotics/visualization/plugins/machine'
 </script>
 
 <div class="h-screen w-screen">
 	<Visualizer>
-		<ControlWidgets />
+		<Machine partID="my-part-id">
+			<ControlWidgets />
+		</Machine>
 	</Visualizer>
 </div>
 ```
@@ -55,4 +58,4 @@ widgets, whether or not the panel is mounted. They persist across reloads when t
 
 - **External packages:** `@viamrobotics/test-widgets` (supplies the widget registry) and `@viamrobotics/svelte-sdk`. Both are optional peers of `@viamrobotics/visualization`, so install them to mount this plugin. The plugin also uses `@threlte/xr` to detect an active immersive session.
 - **Plugins:** none required — though its registry panels hide themselves while an immersive `<XR />` session is active (see [Plugin dependencies](../dependencies/)).
-- **Runtime:** a live machine connection. Resources are resolved per part, so the plugin must be mounted within the visualizer's scene, and the list stays empty until a machine is connected. Registry widget panels are automatically hidden while an immersive XR session is active.
+- **Runtime:** a live machine connection through `<Machine />`. Resources are resolved per part, so the plugin must be mounted inside `<Machine />`, and the list stays empty until the machine is connected. Registry widget panels are automatically hidden while an immersive XR session is active.

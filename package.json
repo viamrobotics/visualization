@@ -745,9 +745,6 @@
 		"@viamrobotics/test-widgets": {
 			"optional": true
 		},
-		"@zag-js/tabs": {
-			"optional": true
-		},
 		"@zag-js/tree-view": {
 			"optional": true
 		},
