@@ -1,5 +1,49 @@
 # visualization
 
+## 4.0.0
+
+### Major Changes
+
+- a5925ef: `partID`, `localConfigProps`, and `componentNameToFragmentInfo` move from `<Visualizer>` to the new `<Machine>` plugin, which replaces `<Monitor />` and wraps plugins that need a machine.
+- 487f3e7: Each `<Visualizer>` keeps its own state, in memory unless given a `storageKey` to persist under, and `useTestWidgets()` must now be called while a component initializes.
+
+### Minor Changes
+
+- a262ee0: Add `<Arm />`, which draws one arm live in its own base frame, and `useCamera`, whose `fit()` frames the scene once content such as `<Arm onready>` is in place.
+- f726e0b: Delete an obstacle from its details panel, and delete frames in embedded hosts as well as the standalone app.
+- a5925ef: Selecting several objects opens one details panel that shows shared values and a dash where they differ. `useDetailsSection` becomes the `<DetailsSection>` component, which takes a `label` and whose snippet, like the `details` snippet on `<Visualizer />`, receives `{ entities }` instead of `{ entity }`. The details panel shows without a mode plugin, and `useEnvironmentMode` takes `ownsDetails`.
+- f726e0b: Duplicate obstacles and Complex obstacle shapes in build mode with Shift+D or from the details panel.
+- a5925ef: The `Fullscreen` plugin is renamed `Maximize`, and details panels no longer shift down while it is mounted.
+- e2fb787: Arms with DH kinematics now draw their links, previews, and saved poses, read from the machine's typed kinematic model.
+- 78d573f: `useEnvironmentMode` takes a `confirmLeave` option, so a mode can ask before a switch discards its work.
+- f1dd343: World tree folders and badges come from plugin-written traits, and `useLogs` drops `statusFor` and `linesFor`.
+- 7daeb2a: Orientation fields open on Euler angles and remember whether you last picked Euler angles or an orientation vector.
+- f726e0b: Edit the offset and geometry of several selected Complex obstacle shapes at once, and delete them together.
+- e2fb787: Each plugin is now importable from its own subpath, such as `@viamrobotics/visualization/plugins/measure-tool`, which loads only that plugin and its optional peers.
+- 4fd55c3: Replace the `@viamrobotics/prime-core` peer dependency with `@viamrobotics/prime-ui` and `@viamrobotics/prime-controls` 0.7, `@viamrobotics/prime-editor` 0.2, and `@mdi/js`.
+- a5925ef: Removes `<FramePov />` and its pop-out windows. The details panel's POV tab remains.
+- 7daeb2a: Move the render stats panel and its Debug settings toggle into a `<RenderStats />` plugin, imported from `@viamrobotics/visualization/render-stats`.
+- fe48b93: Import `TestWidgets` and `useTestWidgets` from `@viamrobotics/visualization/plugins/test-widgets` instead of `@viamrobotics/visualization/plugins`, and mount `<TestWidgets />` inside `<Machine>` to get the details panel's Test tab.
+- f3b93f3: The transform gizmo now moves, rotates, and scales every selected object, pivoting on the first selected object in local space and on the selection's center in world space.
+- 7daeb2a: Edit poses, geometry, colors, and snapping with `@viamrobotics/prime-controls` instead of tweakpane, which is now a regular dependency used only by the render stats panel.
+- ce19c70: `@viamrobotics/visualization/styles.css` points a host's Tailwind 4 build at the visualizer's components.
+- a5925ef: `<XR>` works without a machine, and its camera feeds, joint limits, teleop, and frame configuration move to a new `<XRMachine>` child that goes inside `<Machine>`.
+
+### Patch Changes
+
+- fd81351: In build mode, the details panel shows only Build's appearance editor, no longer adding the session editor beside it.
+- ce19c70: The details panel's tabs use prime-ui's `Tabs`, so core no longer needs `@zag-js/tabs`.
+- a5925ef: Content in a workspace, dashboard, overlay, mode toggle, or settings portal now reads context from the plugin that declared it.
+- ce19c70: Drops the unused `@ag-grid-community/*` peers and the `d3-force` dependency.
+- bfa5f5f: Fix world state store point clouds that stopped loading after their first chunk.
+- ce19c70: Hosts no longer need `assetsInclude` for the visualizer's environment map.
+- e2fb787: `@viamrobotics/svelte-sdk` and `@viamrobotics/test-widgets` are now optional peers, needed only by the machine plugins and `<TestWidgets />`.
+- ce19c70: `@viamrobotics/sdk` is declared as an optional peer for the machine plugins, and `/lib` no longer loads it.
+- ce19c70: The world-tree filter, bounds-obstacle wall checkboxes, and scene-builder prompt use prime components, so no host needs `@tailwindcss/forms`.
+- f726e0b: Fix dragging several shapes of one Complex obstacle moving only one of them, and a stray --> in a shape's details.
+- 487f3e7: The desktop app pins Svelte 5.58.0, fixing a world-tree crash when switching machines.
+- 3132ea7: `@zag-js/tabs` is now a required peer, since the details panel in `<Visualizer />` uses it.
+
 ## 3.4.1
 
 ### Patch Changes
