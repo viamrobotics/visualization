@@ -13,8 +13,9 @@
 	import EntityLink from '#lib/components/overlay/EntityLink.svelte'
 	import { traits, useMappedEntitiesTraits } from '#lib/ecs/index.js'
 	import { FrameEditor } from '#lib/editing/FrameEditor.js'
-	import { useParentFrameOptions } from '#lib/hooks/useParentFrameOptions.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
+
+	import { useParentFrameOptions } from './useParentFrameOptions.svelte'
 
 	interface Props {
 		/** The selection. Never empty. */

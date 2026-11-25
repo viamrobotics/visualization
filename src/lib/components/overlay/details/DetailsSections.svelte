@@ -17,13 +17,22 @@ registration order.
 	interface Props {
 		entities: readonly Entity[]
 		tab: DetailsTabId
+		/**
+		 * The panel edits appearance itself, so sections that replace the built-in appearance
+		 * controls are left out instead of showing a second editor.
+		 */
+		ownsAppearance?: boolean
 	}
 
-	const { entities, tab }: Props = $props()
+	const { entities, tab, ownsAppearance = false }: Props = $props()
 
 	const sections = useDetailsSections()
 
-	const visible = $derived(sectionsForTab(sections?.current ?? [], tab))
+	const visible = $derived(
+		sectionsForTab(sections?.current ?? [], tab).filter(
+			(section) => !(ownsAppearance && section.replacesAppearance)
+		)
+	)
 </script>
 
 {#each visible as section (section)}
@@ -37,7 +46,9 @@ registration order.
 	{:else if matching.length > 0}
 		<SectionNotice
 			label={section.label}
-			message="Not every selected object supports this."
+			message={section.replacesAppearance
+				? 'Some selected objects keep their appearance differently. Select only one kind to edit it.'
+				: 'Not every selected object supports this.'}
 		/>
 	{/if}
 {/each}

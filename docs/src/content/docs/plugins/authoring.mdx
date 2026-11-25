@@ -315,7 +315,7 @@ export const provideWaypoints = () => {
 export const useWaypoints = () => getContext<ReturnType<typeof provideWaypoints>>(KEY)
 ```
 
-Your plugin's root component calls `provideWaypoints()`; its children — and the host app — call `useWaypoints()`. This is exactly the shape of [`useSelectionPlugin`](../selection/#reading-the-selection), and it's how a plugin publishes an API without prop drilling.
+Your plugin's root component calls `provideWaypoints()`. Its children and the host app call `useWaypoints()`. This is exactly the shape of [`useSelectionPlugin`](../selection/#reading-the-selection), and it's how a plugin publishes an API without prop drilling.
 
 ## Reacting to user input
 

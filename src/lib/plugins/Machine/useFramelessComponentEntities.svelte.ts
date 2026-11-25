@@ -3,8 +3,7 @@ import type { Entity, World } from 'koota'
 import { onDestroy } from 'svelte'
 
 import { type FolderSpec, selectOnly, traits, useFolder, useWorld } from '#lib/ecs/index.js'
-
-import { useFramelessComponents } from './useFramelessComponents.svelte'
+import { useFramelessComponents } from '#lib/hooks/useFramelessComponents.svelte.js'
 
 /**
  * Keeps one `FramelessComponent` entity per name in `names`, so the world tree

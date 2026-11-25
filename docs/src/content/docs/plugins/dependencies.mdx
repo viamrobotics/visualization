@@ -48,7 +48,7 @@ The `<ControlWidgets />` ──► `<XR />` link only observes the session state
 
 ## Plugins
 
-Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Machine />`](../machine/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), and [`<FileDrop />`](../file-drop/). Mount all of them — BuildFrames inside Machine — for the full standalone app; mount none for a bare scene with camera controls.
+Plugins are the visualizer's own chrome, split out so an embedded viewer doesn't inherit UI it has no use for: [`<Machine />`](../machine/), [`<WorldTree />`](../world-tree/), [`<Settings />`](../settings/), [`<BuildFrames />`](../build-frames/), and [`<FileDrop />`](../file-drop/). Mount all of them, with BuildFrames inside Machine, for the full standalone app. Mount none for a bare scene with camera controls.
 
 One of them reaches beyond the visualizer element: `<FileDrop />` listens for drags on `window`, so it swallows drag-and-drop for the whole page. Keyboard shortcuts are dispatched by core but exist only when the feature contributing them is mounted, and `inputBindingsEnabled={false}` disables keyboard input wholesale.
 
