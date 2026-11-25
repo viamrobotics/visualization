@@ -39,6 +39,10 @@ pnpm e2e:robot     # Playwright robot suite (provisions a cloud machine)
 
 Organize code by feature with **one focused unit per file**. File names should describe what the code does. Avoid generic bucket files (`utils`, `helpers`, `constants`).
 
+## Docs
+
+When a change alters external-facing code or APIs, update the matching guides in `docs/src/content/docs/` in the same change (`api/` is generated, never hand-edit it).
+
 ## Topic-specific rules
 
 `.claude/rules/` loads by each file's `paths:` frontmatter. Repo-owned: `koota-ecs`, `threlte-scene`, `svelte-lifecycle`, `frontend-aesthetics`, `math`, `go`, `testing-go`, `testing-frontend`, `viam-context`. The rest are houserules-managed and gitignored: set their `paths:` under `rules` in `.claude/houserules.config.json`, never edit the files.
