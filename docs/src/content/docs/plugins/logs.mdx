@@ -14,7 +14,7 @@ Mount `<Logs />` anywhere inside `<Visualizer />`:
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { Logs } from '@viamrobotics/visualization/plugins'
+	import { Logs } from '@viamrobotics/visualization/plugins/logs'
 </script>
 
 <div class="h-screen w-screen">
@@ -30,7 +30,7 @@ Use `useLogs` from anywhere inside `<Visualizer />` to append a message. The lev
 
 ```svelte
 <script lang="ts">
-	import { useLogs } from '@viamrobotics/visualization/plugins'
+	import { useLogs } from '@viamrobotics/visualization/plugins/logs'
 
 	const logs = useLogs()
 
@@ -48,7 +48,7 @@ The same hook exposes the current entries and per-level slices for building your
 
 ```svelte
 <script lang="ts">
-	import { useLogs } from '@viamrobotics/visualization/plugins'
+	import { useLogs } from '@viamrobotics/visualization/plugins/logs'
 
 	const logs = useLogs()
 </script>

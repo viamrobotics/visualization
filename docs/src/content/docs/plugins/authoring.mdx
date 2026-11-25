@@ -453,7 +453,9 @@ If your plugin needs an extra package, import it normally, declare it a peer dep
 
     </TabItem>
     <TabItem label="In the repo">
-    	Contributing a plugin back means it ships in `@viamrobotics/visualization/plugins` for everyone.
+    	Contributing a plugin back means it ships in `@viamrobotics/visualization` for everyone. Give it
+    	an `index.ts` in its folder, add a `./plugins/<name>` subpath to `exports` in `package.json`, and
+    	re-export it from the `/plugins` barrel.
     	Plugins in the repo import through the `#lib` subpath import, so they can use internal hooks
     	(`useCameraControls`, `useMouseRaycaster`, …) and components that aren't publicly exported.
 

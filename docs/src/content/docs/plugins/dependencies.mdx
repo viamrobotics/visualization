@@ -23,6 +23,10 @@ Most plugins need nothing beyond `@viamrobotics/visualization`. Several use **op
 | `<WorldTree />`      | `@zag-js/tree-view svelte-virtuallists`                              |
 | `<XR />`             | `@threlte/xr @viamrobotics/svelte-sdk`                               |
 
+A peer stays optional only when you import each plugin from its own subpath, such as
+`@viamrobotics/visualization/plugins/measure-tool`. The `@viamrobotics/visualization/plugins`
+barrel loads every plugin, so importing anything from it needs every peer in this table.
+
 ## Plugin-to-plugin
 
 No plugin imports another as a hard requirement, but several pairs coordinate at runtime. Each is **soft**: the dependent plugin still works alone, just with reduced behavior.

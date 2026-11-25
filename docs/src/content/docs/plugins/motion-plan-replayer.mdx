@@ -12,7 +12,7 @@ Mount `<MotionPlanReplayer />` anywhere inside `<Visualizer />`:
 ```svelte
 <script lang="ts">
 	import { Visualizer } from '@viamrobotics/visualization'
-	import { MotionPlanReplayer } from '@viamrobotics/visualization/plugins'
+	import { MotionPlanReplayer } from '@viamrobotics/visualization/plugins/motion-plan-replayer'
 </script>
 
 <div class="h-screen w-screen">
@@ -80,7 +80,7 @@ reach context via `useMotionPlanReplayer()`. Pass `replayer` through the
 ```svelte
 <!-- PlanDatabasePicker.svelte — your component, your data fetching -->
 <script lang="ts">
-	import type { MotionPlanReplayerContext } from '@viamrobotics/visualization/plugins'
+	import type { MotionPlanReplayerContext } from '@viamrobotics/visualization/plugins/motion-plan-replayer'
 
 	interface Props {
 		replayer: MotionPlanReplayerContext
@@ -114,7 +114,7 @@ then build snapshots with the exported `transformBytesToSnapshots` helper and ha
 to `addPlan`:
 
 ```ts
-import { transformBytesToSnapshots } from '@viamrobotics/visualization/plugins'
+import { transformBytesToSnapshots } from '@viamrobotics/visualization/plugins/motion-plan-replayer'
 
 // transformsPerStep: Uint8Array[][] — one Uint8Array per transform, one array per step
 replayer.addPlan('from-server', '', transformBytesToSnapshots(transformsPerStep))

@@ -114,6 +114,20 @@ registers it, and mode plugins' mount order sets both the toggle's button order 
 priority. To embed a focused viewer, mount none of them —
 or just the one or two that earn their space.
 
+### Importing plugins
+
+Each plugin has its own subpath, named after the component in kebab case:
+
+```ts
+import { Machine } from '@viamrobotics/visualization/plugins/machine'
+import { MeasureTool } from '@viamrobotics/visualization/plugins/measure-tool'
+```
+
+Import from these subpaths. Each one loads only its own plugin, so you install only the optional
+peers for the plugins you mount. The `@viamrobotics/visualization/plugins` barrel still exports
+every plugin, but it loads all of them, so it needs every optional peer installed. See
+[Plugin dependencies](../../plugins/dependencies/) for which plugin needs which peer.
+
 <Aside
 	type="caution"
 	title="Chrome that reaches past the visualizer"
@@ -133,7 +147,7 @@ else is needed — no `partID`, and no network calls of its own.
 ```svelte
 <script lang="ts">
 	import { PCD, Visualizer } from '@viamrobotics/visualization'
-	import { MeasureTool } from '@viamrobotics/visualization/plugins'
+	import { MeasureTool } from '@viamrobotics/visualization/plugins/measure-tool'
 
 	interface Props {
 		data: Uint8Array
