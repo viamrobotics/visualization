@@ -50,6 +50,32 @@ export default defineConfig({
 })
 ```
 
+### Set up styles
+
+The visualizer is styled with Tailwind 4 and the Viam prime design system, so your app needs
+Tailwind 4. Tailwind does not scan `node_modules`, so each package ships a stylesheet that
+points Tailwind at its own components. Import them in this order, after Tailwind:
+
+```css
+/* app.css */
+@import 'tailwindcss';
+@import '@viamrobotics/prime-ui/styles.css';
+@import '@viamrobotics/prime-controls/styles.css';
+@import '@viamrobotics/visualization/styles.css';
+```
+
+If your app already uses prime-ui and prime-controls, add only the last line. Importing a prime
+stylesheet a second time duplicates its rules.
+
+`<MoveFrame />` also needs `@import '@viamrobotics/prime-editor/styles.css'`
+for its JSON editor.
+
+The visualizer's panels use the prime fonts. Load them once, from your app's entry:
+
+```ts
+import '@viamrobotics/tailwind-config/fonts'
+```
+
 ### Disable SSR for the page
 
 The visualizer renders with WebGPU (falling back to WebGL2), which needs the browser. Disable SSR on any page that mounts `<Visualizer />`. In SvelteKit:

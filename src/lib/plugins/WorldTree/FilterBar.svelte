@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { mdiClose, mdiMagnify } from '@mdi/js'
+	import { TextField } from '@viamrobotics/prime-controls'
 	import { Icon } from '@viamrobotics/prime-ui'
 
 	interface Props {
@@ -10,21 +11,18 @@
 	let { value = $bindable() }: Props = $props()
 </script>
 
-<div
-	class="group bg-light focus-within:bg-medium flex shrink-0 items-center gap-1.5 pr-1 pl-2 transition-colors"
->
+<div class="flex shrink-0 items-center gap-2 px-2 py-1">
 	<Icon
 		icon={mdiMagnify}
 		size="sm"
-		class="text-subtle-2 group-focus-within:text-subtle-1 shrink-0 transition-colors"
+		class="text-gray-6 shrink-0"
 	/>
 
-	<input
+	<TextField
 		bind:value
-		type="text"
 		aria-label="Filter objects"
 		placeholder="Filter"
-		class="text-default placeholder:text-subtle-2 h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-xs outline-none focus:shadow-none focus:ring-0"
+		class="min-w-0 grow"
 		onkeydown={(event) => {
 			// The camera's key bindings listen on `window`, so typing `wasd` here would
 			// fly the camera without this.

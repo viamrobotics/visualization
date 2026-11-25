@@ -794,6 +794,7 @@
 			"types": "./dist/index.d.ts",
 			"svelte": "./dist/index.js"
 		},
+		"./styles.css": "./styles.css",
 		"./lib": {
 			"types": "./dist/lib.d.ts",
 			"svelte": "./dist/lib.js"
@@ -905,6 +906,7 @@
 	},
 	"files": [
 		"dist",
+		"styles.css",
 		"!dist/**/*.test.*",
 		"!dist/**/*.spec.*"
 	],

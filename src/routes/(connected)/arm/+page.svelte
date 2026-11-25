@@ -19,7 +19,6 @@
 		display="model"
 		refreshRate={200}
 		onready={() => {
-			console.log('here')
 			camera.fit()
 		}}
 	/>

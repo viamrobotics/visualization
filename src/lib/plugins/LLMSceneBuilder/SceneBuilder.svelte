@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { mdiAlertCircleOutline } from '@mdi/js'
-	import { Icon } from '@viamrobotics/prime-ui'
+	import { Icon, Textarea } from '@viamrobotics/prime-ui'
 
 	import DashboardButton from '#lib/components/overlay/dashboard/Button.svelte'
 	import FloatingPanel from '#lib/components/overlay/FloatingPanel.svelte'
@@ -42,8 +42,9 @@
 	>
 		<div class="flex h-full min-h-0 min-w-0 flex-col gap-3 p-3 text-xs">
 			<div class="flex min-w-0 gap-2">
-				<textarea
-					class="min-w-0 flex-1 resize-none rounded border border-gray-300 p-2 text-xs focus:ring-1 focus:ring-gray-400 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+				<Textarea
+					aria-label="Frame change"
+					class="min-w-0 flex-1 resize-none text-xs"
 					placeholder="Describe a frame change — translation, rotation, or parent. e.g. 'Move arm 200mm forward and rotate 90° left'"
 					rows={3}
 					disabled={sceneBuilder.uiState === 'loading' || sceneBuilder.uiState === 'diff'}
@@ -56,7 +57,7 @@
 							prompt = ''
 						}
 					}}
-				></textarea>
+				/>
 				<button
 					class="shrink-0 self-end rounded bg-gray-800 px-3 py-1.5 text-xs text-nowrap text-white hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
 					disabled={!canSubmit}
