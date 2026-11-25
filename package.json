@@ -636,7 +636,7 @@
 		"@viamrobotics/prime-controls": "0.7.0",
 		"@viamrobotics/prime-core": "0.1.23",
 		"@viamrobotics/prime-editor": "0.2.0",
-		"@viamrobotics/prime-ui": "0.7.1",
+		"@viamrobotics/prime-ui": "0.7.2",
 		"@viamrobotics/sdk": "0.79.2",
 		"@viamrobotics/svelte-sdk": "1.5.5",
 		"@viamrobotics/tailwind-config": "1.12.0",
