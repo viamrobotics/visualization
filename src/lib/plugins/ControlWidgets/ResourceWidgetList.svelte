@@ -3,8 +3,8 @@
 
 	import { useMachineStatus, useResourceStatuses } from '@viamrobotics/svelte-sdk'
 
-	import { subtypeToColor } from '#lib/color.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { subtypeToColor } from '#lib/resourceColors.js'
 
 	import ResourceWidgetRow from './ResourceWidgetRow.svelte'
 	import { resourceWidgetToggles } from './resourceWidgetToggles'

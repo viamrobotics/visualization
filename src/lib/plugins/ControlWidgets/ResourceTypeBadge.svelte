@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { subtypeToColor } from '#lib/color.js'
+	import { subtypeToColor } from '#lib/resourceColors.js'
 
 	interface Props {
 		subtype: string

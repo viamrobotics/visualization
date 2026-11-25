@@ -704,6 +704,7 @@
 		"@viamrobotics/prime-controls": ">=0.7",
 		"@viamrobotics/prime-editor": ">=0.2",
 		"@viamrobotics/prime-ui": ">=0.7",
+		"@viamrobotics/sdk": ">=0.79.0",
 		"@viamrobotics/svelte-sdk": ">=1.4.0",
 		"@viamrobotics/test-widgets": ">=0.15.0",
 		"@zag-js/floating-panel": ">=1.45",
@@ -737,6 +738,9 @@
 			"optional": true
 		},
 		"@threlte/xr": {
+			"optional": true
+		},
+		"@viamrobotics/sdk": {
 			"optional": true
 		},
 		"@viamrobotics/svelte-sdk": {

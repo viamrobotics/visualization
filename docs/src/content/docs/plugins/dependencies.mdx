@@ -9,19 +9,20 @@ Every plugin mounts independently inside `<Visualizer />`, and none _requires_ a
 
 Most plugins need nothing beyond `@viamrobotics/visualization`. Several use **optional peer dependencies** — install them only when you use the plugin:
 
-| Plugin               | Install                                                              |
-| -------------------- | -------------------------------------------------------------------- |
-| `<Machine />`        | `@viamrobotics/svelte-sdk`                                           |
-| `<BuildFrames />`    | `@viamrobotics/svelte-sdk`                                           |
-| `<ControlWidgets />` | `@viamrobotics/test-widgets @viamrobotics/svelte-sdk`                |
-| `<SelectionTool />`  | `earcut`                                                             |
-| `<SensorCoverage />` | `@viamrobotics/svelte-sdk`                                           |
-| `<DrawService />`    | `@connectrpc/connect @connectrpc/connect-web`                        |
-| `<Debug />`          | `@tanstack/svelte-query-devtools`                                    |
-| `<MoveFrame />`      | `@dimforge/rapier3d-compat @threlte/rapier @viamrobotics/svelte-sdk` |
-| `<Settings />`       | `@zag-js/tabs`                                                       |
-| `<WorldTree />`      | `@zag-js/tree-view svelte-virtuallists`                              |
-| `<XR />`             | `@threlte/xr @viamrobotics/svelte-sdk`                               |
+| Plugin               | Install                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `<Machine />`        | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                           |
+| `<Arm />`            | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                           |
+| `<BuildFrames />`    | `@viamrobotics/sdk @viamrobotics/svelte-sdk`                                           |
+| `<ControlWidgets />` | `@viamrobotics/test-widgets @viamrobotics/svelte-sdk`                                  |
+| `<SelectionTool />`  | `earcut`                                                                               |
+| `<SensorCoverage />` | `@viamrobotics/svelte-sdk`                                                             |
+| `<DrawService />`    | `@connectrpc/connect @connectrpc/connect-web`                                          |
+| `<Debug />`          | `@tanstack/svelte-query-devtools`                                                      |
+| `<MoveFrame />`      | `@dimforge/rapier3d-compat @threlte/rapier @viamrobotics/sdk @viamrobotics/svelte-sdk` |
+| `<Settings />`       | `@zag-js/tabs`                                                                         |
+| `<WorldTree />`      | `@zag-js/tree-view svelte-virtuallists`                                                |
+| `<XR />`             | `@threlte/xr @viamrobotics/sdk @viamrobotics/svelte-sdk`                               |
 
 A peer stays optional only when you import each plugin from its own subpath, such as
 `@viamrobotics/visualization/plugins/measure-tool`. The `@viamrobotics/visualization/plugins`
@@ -62,6 +63,6 @@ Some plugins need more than a mounted `<Visualizer />`:
 | `<ControlWidgets />`, `<XR />` | a live machine connection (resources resolved per part)                       |
 | `<BuildFrames />`              | to be inside `<Machine />`, with edit permissions on its part                 |
 | `<XR />`                       | a WebXR-capable device to enter a session                                     |
-| `<Focus />`                    | an active selection — click an entity first                                   |
+| `<Isolate />`                  | an active selection — click an entity first                                   |
 | `<DrawService />`              | a running draw server (see its [page](../draw-service/))                      |
 | `<TopDownLock />`              | orbit-style camera controls (the default); no effect under trackball controls |
