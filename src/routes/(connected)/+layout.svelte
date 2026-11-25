@@ -29,9 +29,6 @@
 
 	let { children } = $props()
 
-	// `?plugins=false` renders the bare scene: no dial and no machine picker.
-	const pluginsEnabled = $derived(page.url.searchParams.get('plugins') !== 'false')
-
 	const accountPart = provideAccountPart()
 	const viamSession = provideViamSession(
 		() => (drawServer.ready ? drawServer.url : undefined),
@@ -60,11 +57,9 @@
 
 	const partID = $derived(resolved?.partId)
 	// Always current, so a retry after a dropped connection dials with the latest token.
-	const dialConfig = $derived(pluginsEnabled ? resolved?.dialConf : undefined)
+	const dialConfig = $derived(resolved?.dialConf)
 
-	const liveDialIdentity = $derived(
-		pluginsEnabled && resolved && dialIdentity(resolved.partId, resolved.dialConf)
-	)
+	const liveDialIdentity = $derived(resolved && dialIdentity(resolved.partId, resolved.dialConf))
 	// ViamProvider redials on any config change. Tracking only the identity keeps a token refresh
 	// from dropping a live connection.
 	const dialConfigs = $derived.by<Record<string, DialConf>>(() => {
@@ -87,9 +82,7 @@
 		>
 			{@render children()}
 
-			{#if pluginsEnabled}
-				<Machines {launch} />
-			{/if}
+			<Machines {launch} />
 		</MachineConnectionProvider>
 	</ViamAppProvider>
 </ViamProvider>

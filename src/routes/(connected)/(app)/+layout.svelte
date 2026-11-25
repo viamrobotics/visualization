@@ -19,7 +19,6 @@
 		XRMachine,
 	} from '#lib/plugins/index.js'
 	import { RenderStats } from '#lib/plugins/RenderStats/index.js'
-	import { page } from '$app/state'
 
 	import { createIKSolutionsResolver } from '../../lib/createIKSolutionsResolver'
 	import { useDrawServer } from '../../lib/hooks/useDrawServer.svelte'
@@ -30,38 +29,33 @@
 
 	let { children } = $props()
 
-	// `?plugins=false` renders the bare scene, with every plugin unmounted.
-	const pluginsEnabled = $derived(page.url.searchParams.get('plugins') !== 'false')
-
 	const resolveIKSolutions = createIKSolutionsResolver(() => drawServer.url)
 </script>
 
 {@render children()}
 
-{#if pluginsEnabled}
-	<Machine partID={machineConnection.partID}>
-		<SensorCoverage />
+<Machine partID={machineConnection.partID}>
+	<SensorCoverage />
 
-		<BuildFrames />
-		<MoveFrame />
+	<BuildFrames />
+	<MoveFrame />
 
-		<XR anchorKey="xr-origin-anchor:{machineConnection.partID}">
-			<XRMachine />
-		</XR>
+	<XR anchorKey="xr-origin-anchor:{machineConnection.partID}">
+		<XRMachine />
+	</XR>
 
-		<ControlWidgets />
-	</Machine>
+	<ControlWidgets />
+</Machine>
 
-	{#if drawServer.ready}
-		<DrawService config={{ backendIP, port: drawServer.port }} />
-	{/if}
-	<Isolate />
-	<MeasureTool />
-	<MotionPlanReplayer {resolveIKSolutions} />
-	<WorldTree />
-	<Logs />
-	<SceneExport />
-	<Settings />
-	<RenderStats />
-	<FileDrop />
+{#if drawServer.ready}
+	<DrawService config={{ backendIP, port: drawServer.port }} />
 {/if}
+<Isolate />
+<MeasureTool />
+<MotionPlanReplayer {resolveIKSolutions} />
+<WorldTree />
+<Logs />
+<SceneExport />
+<Settings />
+<RenderStats />
+<FileDrop />
