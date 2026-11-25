@@ -1,4 +1,5 @@
 export * from './TopDownLock/index'
+export * from './Arm/index'
 export * from './BuildFrames/index'
 export * from './Debug/index'
 export * from './DrawService/index'

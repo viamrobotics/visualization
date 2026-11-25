@@ -17,12 +17,12 @@ adds the vmodutils module when the machine has nothing to load that model from.
 	import { useFrames } from '#lib/hooks/useFrames.svelte.js'
 	import { usePartConfig } from '#lib/hooks/usePartConfig.svelte.js'
 	import { usePartID } from '#lib/hooks/usePartID.svelte.js'
+	import { armInputsFromJointPositions } from '#lib/motion/armInputsFromJointPositions.js'
 	import { buildFrameDescriptors } from '#lib/motion/frameDescriptors.js'
 	import { frameSystemToPlanFrames } from '#lib/motion/frameSystemToPlanFrames.js'
 	import { nextObstacleName } from '#lib/obstacle.js'
 
 	import { defaultMotionService, motionServiceNames } from '../moveControls'
-	import { armInputsFromJointPositions } from './armInputsFromJointPositions'
 	import {
 		ARM_POSITION_SAVER_MODEL,
 		createArmPositionSaver,

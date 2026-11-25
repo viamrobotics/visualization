@@ -1,0 +1,46 @@
+---
+title: <Arm />
+description: Draw one arm live, in its own base frame.
+---
+
+`<Arm />` draws a single arm with its base at the world origin, its links following the arm's live joint positions. Nothing else on the machine is drawn. A gripper or camera mounted on the arm is left out, because each is a part of its own rather than part of the arm's kinematics.
+
+It suits a view of one arm, such as an arm control card. For the whole machine, use [`<Machine />`](../machine/).
+
+## Usage
+
+```svelte
+<script lang="ts">
+	import { Visualizer } from '@viamrobotics/visualization'
+	import { Arm } from '@viamrobotics/visualization/plugins/arm'
+</script>
+
+<div class="h-96 w-96">
+	<Visualizer>
+		<Arm
+			partID="my-part-id"
+			name="my-arm"
+		/>
+	</Visualizer>
+</div>
+```
+
+## Props
+
+| Prop     | Type     | Description                     |
+| -------- | -------- | ------------------------------- |
+| `partID` | `string` | The machine part the arm is on. |
+| `name`   | `string` | The name of the arm component.  |
+
+## How it is posed
+
+The links are posed on the client from the arm's joint positions, polled every 500 ms, through the kinematic model the machine reports for the arm. Every link comes from the same reading, so a moving arm never tears between links.
+
+The arm is drawn only once its joint positions are known and fit its kinematics. Until then, and while they are unknown, nothing is drawn rather than a pose the arm is not in.
+
+The arm's 3D models are drawn when the machine provides them, following the **Arm models** setting.
+
+## Runtime requirements
+
+- `<ViamProvider>` from `@viamrobotics/svelte-sdk` around it, with a dial config for `partID`.
+- Don't render the same arm with `<Arm />` and `<Machine />` in one `<Visualizer>`. Both name the arm's frames the same way, so their frames would collide.

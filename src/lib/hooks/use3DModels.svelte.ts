@@ -192,9 +192,9 @@ export const provide3DModels = (partID: () => string) => {
 		const sync = (entity: Entity) =>
 			syncModelTrait(entity, matchModel(entity.get(traits.Name), models))
 
-		for (const entity of world.query(traits.FramesAPI)) sync(entity)
+		for (const entity of world.query(traits.KinematicLink)) sync(entity)
 
-		return world.onAdd(traits.FramesAPI, sync)
+		return world.onAdd(traits.KinematicLink, sync)
 	})
 
 	/**
@@ -212,7 +212,7 @@ export const provide3DModels = (partID: () => string) => {
 
 		const frameNames = new Set(
 			world
-				.query(traits.FramesAPI)
+				.query(traits.KinematicLink)
 				.map((entity) => entity.get(traits.Name))
 				.filter((name): name is string => name !== undefined)
 		)

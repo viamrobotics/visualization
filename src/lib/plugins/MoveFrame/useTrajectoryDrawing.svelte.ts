@@ -13,9 +13,9 @@ import {
 	waypointFrames,
 } from '#lib/motion/interpolateTrajectory.js'
 import { createTrajectoryPlayer } from '#lib/motion/trajectoryPlayer.svelte.js'
+import { applyInputs } from '#lib/posedFrames.js'
 
 import {
-	applyPreviewStep,
 	clearPreviewGhosts,
 	createPreviewGhosts,
 	type PreviewGhosts,
@@ -117,7 +117,7 @@ export const useTrajectoryDrawing = ({
 		const inputs = playbackFrames[step]
 		if (!inputs) return false
 		try {
-			applyPreviewStep(ghosts, inputs)
+			applyInputs(ghosts.joints, inputs)
 		} catch (error) {
 			onStepError(error instanceof Error ? error.message : 'Failed to draw a step of the plan.')
 			return false
